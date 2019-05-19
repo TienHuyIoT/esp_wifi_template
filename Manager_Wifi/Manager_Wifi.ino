@@ -50,7 +50,7 @@ TimeOutEvent ESPRebootTo(0);
   Khởi tạo Object Blink IO cho Led Button
   =================================================================*/
 #ifdef ESP8266
-#define _LED_PIN  16
+#define _LED_PIN  2
 #define _BUZZ_PIN 5
 #elif defined(ESP32)
 #define _LED_PIN  22
@@ -95,8 +95,8 @@ void Init_Setup(void){
   //WiFi.setTxPower(WIFI_POWER_19_5dBm);
   COM_DEBUG("This Task runs on Core: %u",xPortGetCoreID());
   #endif  
-  // WiFi.mode(WIFI_STA);  
-  // WiFi.disconnect();
+  WiFi.mode(WIFI_STA);  
+  WiFi.disconnect();
   
   COM_DEBUG("Hello ESP8266 Fans!");  
   COM_DEBUG("HwVersion: %s",HwVersion);

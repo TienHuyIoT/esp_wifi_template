@@ -23,11 +23,11 @@ void TaskFactoryProc(void)
       LED_STT.attach_ms(111, 1000, 1000); 
       FACTORY_DBG("OK");
       #ifdef ESP8266
-      strncpy(FileConfig.ConfigFile.AP.ssid, (char*)"NHTC_BASE", Df_LengSsid);
+      strncpy(FileConfig.ConfigFile.AP.ssid, (char*)"DTUD", Df_LengSsid);
       #elif defined(ESP32)
-      strncpy(FileConfig.ConfigFile.AP.ssid, (char*)"NHTC_BASE", Df_LengSsid);
+      strncpy(FileConfig.ConfigFile.AP.ssid, (char*)"DTUD", Df_LengSsid);
       #endif      
-      strncpy(FileConfig.ConfigFile.AP.pass, "nrtls2109", Df_LengPass);
+      strncpy(FileConfig.ConfigFile.AP.pass, "88888888", Df_LengPass);
       strncpy(FileConfig.ConfigFile.AUTH.user, "admin", Df_LengAuth);
       strncpy(FileConfig.ConfigFile.AUTH.pass, "admin", Df_LengAuth);
       memset(FileConfig.ConfigFile.STA.ssid, 0, Df_LengSsid);
