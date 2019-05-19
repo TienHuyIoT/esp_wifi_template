@@ -1,0 +1,79 @@
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Đổi mật khẩu</title>
+<script>
+var HttpClient = function() {
+    this.get = function(aUrl, aCallback) {
+        var anHttpRequest = new XMLHttpRequest();
+        anHttpRequest.onreadystatechange = function() { 
+            if (anHttpRequest.readyState == 4 && anHttpRequest.status == 200)
+                aCallback(anHttpRequest.responseText);
+        }
+
+        anHttpRequest.open( "GET", aUrl, true );            
+        anHttpRequest.send( null );
+    }
+		
+		this.post = function(aUrl, data, aCallback) {
+        var anHttpRequest = new XMLHttpRequest();
+        anHttpRequest.onreadystatechange = function() { 
+            if (anHttpRequest.readyState == 4 && anHttpRequest.status == 200)
+                aCallback(anHttpRequest.responseText);
+        }
+
+        anHttpRequest.open("POST", aUrl, true);	
+				anHttpRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+				anHttpRequest.send(data);
+    }
+}
+
+var client = new HttpClient();
+
+function UpdatePass(){
+	var myJSON = {"OldPass":"123","NewPass":"TienHuy"};				
+	var table = document.getElementById('TableAuth');
+	myJSON.OldPass = table.rows[0].cells[1].children[0].value;
+	myJSON.NewPass = table.rows[1].cells[1].children[0].value;
+	var Pass = table.rows[2].cells[1].children[0].value;
+	if(myJSON.NewPass != Pass){
+		alert("Mật khẩu mới nhập chưa trùng nhau !!!");
+		return;
+	}
+	var StrJSON = JSON.stringify(myJSON);
+	client.post('/postdata', "Auth=" + StrJSON + "&PassId=All", function(response) {	
+    alert(response);
+    });
+}
+
+</script>
+<style>
+div,input{padding:5px;font-size:1em;} 
+input{width:100%;} 
+body{text-align: center;font-family:verdana;} 
+button{border:0;border-radius:0.3rem;background-color:#4CAF50;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;} 
+</style>
+</head>
+<body>
+<div style="text-align:left;display:inline-block;min-width:260px;">
+<br><br><br><br><br>
+<h3 align="center">Đổi Mật Khẩu Đăng Nhập</h3>
+<table id="TableAuth" width="100%">
+<tr>
+<td align="left">Mật khẩu cũ</td>
+<td><input type="text" maxlength="10" size="10"></td>
+</tr>
+<tr>
+<td align="left">Mật khẩu mới</td>
+<td><input type="text" maxlength="10" size="10"></td>
+</tr>
+<tr>
+<td align="left">Nhập lại mật khẩu mới</td>
+<td><input type="text" maxlength="10" size="10"></td>
+</tr>
+</table>
+<br><input type="button" value="Save" onclick="UpdatePass()">
+</div>
+</body>
+</html>
