@@ -53,10 +53,10 @@ TimeOutEvent ESPRebootTo(0);
 #define _LED_PIN  2
 #define _BUZZ_PIN 5
 #elif defined(ESP32)
-#define _LED_PIN  22
+#define _LED_PIN  7
 #define _BUZZ_PIN 25
 #endif
-IOBlink LED_STT(_LED_PIN, HIGH);
+IOBlink LED_STT(_LED_PIN, LOW);
 IOBlink BUZZ_STT(_BUZZ_PIN, HIGH);
 
 /*=================================================================
