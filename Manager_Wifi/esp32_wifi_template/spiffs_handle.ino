@@ -1,3 +1,17 @@
+/* Includes ------------------------------------------------------------------*/
+
+#include "app_config.h"
+#if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1)
+#include <FS.h>
+#include <SD.h>
+#include <SPI.h>
+#endif
+
+/* Private typedef -----------------------------------------------------------*/
+
+/* Private define ------------------------------------------------------------*/
+
+/* Private macro -------------------------------------------------------------*/
 #define SPIFFS_PORT Serial
 #define SPIFFS_PRINTF(f_, ...) SPIFFS_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
 
@@ -53,11 +67,18 @@ bool handleFileRead(String path)
 {
     SPIFFS_PRINTF("\r\nhandleFileRead: %s", path.c_str());
     if (path.endsWith("/"))
+    {
         path += "home.htm";
+    }
     String contentType = getContentType(path);
     String pathWithGz = path + ".gz";
 
-    fs::FS *fs = &FILE_SYSTEM;
+    fs::FS *fs = &NAND_FS_SYSTEM;
+
+    if (server.hasArg("sdmmc"))
+    {
+        fs = &SD_FS_SYSTEM;
+    }
 
     if (server.hasArg("delect") && server.arg("delect") == "true")
     {
@@ -77,7 +98,9 @@ bool handleFileRead(String path)
     if (fs->exists(pathWithGz) || fs->exists(path))
     {
         if (fs->exists(pathWithGz))
+        {
             path += ".gz";
+        }
         File file = fs->open(path, "r");
         size_t sent = server.streamFile(file, contentType);
         file.close();
@@ -98,7 +121,7 @@ void handleFileUpload()
         if (!filename.startsWith("/"))
             filename = "/" + filename;
         SPIFFS_PRINTF("\r\nhandleFileUpload Name: %s", filename.c_str());
-        fs::FS *fs = &FILE_SYSTEM;
+        fs::FS *fs = &NAND_FS_SYSTEM;
         fsUploadFile = fs->open(filename, "w");
         filename = String();
     }
@@ -127,7 +150,7 @@ void handleFileDelete()
         return server.send(500, "text/plain", "BAD PATH");
     }
 
-    fs::FS *fs = &FILE_SYSTEM;
+    fs::FS *fs = &NAND_FS_SYSTEM;
 
     if (!fs->exists(path))
     {
@@ -147,9 +170,9 @@ void handleFileCreate()
     SPIFFS_PRINTF("handleFileCreate: %s", path.c_str());
     if (path == "/")
         return server.send(500, "text/plain", "BAD PATH");
-    if (FILE_SYSTEM.exists(path))
+    if (NAND_FS_SYSTEM.exists(path))
         return server.send(500, "text/plain", "FILE EXISTS");
-    File file = FILE_SYSTEM.open(path, "w");
+    File file = NAND_FS_SYSTEM.open(path, "w");
     if (file)
         file.close();
     else

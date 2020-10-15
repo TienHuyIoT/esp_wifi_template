@@ -70,7 +70,7 @@ void wifi_info_write(wifi_file_json_t* w_wifi_info)
 
     WIFI_FILE_PRINTF("\r\nJson created:\r\n");
     root.printTo(WIFI_FILE_PORT);
-    fs_handle = FILE_SYSTEM.open(WIFI_FILE_PATH, FILE_WRITE);
+    fs_handle = NAND_FS_SYSTEM.open(WIFI_FILE_PATH, FILE_WRITE);
     root.prettyPrintTo(fs_handle);
     fs_handle.close();    
     WIFI_FILE_PRINTF("\r\nwifi info updated\r\n"); 
@@ -79,15 +79,15 @@ void wifi_info_write(wifi_file_json_t* w_wifi_info)
 void wifi_info_read(wifi_file_json_t* r_wifi_info)
 {
     // check file exist
-    if (!FILE_SYSTEM.exists(WIFI_FILE_PATH))
+    if (!NAND_FS_SYSTEM.exists(WIFI_FILE_PATH))
     {
         // write json string default
-        fs_handle = FILE_SYSTEM.open(WIFI_FILE_PATH, FILE_WRITE);
+        fs_handle = NAND_FS_SYSTEM.open(WIFI_FILE_PATH, FILE_WRITE);
         fs_handle.printf_P(wifi_file_default);
         fs_handle.close();
     }
 
-    fs_handle = FILE_SYSTEM.open(WIFI_FILE_PATH, FILE_READ);
+    fs_handle = NAND_FS_SYSTEM.open(WIFI_FILE_PATH, FILE_READ);
     size_t size = fs_handle.size();
     std::unique_ptr<char[]> buff(new char[size + 1]);
     fs_handle.readBytes(buff.get(), size);

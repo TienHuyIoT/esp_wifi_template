@@ -30,7 +30,7 @@ void rtc_info_write(rtc_time_t *w_rtc_info)
 
     RTC_FILE_PRINTF("\r\nJson created: ");
     root.printTo(RTC_FILE_PORT);
-    fs_handle = FILE_SYSTEM.open(RTC_FILE_PATH, FILE_WRITE);
+    fs_handle = NAND_FS_SYSTEM.open(RTC_FILE_PATH, FILE_WRITE);
     root.prettyPrintTo(fs_handle);
     fs_handle.close();
     RTC_FILE_PRINTF("\r\nrtc info updated");
@@ -39,15 +39,15 @@ void rtc_info_write(rtc_time_t *w_rtc_info)
 void rtc_info_read(rtc_time_t *r_rtc_info)
 {
     // check file exist
-    if (!FILE_SYSTEM.exists(RTC_FILE_PATH))
+    if (!NAND_FS_SYSTEM.exists(RTC_FILE_PATH))
     {
         // write json string default
-        fs_handle = FILE_SYSTEM.open(RTC_FILE_PATH, FILE_WRITE);
+        fs_handle = NAND_FS_SYSTEM.open(RTC_FILE_PATH, FILE_WRITE);
         fs_handle.printf_P(rtc_file_default);
         fs_handle.close();
     }
 
-    fs_handle = FILE_SYSTEM.open(RTC_FILE_PATH, FILE_READ);
+    fs_handle = NAND_FS_SYSTEM.open(RTC_FILE_PATH, FILE_READ);
     size_t size = fs_handle.size();
     std::unique_ptr<char[]> buff(new char[size + 1]);
     fs_handle.readBytes(buff.get(), size);
@@ -73,7 +73,7 @@ void rtc_info_read(rtc_time_t *r_rtc_info)
 
 void rtc_info_remove()
 {
-    if (FILE_SYSTEM.remove(RTC_FILE_PATH))
+    if (NAND_FS_SYSTEM.remove(RTC_FILE_PATH))
     {
         RTC_FILE_PRINTF("\r\n- %s file deleted\r\n", RTC_FILE_PATH);
     }

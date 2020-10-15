@@ -1,20 +1,20 @@
 void log_report(uint8_t log_id, char *p_log)
 {
-    if (!FILE_SYSTEM.exists(LOG_REPORT_PATH))
+    if (!NAND_FS_SYSTEM.exists(LOG_REPORT_PATH))
     {
-        fs_handle = FILE_SYSTEM.open(LOG_REPORT_PATH, FILE_WRITE);
+        fs_handle = NAND_FS_SYSTEM.open(LOG_REPORT_PATH, FILE_WRITE);
         fs_handle.println("Date, Time, Heap RAM, Code Reset, Temp, Description");
         fs_handle.close();
     }
 
-    fs_handle = FILE_SYSTEM.open(LOG_REPORT_PATH, FILE_APPEND);
+    fs_handle = NAND_FS_SYSTEM.open(LOG_REPORT_PATH, FILE_APPEND);
 
     size_t size = fs_handle.size();
     if (size > LOG_REPORT_SIZE_BYTE)
     {
         fs_handle.close();
-        FILE_SYSTEM.remove(LOG_REPORT_PATH);
-        fs_handle = FILE_SYSTEM.open(LOG_REPORT_PATH, FILE_WRITE);
+        NAND_FS_SYSTEM.remove(LOG_REPORT_PATH);
+        fs_handle = NAND_FS_SYSTEM.open(LOG_REPORT_PATH, FILE_WRITE);
         fs_handle.println("Date*, Time*, Heap RAM, Code report, Temp, Description");
     }
 

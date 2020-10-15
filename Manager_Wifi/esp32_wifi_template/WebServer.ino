@@ -1,3 +1,5 @@
+#include "app_config.h"
+
 #define WEB_SERVER_PORT Serial
 #define WEB_SERVER_PRINTF(...) WEB_SERVER_PORT.printf(__VA_ARGS__)
 
@@ -107,9 +109,13 @@ void web_server_url_setup(void)
     =================================================================*/
   server.on("/edit", HTTP_GET, []() {
     if (!WebAuthCheck("admin", "25123"))
+    {
       return;
+    }
     if (!handleFileRead("/edit.htm"))
+    {
       server.send(404, "text/plain", "FileNotFound");
+    }
   });
   /*=================================================================
     Create file
@@ -129,6 +135,17 @@ void web_server_url_setup(void)
         server.send(200, "text/plain", "");
       },
       handleFileUpload);
+
+#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
+  // Filesystem status
+  server.on("/status_sd", HTTP_GET, sd_handleStatus);
+  server.on("/list_sd", HTTP_GET, sd_printDirectory);
+  server.on("/edit_sd", HTTP_DELETE, sd_handleDelete);
+  server.on("/edit_sd", HTTP_PUT, sd_handleCreate);
+  server.on("/edit_sd", HTTP_POST, []() {
+    sd_returnOK();
+  }, sd_handleFileUpload);
+#endif
 
   /*=================================================================
     Wifi config
@@ -190,11 +207,17 @@ void web_server_url_setup(void)
     if (server.uri() != "/favicon.icon")
     {
       if (!web_authentication())
+      {
         return;
+      }
     }
+
     print_handlerequest();
+
     if (!handleFileRead(server.uri()))
+    {
       server.send(404, "text/plain", "FileNotFound");
+    }
   });
 
   /*=================================================================

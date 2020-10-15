@@ -1,25 +1,4 @@
 //==========================================================
-// <o> FW_VERSION_MAJOR
- 
-#ifndef FW_VERSION_MAJOR
-#define FW_VERSION_MAJOR 1
-#endif
-
-//==========================================================
-// <o> FW_VERSION_MINOR
- 
-#ifndef FW_VERSION_MINOR
-#define FW_VERSION_MINOR 0
-#endif
-
-//==========================================================
-// <o> FW_VERSION_BUILD
- 
-#ifndef FW_VERSION_BUILD
-#define FW_VERSION_BUILD 0
-#endif
-
-//==========================================================
 // Macro debug
 //==========================================================
 #define COMMON_PORT Serial
@@ -29,7 +8,6 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiAP.h>
-#include <FS.h>
 #include <SPIFFS.h>
 #include <EEPROM.h>
 #include <ArduinoJson.h>
@@ -47,6 +25,17 @@
 #include "rtc_data_file.h"
 #include "wifi_data_file.h"
 #include "eeprom_data.h"
+#include "app_config.h"
+
+#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
+#include <FS.h>
+#if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1)
+#include <SD.h>
+#include <SPI.h>
+#else
+#include <SD_MMC.h>
+#endif
+#endif
 
 hw_timer_t *timer = NULL;
 
@@ -96,10 +85,9 @@ typedef struct rtc_time{
 /* =========================================================
  * handle file system
  * =========================================================*/
-
-#define FILE_SYSTEM SPIFFS
 File fs_handle;
 File fsUploadFile;
+File sd_uploadfile;
 
 #define LOG_REPORT_SIZE_BYTE      (1024 * 200)
 #define LOG_REPORT_INIT           0
@@ -108,6 +96,7 @@ File fsUploadFile;
 #define LOG_REPORT_WIFI           3
 #define LOG_REPORT_TEMP           4
 #define LOG_REPORT_OVER_TEMP      5
+#define LOG_REPORT_SD             6
 #define LOG_REPORT_PATH           "/log_report.csv"
 
 // inteval timeout check temperature
@@ -116,29 +105,42 @@ TimeOutEvent internal_temp_to(60000);
 void setup()
 {
   COMMON_PORT.begin(115200);
+  COMMON_PRINTF("\r\n==== Firmware version %u.%u.%u ====\r\n", 
+                FW_VERSION_MAJOR,
+                FW_VERSION_MINOR,
+                FW_VERSION_BUILD);
 
-  FILE_SYSTEM.begin();  // init spiffs  
+  /* Init nand memory file system */
+  NAND_FS_SYSTEM.begin();
   
-  rtc_init(); // rtc init
+  /* Init rtc of system */
+  rtc_init();
+  /* List file in nand memory file system */
+  listDir(NAND_FS_SYSTEM, "/", 0);
 
-  listDir(FILE_SYSTEM, "/", 0);
+#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
+  /* Init sd card */
+  sd_card_init();
+  /* List file in sd card memory file system */
+  listDir(SD_FS_SYSTEM, "/", 0);
+#endif
+  /* Init eeprom system */
+  eeprom_setup();  
+  /* Init watch dog timer system 120s*/
+  hw_wdt_init(120000);
 
-  eeprom_setup();
-  
-  COMMON_PRINTF("Hello my FANs!");  
-
-  hw_wdt_init(120000);  // init wdt 120s  
-
+  /* Update log */
   log_report(LOG_REPORT_INIT, (char*)"Board Init");
 
-  reason_reset_log(); //log report reason reset
+  /* Update log reset reason */
+  reason_reset_log();
+  /* Update log wakeup reason */
+  wakeup_reason_log();
 
-  wakeup_reason_log();  // log report reason wakeup
-
+  /* Init wifi and web server */
   wifi_info_setup();
   wifi_events_setup();
   web_server_setup();
-
   wifi_init();
   web_server_begin();
 }
