@@ -1,4 +1,5 @@
 #include "app_config.h"
+#include "sd_card.h"
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 
@@ -24,6 +25,11 @@ static bool sd_card_status;
 
 void sd_card_init(void)
 {
+#if (defined SD_POWER_ENABLE) && (SD_POWER_ENABLE == 1)
+  SD_POWER_PINMODE_INIT();
+  SD_POWER_ON();
+  delay(5); // add timeout to supply power to sd card
+#endif  
 #if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 0)
     if(!SD_FS_SYSTEM.begin()){
         SD_FS_PRINTFLN("\r\nCard Mount Failed");
@@ -32,8 +38,11 @@ void sd_card_init(void)
         return;
     }
 #else
+    // Init SPI driver.
+    // We must be init SPI PIN the first than Init SD card
+    SPI.begin(SD_SCK_PIN, SD_MISO_PIN, SD_MOSI_PIN, SD_NSS_PIN);
     // Init SD card with SPI clock = 20Mhz
-    if(!SD_FS_SYSTEM.begin(SD_CARD_NSS_PIN, SPI, 20E6)){
+    if(!SD_FS_SYSTEM.begin(SD_NSS_PIN, SPI, 20E6)){
         SD_FS_PRINTFLN("\r\nCard Mount Failed");
         log_report(LOG_REPORT_SD, (char*)"Card Mount Failed");
         sd_card_status = false;

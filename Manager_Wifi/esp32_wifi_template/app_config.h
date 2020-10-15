@@ -23,19 +23,17 @@
 #endif
 
 /* Enable sd card */
-#define SD_CARD_ENABLE  0
+#define SD_CARD_ENABLE  1
 /* Select sd card interface
 0: SD_MMC
 1: SD interface over SPI
 */
 #define SD_CARD_SYSTEM  1
-
-#if (SD_CARD_SYSTEM == 0)
-#define SD_FS_SYSTEM SD_MMC
-#else
-#define SD_FS_SYSTEM SD
-#define SD_CARD_NSS_PIN 16
-#endif
+/* Enable control power sd card 
+0: not use
+1: use
+*/
+#define SD_POWER_ENABLE 1
 
 /* Nand memory file system */
 #define NAND_FS_SYSTEM SPIFFS

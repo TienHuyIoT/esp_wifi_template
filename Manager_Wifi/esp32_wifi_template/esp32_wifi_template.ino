@@ -26,6 +26,8 @@
 #include "wifi_data_file.h"
 #include "eeprom_data.h"
 #include "app_config.h"
+#include "board.h"
+#include "sd_card.h"
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 #include <FS.h>
