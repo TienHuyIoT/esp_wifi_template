@@ -1,16 +1,10 @@
-//==========================================================
-// Macro debug
-//==========================================================
-#define COMMON_PORT Serial
-#define COMMON_PRINTF(f_, ...) COMMON_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
-
-// include the library code:
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiAP.h>
 #include <SPIFFS.h>
 #include <EEPROM.h>
 #include <ArduinoJson.h>
+#include <esp_wifi.h>
 #include <esp_system.h>
 #include <driver/rtc_io.h>
 #include <hwcrypto/aes.h>
@@ -20,7 +14,9 @@
 #include <time.h>
 #include <Update.h>
 #include <WebServer.h>
+#include <WebSocketsServer.h>
 #include <TimeOutEvent.h>
+#include <IOInput.h>
 #include "Tools.h"
 #include "rtc_data_file.h"
 #include "wifi_data_file.h"
@@ -28,6 +24,8 @@
 #include "app_config.h"
 #include "board.h"
 #include "sd_card.h"
+#include "WebSocket.h"
+#include "app_websocket.h"
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 #include <FS.h>
@@ -39,6 +37,9 @@
 #endif
 #endif
 
+#define COMMON_PORT Serial
+#define COMMON_PRINTF(f_, ...) COMMON_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+
 hw_timer_t *timer = NULL;
 
 const char* ntpServer1 = "pool.ntp.org";
@@ -46,11 +47,17 @@ const char* ntpServer2 = "time.nist.gov";
 const long  gmtOffset_sec = 3600 * 7;
 const int   daylightOffset_sec = 0;
 
+#if (defined FACTORY_INPUT_PIN) && (FACTORY_INPUT_PIN != -1)
+/* Object input factory reset */
+IOInput input_factory_reset(FACTORY_INPUT_PIN,HIGH,10,10,10);
+#endif
+
 /* =========================================================
  * Web server 
  * =========================================================*/
 WebServer server(25123);
 WebServer server80(80);
+WebSocketsServer webSocket = WebSocketsServer(25124);
 
 /* 
 *  https://circuits4you.com
@@ -68,21 +75,6 @@ uint8_t temprature_sens_read();
 #endif
  
 uint8_t temprature_sens_read();
-
-/* =========================================================
- * RTC 
- * =========================================================*/
-typedef struct rtc_time{
-  int    year;   /* 2020 */
-  int    mon;    /* 1..12 */
-  int    mday;    /* 1.. 31 */
-  int    wday;    /* 0..6 */
-  int    hour;    /* 0..23 */
-  int    min;    /* 0..59 */
-  int    sec;    /* 0..59 */
-} rtc_time_t;
-
-#define RTC_TIME_DEFAULT {1930, 1, 1, 3, 0, 0, 0}
 
 /* =========================================================
  * handle file system
@@ -116,7 +108,8 @@ void setup()
   NAND_FS_SYSTEM.begin();
   
   /* Init rtc of system */
-  rtc_init();
+  rtc_setup();
+
   /* List file in nand memory file system */
   listDir(NAND_FS_SYSTEM, "/", 0);
 
@@ -126,16 +119,19 @@ void setup()
   /* List file in sd card memory file system */
   listDir(SD_FS_SYSTEM, "/", 0);
 #endif
+
   /* Init eeprom system */
   eeprom_setup();  
+
   /* Init watch dog timer system 120s*/
   hw_wdt_init(120000);
 
   /* Update log */
-  log_report(LOG_REPORT_INIT, (char*)"Board Init");
+  log_report(LOG_REPORT_INIT, (char*)"Board Initialize");
 
   /* Update log reset reason */
   reason_reset_log();
+
   /* Update log wakeup reason */
   wakeup_reason_log();
 
@@ -144,7 +140,8 @@ void setup()
   wifi_events_setup();
   web_server_setup();
   wifi_init();
-  web_server_begin();
+  web_server_init();
+  web_socket_init(&ws_receive_txt_callback);
 }
 
 void loop()
@@ -161,7 +158,16 @@ void loop()
   /* Monitor internal temperature */
   internal_temp_log_report();
 
+#if (defined FACTORY_INPUT_PIN) && (FACTORY_INPUT_PIN != -1)
+  /* factory reset input handle */
+  factory_reset_handle();
+#endif
+
   /* Webserver handler */
   server.handleClient();
   server80.handleClient();
+
+  /* Ws handle */
+  webSocket.loop();
+  ws_interval_sync();
 }

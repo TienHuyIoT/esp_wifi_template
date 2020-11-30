@@ -1,7 +1,9 @@
+#include "rtc_data_file.h"
+
 #define RTC_PORT Serial
 #define RTC_PRINTF(f_, ...) RTC_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
 
-void rtc_init()
+void rtc_setup(void)
 {
     struct tm tmstruct;
     // Set timezone to vietnam Standard Time
@@ -9,9 +11,11 @@ void rtc_init()
     tzset();
     if (!getLocalTime(&tmstruct, 1))
     {
-        rtc_time_t rtc;
-        rtc_info_read(&rtc);
-        rtc_info_remove();
+        rtc_time_t rtc = RTC_TIME_DEFAULT;
+        if (rtc_info_read(&rtc))
+        {
+            rtc_info_remove();
+        }
         // rtc.year = 2020;
         // rtc.mon = 8;
         // rtc.mday = 2;
@@ -23,6 +27,24 @@ void rtc_init()
         rtc_get(&rtc);
         RTC_PRINTF("\r\nInit RTC default\r\n");        
     }    
+}
+
+uint8_t rtc_level_update_get(void)
+{
+    return rtc_level_update;
+}
+
+void rtc_level_update_set(uint8_t level)
+{
+    RTC_PRINTF("\r\nRtc level set: %u", level);
+    if (level > rtc_level_update)
+    {        
+        RTC_PRINTF(" Access \r\n");
+        rtc_level_update = level;
+    }else
+    {
+        RTC_PRINTF(" Deny \r\n");
+    }
 }
 
 void rtc_set_time(rtc_time_t *rtc)
@@ -97,7 +119,7 @@ uint8_t rtc_get(rtc_time_t *rtc)
         rtc->mon = tmstruct.tm_mon + 1;
         rtc->mday = tmstruct.tm_mday;
         rtc->wday = tmstruct.tm_wday;
-        // RTC_PORT.println(&tmstruct, "\r\n%A, %B %d %Y %H:%M:%S");
+        RTC_PORT.println(&tmstruct, "\r\n%A, %B %d %Y %H:%M:%S");
         return true;
     }
     return false;

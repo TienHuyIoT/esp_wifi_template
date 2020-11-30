@@ -28,10 +28,10 @@
 typedef struct {
     uint16_t 		UDPPort;      /*UDP Port*/
     uint16_t 		TCPPort;      /*TCP Port*/
-    uint16_t    WSPort;       /*Websocket Port*/
+    uint16_t        WSPort;       /*Websocket Port*/
     struct {
-        char    Username[Df_LengAddr + 1];
-        char    Useraddr[Df_LengAddr + 1];
+        char    device_name[Df_LengAddr + 1];
+        char    device_addr[Df_LengAddr + 1];
     }addr;
     struct {
         char    user[Df_LengAuth + 1];

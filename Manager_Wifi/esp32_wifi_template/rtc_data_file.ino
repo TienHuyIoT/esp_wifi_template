@@ -36,15 +36,16 @@ void rtc_info_write(rtc_time_t *w_rtc_info)
     RTC_FILE_PRINTF("\r\nrtc info updated");
 }
 
-void rtc_info_read(rtc_time_t *r_rtc_info)
+uint8_t rtc_info_read(rtc_time_t *r_rtc_info)
 {
     // check file exist
     if (!NAND_FS_SYSTEM.exists(RTC_FILE_PATH))
     {
         // write json string default
-        fs_handle = NAND_FS_SYSTEM.open(RTC_FILE_PATH, FILE_WRITE);
-        fs_handle.printf_P(rtc_file_default);
-        fs_handle.close();
+        // fs_handle = NAND_FS_SYSTEM.open(RTC_FILE_PATH, FILE_WRITE);
+        // fs_handle.printf_P(rtc_file_default);
+        // fs_handle.close();
+        return 0;
     }
 
     fs_handle = NAND_FS_SYSTEM.open(RTC_FILE_PATH, FILE_READ);
@@ -60,7 +61,7 @@ void rtc_info_read(rtc_time_t *r_rtc_info)
     if (!root.success())
     {
         RTC_FILE_PRINTF("\r\nJSON parsing failed!");
-        return;
+        return 0;
     }
     r_rtc_info->year = root["year"].as<int>();
     r_rtc_info->mon = root["mon"].as<int>();
@@ -69,6 +70,8 @@ void rtc_info_read(rtc_time_t *r_rtc_info)
     r_rtc_info->min = root["min"].as<int>();
     r_rtc_info->sec = root["sec"].as<int>();
     r_rtc_info->wday = root["wday"].as<int>();
+
+    return 1;
 }
 
 void rtc_info_remove()

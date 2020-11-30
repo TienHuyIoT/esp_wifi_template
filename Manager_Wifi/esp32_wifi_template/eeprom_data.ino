@@ -47,12 +47,12 @@ void eeprom_setup()
     if(eep_data_struct.chipid != chipid)
     {
         eep_data_struct.Activated = Df_MacUnActivate;
-        EEPROM_DATA_PRINTF("\r\nDevice activated\r\n");
+        EEPROM_DATA_PRINTF("\r\nDevice inactive\r\n");
     }
     else
     {
         eep_data_struct.Activated = Df_MacActivated;
-        EEPROM_DATA_PRINTF("\r\nDevice inactive\r\n");
+        EEPROM_DATA_PRINTF("\r\nDevice activated\r\n");
     }
 }
 

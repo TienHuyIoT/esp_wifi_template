@@ -1,3 +1,6 @@
+#include <ArduinoJson.h>
+#include "wifi_data_file.h"
+
 #define WEB_UPDATE_PORT Serial
 #define WEB_UPDATE_PRINTF(...) WEB_UPDATE_PORT.printf(__VA_ARGS__)
 
@@ -11,7 +14,22 @@ void web_update_url_setup(void) {
     WEB_UPDATE_PRINTF("\r\nargName(0): %s", server.argName(0).c_str());
     size_t size = server.arg(0).length();
     WEB_UPDATE_PRINTF("\r\nserver.arg(0) %u: %s", (uint16_t)size, server.arg(0).c_str());
+
+    /* Change addr device info */
+    if (server.argName(0) == "Addr") {
+      DynamicJsonBuffer djbpo(size + 1);
+      JsonObject& root = djbpo.parseObject(server.arg(0));
+      if (!root.success()) {
+        WEB_UPDATE_PRINTF("\r\nJSON parsing failed!");
+        return;
+      }
+      root["device_name"].as<String>().toCharArray(g_wifi_cfg->addr.device_name, Df_LengAddr + 1);
+      root["device_addr"].as<String>().toCharArray(g_wifi_cfg->addr.device_addr, Df_LengAddr + 1);
+      wifi_info_write(g_wifi_cfg);
+      server.send(200, "text/html", "Đổi địa chỉ thành công");
+    }
     
+    /* Change pass */
     if (server.argName(0) == "Auth" && server.argName(1) == "PassId") {
       DynamicJsonBuffer djbpo(size + 1);
       JsonObject& root = djbpo.parseObject(server.arg(0));

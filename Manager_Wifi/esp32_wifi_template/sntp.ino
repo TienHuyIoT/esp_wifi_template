@@ -1,3 +1,5 @@
+#include "rtc_data_file.h"
+
 void sntp_setup()
 {
     Serial.println("Contacting Time Server");
@@ -13,4 +15,6 @@ void sntp_sync_time_cb(struct timeval *tv)
     localtime_r(&tv->tv_sec, &timeinfo);
     Serial.println("\nSntp sync time");
     Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+
+    rtc_level_update_set(RTC_SNTP_UPDATE);
 }

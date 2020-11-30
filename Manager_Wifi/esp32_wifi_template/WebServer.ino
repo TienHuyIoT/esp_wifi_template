@@ -71,7 +71,7 @@ void web_server_setup()
   });
 }
 
-void web_server_begin()
+void web_server_init()
 {
   wifi_file_json_t *g_wifi_cfg;
   g_wifi_cfg = wifi_info_get();
@@ -85,6 +85,7 @@ void web_server_begin()
   virtual void NewPort(int port = 80);
   server.NewPort(g_wifi_cfg->TCPPort);
   */
+  if (g_wifi_cfg->TCPPort <= 80) g_wifi_cfg->TCPPort = 25123;
   WEB_SERVER_PRINTF("\r\nInit Web Server Port: %u\r\n", g_wifi_cfg->TCPPort);
   server.begin(g_wifi_cfg->TCPPort);
   server80.begin(); //mac dinh port 80
@@ -198,6 +199,20 @@ void web_server_url_setup(void)
       server.send(200, "text/html", "Vaule: " + String(device_is_active()));
     }
   });
+
+#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
+  /*=================================================================
+    Format SD card
+    =================================================================*/
+  server.on("/format_sd_card", []() {
+    if (!web_authentication())
+    {
+      return;
+    }      
+    sd_format(SD_FS_SYSTEM, "/");
+    server.send(200, "text/html", "Format SD card OK");
+  });
+#endif
 
   /*=================================================================
     Called when the url is not defined here

@@ -6,8 +6,8 @@
 
 // wifi json string default
 const char wifi_file_default[] PROGMEM =
-"{\"Username\":\"THIẾT BỊ QUẢN LÝ XE BẰNG THẺ\","
-"\n\"Useraddr\":\"102 Phan Huy Ích, Phường 15, Quận Tân Bình, Tp HCM\"," 
+"{\"device_name\":\"THIẾT BỊ BÁN XĂNG BẰNG THẺ\","
+"\n\"device_addr\":\"102 Phan Huy Ích, Phường 15, Quận Tân Bình, Tp HCM\"," 
 "\n\"UDPPort\":25123,"	
 "\n\"TCPPort\":25123,"
 "\n\"WSPort\":25124,"
@@ -21,7 +21,7 @@ const char wifi_file_default[] PROGMEM =
 "\n\"STASsid\":\"\","
 "\n\"STAPass\":\"\","
 "\n\"STAName\":\"dtud\","
-"\n\"APSsid\":\"Ken_Wifi\","
+"\n\"APSsid\":\"MONTECH\","
 "\n\"APPass\":\"88888888\","
 "\n\"APName\":\"tienhuyiot\","
 "\n\"APIp\":\"192.168.4.1\","
@@ -41,12 +41,17 @@ wifi_file_json_t* wifi_info_get()
     return &wifi_file_cfg;
 }
 
+void wifi_info_refactor(void)
+{
+    NAND_FS_SYSTEM.remove(WIFI_FILE_PATH);
+}
+
 void wifi_info_write(wifi_file_json_t* w_wifi_info)
 {
     DynamicJsonBuffer djbco;
     JsonObject& root = djbco.createObject();
-    root["Username"].set(w_wifi_info->addr.Username);
-    root["Useraddr"].set(w_wifi_info->addr.Useraddr);
+    root["device_name"].set(w_wifi_info->addr.device_name);
+    root["device_addr"].set(w_wifi_info->addr.device_addr);
     root["UDPPort"].set(w_wifi_info->UDPPort);
     root["TCPPort"].set(w_wifi_info->TCPPort);
     root["WSPort"].set(w_wifi_info->WSPort);
@@ -114,8 +119,8 @@ void wifi_info_read(wifi_file_json_t* r_wifi_info)
     r_wifi_info->sta.Dns.fromString(root["Dns"].as<String>());
     r_wifi_info->ap.Ip.fromString(root["APIp"].as<String>());
     r_wifi_info->ap.Sn.fromString(root["APSn"].as<String>()); 
-    root["Username"].as<String>().toCharArray(r_wifi_info->addr.Username, Df_LengAddr + 1);
-    root["Useraddr"].as<String>().toCharArray(r_wifi_info->addr.Useraddr, Df_LengAddr + 1);    
+    root["device_name"].as<String>().toCharArray(r_wifi_info->addr.device_name, Df_LengAddr + 1);
+    root["device_addr"].as<String>().toCharArray(r_wifi_info->addr.device_addr, Df_LengAddr + 1);    
     root["AuthUser"].as<String>().toCharArray(r_wifi_info->auth.user, Df_LengAuth + 1);
     root["AuthPass"].as<String>().toCharArray(r_wifi_info->auth.pass, Df_LengAuth + 1);
     root["STASsid"].as<String>().toCharArray(r_wifi_info->sta.ssid, Df_LengSsid + 1);

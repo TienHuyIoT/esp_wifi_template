@@ -89,6 +89,19 @@ uint8_t StrncpyUntilChar(char *Dest, char *Scr, char Chr, uint16_t Leng)
   return 0;
 }
 
+int find_char_rev(char *buff, char dat, int start_id)
+{
+  int i;
+  for(i = start_id - 1; i >= 0; --i)
+  {
+    if (buff[i] == dat)
+    {
+      break;
+    }
+  }
+  return i;
+}
+
 char check_strncmp(char *str, char dat, uint8_t *index, uint8_t len)
 {
   if (str[*index] == dat)
@@ -109,29 +122,32 @@ char check_strncmp(char *str, char dat, uint8_t *index, uint8_t len)
   return 0;
 }
 
-void convert_num2str_fpu(uint32_t num, char *buff, uint8_t cmd)
+void convert_num2str_fpu(int32_t num, char *buff, uint8_t cmd)
 {
+  int32_t num_abs;
+  num_abs = abs(num);
+
   if (cmd == CV_NUM2VOLUME)
   {
-    sprintf(buff, "%u,%03u", num / 1000, num % 1000);
+    sprintf(buff, "%d,%03u", num / 1000, num_abs % 1000);
   }
   else
   {
-    if (num < 1000)
+    if (num_abs < 1000)
     {
-      sprintf(buff, "%u", num);
+      sprintf(buff, "%d", num);
     }
-    else if (num < 1000000)
+    else if (num_abs < 1000000)
     {
-      sprintf(buff, "%u.%03u", num / 1000, num % 1000);
+      sprintf(buff, "%d.%03u", num / 1000, num_abs % 1000);
     }
-    else if (num < 1000000000)
+    else if (num_abs < 1000000000)
     {
-      sprintf(buff, "%u.%03u.%03u", num / 1000000, (num % 1000000) / 1000, num % 1000);
+      sprintf(buff, "%d.%03u.%03u", num / 1000000, (num_abs % 1000000) / 1000, num_abs % 1000);
     }
     else
     {
-      sprintf(buff, "%u.%03u.%03u.%03u", num / 1000000000, (num % 1000000000) / 1000000, (num % 1000000) / 1000, num % 1000);
+      sprintf(buff, "%d.%03u.%03u.%03u", num / 1000000000, (num_abs % 1000000000) / 1000000, (num_abs % 1000000) / 1000, num_abs % 1000);
     }
   }
 }
@@ -144,4 +160,17 @@ uint8_t crc_xor(const uint8_t *buff, uint32_t lenght)
     xor ^= buff[i];
   }
   return xor;
+}
+
+/* Brief: swap ddmmyy --> 20yymmdd
+ * 
+ */
+uint32_t swap_date(uint32_t date_in)
+{
+  uint32_t dd,mm,yy, date_out;
+  yy = date_in % 100;
+  mm = (date_in / 100) % 100;
+  dd = date_in / 10000;
+  date_out = 20000000 + (yy * 10000) + (mm * 100) + dd;
+  return date_out;
 }

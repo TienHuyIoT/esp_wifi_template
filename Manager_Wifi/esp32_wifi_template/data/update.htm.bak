@@ -2,7 +2,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <title>Update</title>
+    <title>UpGrade</title>
     <script>function c(l) { document.getElementById('s').value = l.innerText || l.textContent; document.getElementById('p').focus(); }</script>
     <style>
         div, input
@@ -37,13 +37,6 @@
         <table><tr><th align='left'>Upload File:</th></tr></table>
         <form method="POST" action="/upload" enctype="multipart/form-data">
           <input type="file" name="upload">
-          <input type="submit" value="Upload File">
-        </form>
-        <br>
-        <br>
-        <table><tr><th align='left'>Upload Sd:</th></tr></table>
-        <form method="POST" action="/upload_sd" enctype="multipart/form-data">
-          <input type="file" name="upload_sd">
           <input type="submit" value="Upload File">
         </form>
     </div>
