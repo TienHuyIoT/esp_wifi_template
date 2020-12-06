@@ -26,6 +26,7 @@
 #include "sd_card.h"
 #include "WebSocket.h"
 #include "app_websocket.h"
+#include "server_data_process.h"
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 #include <FS.h>

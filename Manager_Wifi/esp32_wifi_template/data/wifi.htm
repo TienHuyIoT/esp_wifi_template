@@ -1,0 +1,203 @@
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <link rel="stylesheet" href="/mystyle.css">
+    <title>wifi manager</title>
+    <script src="/myscripts.js"></script>
+    <script>
+        var body_sta_ap_info = "";
+        var body_sta_network = "";
+        var body_sta_setting = "";
+        var body_ap_setting = "";
+        var table_sta_network = "";
+
+        function myhttp_get(element) {
+            if (element == 'sta_network') {
+                table_sta_network = "";
+                document.getElementById('TableStaNetwork').innerHTML = "<tr><td style='text-align: left;''>WiFi is scanning</td><td></td></tr>";
+                client.get('/get?' + element + '=true', function(response) {
+                    console.log(response);
+                    var tr_table_sta_network = "<tr><td style = 'text-align: left;'onclick = 'fill_ssid(this)'>{ssid}</td><td><span class = 'quality {secure}'>{rssi}%</span></td></tr>";
+                    var obj = JSON.parse(response);
+                    /*
+                    {
+                        "status":"ok",
+                        "mgs":"Network OK",
+                        "sta_network":
+                        [
+                            {"ssid":"Quyen_2.4G","rssi":50,"secure":1}
+                        ]
+                    }
+                    */
+                    if (obj.status == "ok") {
+                        var i = 0;
+                        while (obj.sta_network && obj.sta_network[i]) {
+                            var tr_table = tr_table_sta_network;
+                            tr_table = tr_table.replace("{ssid}", obj.sta_network[i].ssid);
+                            if (0 != obj.sta_network[i].security) {
+                                tr_table = tr_table.replace("{secure}", 'lock');
+                            } else {
+                                tr_table = tr_table.replace("{secure}", '');
+                            }
+                            tr_table = tr_table.replace("{rssi}", obj.sta_network[i].rssi);
+                            table_sta_network += tr_table;
+
+                            ++i;
+                        }
+                        document.getElementById('TableStaNetwork').innerHTML = table_sta_network;
+                    } else {
+                        document.getElementById('TableStaNetwork').innerHTML = "<tr><td style='text-align: left;''>Not find any Network</td><td></td></tr>";
+                    }
+                });
+            }
+        }
+
+        function myhttp_post(element) {
+            if (element == 'sta_network') {
+                var myJSON = {
+                    "STASsid": "Quyen_2.4G",
+                    "STAPass": "12345679"
+                };
+                var table = document.getElementById('TableSsidPass');
+                var STASsid = document.getElementById('sta_ssid').value;
+                var STAPass = document.getElementById('sta_pass').value;
+                if (STASsid.length != 0) {
+                    if (STAPass.length > 0 && STAPass.length < 8) {
+                        alert('Password length error !');
+                        return;
+                    }
+                }
+
+                myJSON.STASsid = STASsid;
+                myJSON.STAPass = STAPass;
+                myJSON.access_code = prompt("Please Enter Password");
+                var StrJSON = JSON.stringify(myJSON);
+                console.log(StrJSON);
+                /*
+                {
+                    "STASsid": "Quyen_2.4G",
+                    "STAPass": "12345679",
+                    "access_code": "1234"
+                }
+                */
+                client.post('/post', element + "=" + StrJSON, function(response) {
+                    alert(response);
+                });
+            }
+        }
+
+        function sta_ap_info() {
+            document.getElementById('Body').innerHTML = body_sta_ap_info;
+        }
+
+        function fill_ssid(element) {
+            var table = document.getElementById('TableStaNetwork');
+            var row = element.parentNode.rowIndex;
+            var ssid = table.rows[row].cells[0].innerHTML;
+
+            document.getElementById('sta_ssid').value = ssid;
+            document.getElementById('sta_pass').focus();
+        }
+
+        function sta_network() {
+            document.getElementById('Body').innerHTML = body_sta_network;
+            if (table_sta_network.length) {
+                document.getElementById('TableStaNetwork').innerHTML = table_sta_network;
+            } else {
+                myhttp_get('sta_network');
+            }
+        }
+
+        function onBodyLoad() {
+            body_sta_ap_info = document.getElementById('Body').innerHTML;
+
+            client.get('/sta_network.htm', function(response) {
+                console.log("sta_network ok");
+                body_sta_network = response;
+            });
+
+            // client.get('/sta_setting.htm', function(response) {
+            //     console.log("sta_advance_cfg ok");
+            //     body_sta_setting = response;
+            // });
+
+            // client.get('/ap_setting.htm', function(response) {
+            //     console.log("ap_setting ok");
+            //     body_ap_setting = response;
+            // });
+        }
+    </script>
+</head>
+
+<body onload="onBodyLoad()" id="Body">
+    <div style="text-align:left;display:inline-block;min-width:260px;">
+        <br><br>
+        <h3>WIFI SETTING</h3>
+        <table border="0" width="100%" style="margin-bottom: 0px;" id="TableMenu">
+            <tbody>
+                <tr>
+                    <td style="text-align: left;padding-left: 0; color: #14AFB4;"><b>Wifi Info</b></td>
+                    <td style="text-align: center; color: #00B0F0; padding-right: 5;" onclick="sta_network()">
+                        <b>Wifi Network</b>
+                    </td>
+                    <td style="text-align: center; color: #00B0F0;" onclick="sta_setting()">
+                        <b>Wifi Setting</b>
+                    </td>
+                    <td style="text-align: right; color: #00B0F0; padding-right: 0;" onclick="ap_setting()">
+                        <b>Wifi Hotspot</b>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <div>
+            <table width="100%" id="TableInfo">
+                <tbody>
+                    <tr>
+                        <td colspan='2' style="text-align: left;padding-left: 0;padding-top: 20; color: #ff5722; font-size: 11px;"><b>WIFI HOTSPOT</b></td>
+                    </tr>
+                    <tr>
+                        <td align="left"><b>Wifi Name</b></td>
+                        <td align="center"><input type="text" id="ap_ssid" name="ap_ssid" size="32" placeholder='TienHuyIoT' readonly>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="left"><b>IP Address</b></td>
+                        <td align="center"><input type="text" id="ap_ip_adress" name="ap_ip_adress" size="32" value='192.168.4.1' readonly>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan='2' style="text-align: left;padding-left: 0;padding-top: 20; color: #ff5722; font-size: 11px;"><b>WIFI NETWORK</b></td>
+                    </tr>
+                    <tr>
+                        <td align="left"><b>Wifi Name</b></td>
+                        <td align="center"><input type="text" id="sta_ssid" name="sta_ssid" size="32" placeholder='TienHuyIoT' readonly>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="left"><b>IP Address</b></td>
+                        <td align="center"><input type="text" id="sta_ip_address" name="sta_ip_address" size="32" placeholder='192.168.1.1' readonly>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="left"><b>IP Status</b></td>
+                        <td align="center"><input type="text" id="sta_ip_status" name="sta_ip_status" size="32" placeholder='IP dynamic' readonly>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="left"><b>Connection</b></td>
+                        <td align="center"><input type="text" id="sta_connection" name="sta_connection" size="32" placeholder='Success' readonly>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p style="text-align: center;">
+            <font size="0" face="arial" color="gray">
+                Copyright © 2020 - TienHuyIoT</font>
+        </p>
+    </div>
+</body>
+
+</html>

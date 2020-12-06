@@ -1,21 +1,6 @@
 #ifndef	_WIFI_DATA_FILE_
 #define _WIFI_DATA_FILE_
 
-// typedef enum {
-//     WIFI_UDP_PORT = 0,
-//     WIFI_TCP_PORT,
-//     WIFI_WS_PORT,
-//     WIFI_USER_NAME,
-//     WIFI_USER_ADDR,
-//     WIFI_USER_AUTH,
-//     WIFI_PASS_AUTH,
-//     WIFI_STA_SSID,
-//     WIFI_STA_PASS,
-//     WIFI_STA_HOTNAME,
-//     WIFI_STA_STATIC,
-//     WIFI_STA_SSID
-// } wifi_file_cmd_t;
-
 #define WIFI_FILE_PATH "/wifi_info_file.txt"
 
 #define Df_LengHostName       32

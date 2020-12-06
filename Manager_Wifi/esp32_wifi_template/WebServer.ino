@@ -1,4 +1,5 @@
 #include "app_config.h"
+#include "server_data_process.h"
 
 #define WEB_SERVER_PORT Serial
 #define WEB_SERVER_PRINTF(...) WEB_SERVER_PORT.printf(__VA_ARGS__)
@@ -158,6 +159,16 @@ void web_server_url_setup(void)
   server.on("/wlanconfAd", WMhandleWlanAd);            // Advance config STA Wifi
   server.on("/softapconf", HTTP_GET, WMhandleSAP);     // AP wifi config
   server.on("/sapsave", HTTP_POST, WMhandleSAPSave);   // AP wifi save
+
+  /* IP/get?sta_network=true */
+  server.on("/get", HTTP_GET, []() {
+    server_data_get_process();
+  });
+
+  /* IP/post?sta_network=true */
+  server.on("/post", HTTP_POST, []() {
+    server_data_post_process();
+  });
 
   //Get version
   server.on("/fw_version", []() {
