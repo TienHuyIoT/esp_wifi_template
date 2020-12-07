@@ -18,8 +18,8 @@ const char wifi_file_default[] PROGMEM =
 "\n\"Gw\":\"192.168.1.1\","
 "\n\"Sn\":\"255.255.255.0\","
 "\n\"Dns\":\"192.168.1.1\","
-"\n\"STASsid\":\"\","
-"\n\"STAPass\":\"\","
+"\n\"STASsid\":\"Quyen_2.4G\","
+"\n\"STAPass\":\"12345679\","
 "\n\"STAName\":\"dtud\","
 "\n\"STADis\":0,"
 "\n\"STASmCfg\":1,"
@@ -119,7 +119,7 @@ void wifi_info_read(wifi_file_json_t* r_wifi_info)
     r_wifi_info->sta.Dns.fromString(root["Dns"].as<String>());
     r_wifi_info->ap.Ip.fromString(root["APIp"].as<String>());
     r_wifi_info->ap.Sn.fromString(root["APSn"].as<String>());     
-    root["device_name"].as<String>().toCharArray(r_wifi_info->addr.device_name, Df_LengAddr + 1);
+    root["device_name"].as<String>().toCharArray(r_wifi_info->addr.device_name, Df_LengDevName + 1);
     root["device_addr"].as<String>().toCharArray(r_wifi_info->addr.device_addr, Df_LengAddr + 1);    
     root["AuthUser"].as<String>().toCharArray(r_wifi_info->auth.user, Df_LengAuth + 1);
     root["AuthPass"].as<String>().toCharArray(r_wifi_info->auth.pass, Df_LengAuth + 1);

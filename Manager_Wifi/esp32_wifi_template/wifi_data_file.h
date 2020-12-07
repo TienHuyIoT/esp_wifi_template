@@ -7,6 +7,7 @@
 #define Df_LengSsid           32
 #define Df_LengPass           64
 #define Df_LengAuth           10
+#define Df_LengDevName        100
 #define Df_LengAddr           100
 #define Df_LengServer         32
 
@@ -15,7 +16,7 @@ typedef struct {
     uint16_t 		TCPPort;      /*TCP Port*/
     uint16_t        WSPort;       /*Websocket Port*/
     struct {
-        char        device_name[Df_LengAddr + 1];
+        char        device_name[Df_LengDevName + 1];
         char        device_addr[Df_LengAddr + 1];
     }addr;
     struct {

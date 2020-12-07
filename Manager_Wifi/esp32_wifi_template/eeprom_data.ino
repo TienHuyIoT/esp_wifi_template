@@ -3,22 +3,19 @@
 #define EEPROM_DATA_PORT Serial
 #define EEPROM_DATA_PRINTF(f_, ...) EEPROM_DATA_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
 
-static uint8_t ActivateByMac = Df_MacUnActivate;
-static eeprom_data_t eep_data_struct;
-
-uint8_t device_is_active()
+uint8_t eeprom_device_is_activated()
 {
-    return (Df_MacActivated == eep_data_struct.Activated);
+    return (Df_Mac_Activated == eep_data_struct.Activated);
 }
 
-void device_active()
+void eeprom_device_active()
 {
-    active_configure(Df_MacActivated);
+    active_configure(Df_ConfigActiveUpdate);
 }
 
-void device_inactive()
+void eeprom_device_inactive()
 {
-    active_configure(Df_MacUnActivate);
+    active_configure(Df_ConfigInActiveUpdate);
 }
 
 void eeprom_setup()
@@ -46,12 +43,12 @@ void eeprom_setup()
     //Nếu địa chỉ Mac không được activated
     if(eep_data_struct.chipid != chipid)
     {
-        eep_data_struct.Activated = Df_MacUnActivate;
+        eep_data_struct.Activated = Df_Mac_InActivate;
         EEPROM_DATA_PRINTF("\r\nDevice inactive\r\n");
     }
     else
     {
-        eep_data_struct.Activated = Df_MacActivated;
+        eep_data_struct.Activated = Df_Mac_Activated;
         EEPROM_DATA_PRINTF("\r\nDevice activated\r\n");
     }
 }
@@ -62,16 +59,15 @@ void active_configure(uint8_t Cmd)
     chipid = ESP.getEfuseMac();
     EEPROM_DATA_PORT.printf("\r\nESP32 Chip ID = %04X", (uint16_t)(chipid >> 32));//print High 2 bytes
     EEPROM_DATA_PORT.printf("%08X\r\n", (uint32_t)chipid);//print Low 4bytes.
-    EEPROM_DATA_PRINTF("\r\nActive configure: %u", Cmd);
 
     if (Df_ConfigActiveUpdate == Cmd) {
         eep_data_struct.chipid = chipid;
-        eep_data_struct.Activated = Df_MacActivated;
+        eep_data_struct.Activated = Df_Mac_Activated;
     }
 
-    if (Df_ConfigUnActiveUpdate == Cmd) {
+    if (Df_ConfigInActiveUpdate == Cmd) {
         eep_data_struct.chipid = 0;
-        eep_data_struct.Activated = Df_MacUnActivate;
+        eep_data_struct.Activated = Df_Mac_InActivate;
     }
 
     EEPROM.begin(EEPROM_SIZE_MAX);

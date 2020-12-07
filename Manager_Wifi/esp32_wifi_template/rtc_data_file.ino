@@ -81,3 +81,48 @@ void rtc_info_remove()
         RTC_FILE_PRINTF("\r\n- %s delete failed\r\n", RTC_FILE_PATH);
     }
 }
+
+/* "Thu Jan 25 2018 19:39:48 GMT+0700 (SE Asia Standard Time)" */
+uint8_t rtc_parse_utility(char *rtc_web)
+{
+    rtc_time_t rtc = {0};
+    char wday[15], mon[15];
+    uint8_t result = 0;
+    uint8_t field;
+
+    field = sscanf(rtc_web, "%3s %3s %u %u %u:%u:%u", 
+            wday, mon, &rtc.mday, &rtc.year, &rtc.hour, &rtc.min, &rtc.sec);
+    RTC_FILE_PRINTF("\r\nfield: [%u]: %s", field, rtc_web);
+    if (7 == field)
+    {
+        const char *const mon_list[] PROGMEM = {
+            "", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        };
+        RTC_FILE_PRINTF("\r\n%s %s %u %u %u:%u:%u", 
+            wday, mon, rtc.mday, rtc.year, rtc.hour, rtc.min, rtc.sec);
+        
+        for (rtc.mon = 1; rtc.mon <= 12; ++rtc.mon)
+        {
+            if(!strcmp_P(mon,PSTR(mon_list[rtc.mon])))
+            {
+                RTC_FILE_PRINTF("\r\nParse month: %u", rtc.mon);
+                break;
+            }
+        }
+        if (rtc_level_update_get() < (uint8_t)RTC_SNTP_UPDATE)
+        {
+            RTC_FILE_PRINTF("\r\ntime update");
+            rtc_set(&rtc);
+            rtc_get(&rtc);
+            rtc_level_update_set(RTC_WEB_UPATE);
+        }
+        else
+        {
+            RTC_FILE_PRINTF("\r\ntime update low priority");
+        }
+        result = 1;      
+    }
+
+    return result;
+}

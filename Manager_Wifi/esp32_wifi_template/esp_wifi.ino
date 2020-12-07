@@ -255,3 +255,22 @@ int esp_ssid_scan(String &json)
 
   return n;
 }
+
+/* Convert to %*/
+int getRSSIasQuality(int RSSI)
+{
+  int quality = 0;
+  if (RSSI <= -100)
+  {
+    quality = 0;
+  }
+  else if (RSSI >= -50)
+  {
+    quality = 100;
+  }
+  else
+  {
+    quality = 2 * (RSSI + 100);
+  }
+  return quality;
+}

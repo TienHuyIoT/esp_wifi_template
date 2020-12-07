@@ -151,7 +151,7 @@ void loop()
   hw_wdt_feed();
 
   /* Run any function special */
-  if (device_is_active())
+  if (eeprom_device_is_activated())
   {
     
   }

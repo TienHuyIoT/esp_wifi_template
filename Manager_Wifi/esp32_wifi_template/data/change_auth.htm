@@ -1,0 +1,71 @@
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Auth Access</title>
+    <link rel="stylesheet" href="/mystyle.css">
+    <script src="/myscripts.js"></script>
+    <script>
+        function myhttp_post(element) {
+            if (element == 'auth_access') {
+                var pass = prompt("Please Enter Password");
+                if (pass.length < 4) {
+                    alert('Password Input Fail');
+                    return;
+                }
+                var obj = {
+                    "old_pass": "admin"
+                };
+                var table = document.getElementById('table_auth_access');
+                obj.old_pass = table.rows[0].cells[1].children[0].value;
+                obj.new_pass = table.rows[1].cells[1].children[0].value;
+                var confirm_pass = table.rows[2].cells[1].children[0].value;
+                if (obj.new_pass != confirm_pass) {
+                    alert("Confirm Password Fail !!!");
+                    return;
+                }
+                var StrJSON = JSON.stringify(obj);
+                console.log(StrJSON);
+                /*
+                {
+                    "old_pass": "admin",
+                    "new_pass": "1234",
+                    "access_code": "1234"
+                }
+                */
+                client.post('/post', element + "=" + StrJSON, function(response) {
+                    alert(response);
+                });
+            }
+        }
+    </script>
+
+</head>
+
+<body>
+    <div style="text-align:left;display:inline-block;min-width:260px;">
+        <br><br>
+        <h3 align="center">PASSWORD AUTHENTICATION</h3>
+        <table id="table_auth_access" width="100%">
+            <tr>
+                <td align="left"><b>OLD PASSWORD</b></td>
+                <td><input type="text" maxlength="10" size="32"></td>
+            </tr>
+            <tr>
+                <td align="left"><b>NEW PASSWORD</b></td>
+                <td><input type="text" maxlength="10" size="32"></td>
+            </tr>
+            <tr>
+                <td align="left"><b>CONFIRM PASSWORD</b></td>
+                <td><input type="text" maxlength="10" size="32"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><input type="button" onclick="myhttp_post('auth_access')" value="Save"></td>
+            </tr>
+        </table>
+    </div>
+</body>
+
+</html>

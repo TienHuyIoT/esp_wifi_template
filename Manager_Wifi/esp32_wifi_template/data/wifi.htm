@@ -3,8 +3,8 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <link rel="stylesheet" href="/mystyle.css">
     <title>wifi manager</title>
+    <link rel="stylesheet" href="/mystyle.css">
     <script src="/myscripts.js"></script>
     <script>
         var body_sta_ap_info = "";
@@ -244,6 +244,8 @@
                 console.log("Load body_ap_setting ok");
                 body_ap_setting = response;
             });
+
+            time_sync_post();
         }
     </script>
 </head>

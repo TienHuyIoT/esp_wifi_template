@@ -22,3 +22,11 @@ var HttpClient = function() {
     }
 }
 var client = new HttpClient();
+
+function time_sync_post() {
+    var time_web = new Date().toString();
+    console.log(time_web);
+    client.post('/post', 'time_setting=' + time_web, function(response) {
+        console.log(response);
+    });
+}

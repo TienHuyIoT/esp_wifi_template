@@ -351,7 +351,6 @@ void sd_returnFail(String msg)
 
 void sd_handleFileUpload()
 {
-  print_handlerequest();
   if (server.uri() != "/edit_sd")
   {
     return;
@@ -425,7 +424,6 @@ void sd_deleteRecursive(String path)
 
 void sd_handleDelete()
 {
-  print_handlerequest();
   if (server.args() == 0)
   {
     return sd_returnFail("BAD ARGS");
@@ -545,7 +543,6 @@ String lastExistingParent(String path)
 
 void sd_printDirectory()
 {
-  print_handlerequest();
   if (!server.hasArg("dir"))
   {
     return sd_returnFail("BAD ARGS");

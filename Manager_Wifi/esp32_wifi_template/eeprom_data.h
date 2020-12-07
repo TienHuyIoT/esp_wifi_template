@@ -1,17 +1,17 @@
 #ifndef	_EEPROM_DATA_
 #define _EEPROM_DATA_
 
-#define EEPROM_SIZE_MAX 512
+#define EEPROM_SIZE_MAX           512
 
-#define Df_ReadEep     0
-#define Df_UpdateEep   1
+#define Df_ReadEep                0
+#define Df_UpdateEep              1
 
-#define Df_MacUnActivate     0
-#define Df_MacActivated      1
+#define Df_Mac_InActivate         0
+#define Df_Mac_Activated          1
 
 #define Df_ConfigActiveRead       0
 #define Df_ConfigActiveUpdate     1
-#define Df_ConfigUnActiveUpdate   2
+#define Df_ConfigInActiveUpdate   2
 
 typedef struct {
     union {
@@ -29,5 +29,8 @@ typedef struct {
         };
     };
 } eeprom_data_t;
+
+uint8_t ActivateByMac = Df_Mac_InActivate;
+eeprom_data_t eep_data_struct;
 
 #endif

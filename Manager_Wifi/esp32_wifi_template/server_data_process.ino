@@ -1,4 +1,7 @@
 #include <ArduinoJson.h>
+#include "app_config.h"
+#include "eeprom_data.h"
+#include "rtc_data_file.h"
 #include "wifi_data_file.h"
 #include "server_data_process.h"
 
@@ -180,6 +183,115 @@ void ap_setting_get(void)
     server.send(200, "text/json", json_network);
 }
 
+void device_address_get(void)
+{
+    String json_network;
+    wifi_file_json_t *g_wifi_cfg;
+    g_wifi_cfg = wifi_info_get();
+    
+    DynamicJsonBuffer djbco;
+    JsonObject& root = djbco.createObject();   
+    root["device_name"].set(g_wifi_cfg->addr.device_name);
+    root["device_addr"].set(g_wifi_cfg->addr.device_addr);
+
+    root.prettyPrintTo(json_network);
+    server.send(200, "text/json", json_network);
+}
+
+void time_setting_get(void)
+{    
+    String json_network;
+    rtc_time_t rtc;
+
+    DynamicJsonBuffer djbco;
+    JsonObject& root = djbco.createObject();  
+
+    if (rtc_get(&rtc))
+    {            
+        char time[9];
+        char date[11];
+
+        snprintf(time, 9, "%02u:%02u:%02u", rtc.hour, rtc.min, rtc.sec);
+        snprintf(date, 11, "%04u/%02u/%02u", rtc.year, rtc.mon, rtc.mday);
+         
+        root["time"].set(time);
+        root["date"].set(date);        
+    }
+    else
+    {
+        root["time"].set("00:00:00");
+        root["date"].set("2000/01/01");
+    }
+
+    root.prettyPrintTo(json_network);
+    server.send(200, "text/json", json_network);
+}
+
+/* /get?param_wifi=fw_version */
+void fw_version_get(void)
+{
+    char buf[30];
+    snprintf(buf, 30, "{\"fw_version\":\"%u.%u.%u\"}",
+            FW_VERSION_MAJOR, FW_VERSION_MINOR, FW_VERSION_BUILD);
+    server.send(200, "text/json", buf);
+}
+
+/* /get?param_wifi=restart */
+void restart_device_get(void)
+{
+    server.send(200, "text/json", "Reset OK");
+    log_report(LOG_REPORT_RESET, (char *)"Web reset3");
+    esp_reset_enable();
+}
+
+/* /get?param_wifi=heap_temperature */
+void heap_temperature_get(void)
+{
+    String json = "{";
+    json += "\"heap\":" + String(ESP.getFreeHeap());
+    json += ", \"analog\":" + String(esp32_internal_temp());
+    json += ", \"gpio\":1";
+    json += "}";
+    server.send(200, "text/json", json);
+    json = String();
+}
+
+/* /get?param_wifi=activated&cmd=X 
+ * [X] = 0: InActive
+ * [X] = 1: Active
+ * [X] > 1: Read status
+ */
+void activated_get(void)
+{    
+    if (server.argName(1) == "cmd")
+    {
+        uint8_t cmd = atoi(server.arg(1).c_str());
+        if (0 == cmd || 1 == cmd)
+        {
+            if (1 == cmd)
+            {
+                eeprom_device_active();
+            }
+                
+            if (0 == cmd)
+            {
+                eeprom_device_inactive();
+            }
+        }
+        server.send(200, "text/html", "Vaule: " + String(eeprom_device_is_activated()));
+    }    
+}
+
+void format_sd_card_get(void)
+{
+#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)    
+    sd_format(SD_FS_SYSTEM, "/");
+    server.send(200, "text/html", "Format SD card Succeed");
+#else
+    server.send(200, "text/html", "No Support SD Card");
+#endif        
+}
+
 /*---------------------------------------------------------------------*
  *----------------------------data post process------------------------*
  *---------------------------------------------------------------------*/
@@ -217,7 +329,6 @@ void sta_network_post(void)
         WEB_SERVER_PRINTF("\r\nSSID: %s", g_wifi_cfg->sta.ssid);
         WEB_SERVER_PRINTF("\r\nPASS: %s\r\n", g_wifi_cfg->sta.pass);        
 
-        //Cập nhật thông số vào FS
         wifi_info_write(g_wifi_cfg);
 
         /* Reset to access new network */
@@ -259,7 +370,6 @@ void sta_setting_post(void)
         g_wifi_cfg->WSPort    = root["ws_port"].as<int>(); 
         g_wifi_cfg->sta.Dis   = !root["sta_on"].as<int>();
 
-        //Cập nhật thông số vào FS
         wifi_info_write(g_wifi_cfg);
 
         /* Reset to access new network */
@@ -294,8 +404,6 @@ void ap_setting_post(void)
         g_wifi_cfg->ap.Chanel = root["ap_channel"].as<int>();
         g_wifi_cfg->ap.Hidden = root["ap_hidden"].as<int>(); 
         
-
-        //Cập nhật thông số vào FS
         wifi_info_write(g_wifi_cfg);
 
         /* Reset to access new network */
@@ -305,4 +413,88 @@ void ap_setting_post(void)
     {
         server.send(200, "text/json", "Password Setting Wrong");
     }
+}
+
+void device_address_post(void)
+{
+    wifi_file_json_t *g_wifi_cfg;    
+
+    DynamicJsonBuffer djbpo;
+    JsonObject& root = djbpo.parseObject(server.arg(0));
+    if (!root.success())
+    {
+        SERVER_DATA_PRINTF("JSON parsing failed!");
+        return;
+    }
+
+    g_wifi_cfg = wifi_info_get();
+
+    if("1234" == root["access_code"])
+    {
+        server.send(200, "text/json", "Wifi Advance Setting Succeed");
+
+        root["device_name"].as<String>().toCharArray(g_wifi_cfg->addr.device_name, Df_LengDevName + 1);
+        root["device_addr"].as<String>().toCharArray(g_wifi_cfg->addr.device_addr, Df_LengAddr + 1);        
+
+        wifi_info_write(g_wifi_cfg);
+
+        /* Reset to access new network */
+        esp_reset_enable();
+    }
+    else
+    {
+        server.send(200, "text/json", "Password Setting Wrong");
+    }
+}
+
+void auth_access_post(void)
+{
+    wifi_file_json_t *g_wifi_cfg;    
+
+    DynamicJsonBuffer djbpo;
+    JsonObject& root = djbpo.parseObject(server.arg(0));
+    if (!root.success())
+    {
+        SERVER_DATA_PRINTF("JSON parsing failed!");
+        return;
+    }
+
+    g_wifi_cfg = wifi_info_get();
+
+    if("1234" == root["access_code"])
+    {
+        if (root["old_pass"] == g_wifi_cfg->auth.pass)
+        {
+            server.send(200, "text/json", "Wifi Advance Setting Succeed");
+
+            root["new_pass"].as<String>().toCharArray(g_wifi_cfg->auth.pass, Df_LengAuth + 1);        
+
+            wifi_info_write(g_wifi_cfg);
+
+            /* Reset to access new network */
+            esp_reset_enable();
+        }
+        else
+        {
+            server.send(200, "text/json", "Old pass Wrong");
+        }
+        
+    }
+    else
+    {
+        server.send(200, "text/json", "Password Setting Wrong");
+    }
+}
+
+void time_setting_post(void)
+{
+    const char *rtc_str = server.arg(0).c_str();
+    if (rtc_parse_utility((char*)rtc_str))
+    {
+        server.send(200, "text/json", "Time Setting Succeed");
+    }
+    else
+    {
+        server.send(200, "text/json", "Time Setting Wrong");
+    }    
 }
