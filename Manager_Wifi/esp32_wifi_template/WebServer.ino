@@ -238,7 +238,8 @@ void web_server_url_setup(void)
       }
     }
 
-    print_handlerequest();
+    String message = "";
+    print_handlerequest(message);
 
     if (!handleFileRead(server.uri()))
     {
@@ -288,7 +289,7 @@ void WMhandleInfo()
       "<br>"
       "<table><tr><th align='left'>Wifi Nhà</th></tr>");
   page += ("<tr><td>Tên Wifi: " + String(g_wifi_cfg->sta.ssid) + "</td></tr>");
-  if (g_wifi_cfg->sta.SaticIp)
+  if (!g_wifi_cfg->sta.Dhcp)
     page += ("<tr><td>IP tĩnh: " + WiFi.localIP().toString() + "</td></tr>");
   else
     page += ("<tr><td>IP động: " + WiFi.localIP().toString() + "</td></tr>");
@@ -515,7 +516,7 @@ void WMhandleWlanAd()
       if (argN == "Dns")
         g_wifi_cfg->sta.Dns.fromString(server.arg(i));
       if (argN == "En")
-        g_wifi_cfg->sta.SaticIp = atoi(server.arg(i).c_str());
+        g_wifi_cfg->sta.Dhcp = atoi(server.arg(i).c_str());
       if (argN == "Up")
         g_wifi_cfg->UDPPort = atoi(server.arg(i).c_str());
       if (argN == "Tp")
@@ -575,7 +576,7 @@ void WMhandleWlanAd()
   page += F("\"></td></tr>");
 
   page += F("<tr><td align='left'>IP động</td>");
-  if (!g_wifi_cfg->sta.SaticIp)
+  if (g_wifi_cfg->sta.Dhcp)
     page += F("<td align='right'><select name='En'><option value=\"0\" selected>Enable</option><option value=\"1\">Disable</option></select>");
   else
     page += F("<td align='right'><select name='En'><option value=\"0\">Enable</option><option value=\"1\" selected>Disable</option></select>");
@@ -688,9 +689,9 @@ void WebHandleStatus(String Title, String Text)
   server.send(200, "text/html", page);
 }
 
-void print_handlerequest(void)
+void print_handlerequest(String &message)
 {
-  String message = "";
+  message = "";
   message += "\r\nURI: ";
   message += server.uri();
   message += "\nMethod: ";

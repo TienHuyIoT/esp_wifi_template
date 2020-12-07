@@ -1,3 +1,6 @@
+#include "WiFiType.h"
+#include "wifi_data_file.h"
+
 #define ESP_WIFI_PORT Serial
 #define ESP_WIFI_PRINTF(f_, ...) ESP_WIFI_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
 
@@ -5,6 +8,8 @@ void wifi_init(void)
 {
   char ssid[Df_LengSsid + 1];
   wifi_file_json_t *g_wifi_cfg;
+  WiFiMode_t wf_mode = WIFI_OFF;
+
   g_wifi_cfg = wifi_info_get();
 
   /* Once WiFi.persistent(false) is called, WiFi.begin, 
@@ -33,39 +38,93 @@ void wifi_init(void)
     */
   WiFi.setTxPower(WIFI_POWER_19_5dBm);
 
-  if (strlen(g_wifi_cfg->sta.ssid) > 0)
+  /* Disable sta and ap */
+  if(g_wifi_cfg->sta.Dis && g_wifi_cfg->ap.Dis)
   {
-    WiFi.mode(WIFI_AP_STA);
-    if (g_wifi_cfg->sta.SaticIp)
+    /* Enable smart config */
+    if(g_wifi_cfg->sta.SmCfg)
     {
-      WiFi.config(g_wifi_cfg->sta.Ip, g_wifi_cfg->sta.Gw, g_wifi_cfg->sta.Sn, g_wifi_cfg->sta.Dns);
-      ESP_WIFI_PRINTF("\r\nstatic IP enable");
-      ESP_WIFI_PRINTF("\r\nIp: %s", g_wifi_cfg->sta.Ip.toString().c_str());
-      ESP_WIFI_PRINTF("\r\nGw: %s", g_wifi_cfg->sta.Gw.toString().c_str());
-      ESP_WIFI_PRINTF("\r\nSn: %s", g_wifi_cfg->sta.Sn.toString().c_str());
-      ESP_WIFI_PRINTF("\r\nDns: %s\r\n", g_wifi_cfg->sta.Dns.toString().c_str());
+      wf_mode = WIFI_STA;
+      ESP_WIFI_PRINTF("\r\nWifi Mode WIFI_STA using for smart config");
     }
-    wifi_setup(g_wifi_cfg->sta.ssid, g_wifi_cfg->sta.pass);
+    else
+    {
+      wf_mode = WIFI_OFF;
+      ESP_WIFI_PRINTF("\r\nWifi Mode WIFI_OFF");
+    }    
+  }
+  /* Enable sta and ap */
+  else if (!g_wifi_cfg->sta.Dis && !g_wifi_cfg->ap.Dis)
+  {
+    wf_mode = WIFI_AP_STA;
+    ESP_WIFI_PRINTF("\r\nWifi Mode WIFI_AP_STA");
+  }
+  /* Enable sta and Diasble ap */
+  else if (!g_wifi_cfg->sta.Dis && g_wifi_cfg->ap.Dis)
+  {
+    wf_mode = WIFI_STA;
+    ESP_WIFI_PRINTF("\r\nWifi Mode WIFI_STA");
+  }
+  /* Disable sta and Enable ap */
+  else
+  {
+    wf_mode = WIFI_AP;
+    ESP_WIFI_PRINTF("\r\nWifi Mode WIFI_AP");
+  }
+  
+  if (WIFI_OFF == wf_mode)
+  {
+    wifi_off();
   }
   else
   {
-    WiFi.mode(WIFI_AP);
+    WiFi.mode(wf_mode);
+  }  
+
+  /* STA enable */
+  if (!g_wifi_cfg->sta.Dis)
+  {
+    if (strlen(g_wifi_cfg->sta.ssid) > 0)
+    {
+      if (!g_wifi_cfg->sta.Dhcp)
+      {
+        WiFi.config(g_wifi_cfg->sta.Ip, g_wifi_cfg->sta.Gw, g_wifi_cfg->sta.Sn, g_wifi_cfg->sta.Dns);
+        ESP_WIFI_PRINTF("\r\nstatic IP enable");
+        ESP_WIFI_PRINTF("\r\nIp: %s", g_wifi_cfg->sta.Ip.toString().c_str());
+        ESP_WIFI_PRINTF("\r\nGw: %s", g_wifi_cfg->sta.Gw.toString().c_str());
+        ESP_WIFI_PRINTF("\r\nSn: %s", g_wifi_cfg->sta.Sn.toString().c_str());
+        ESP_WIFI_PRINTF("\r\nDns: %s\r\n", g_wifi_cfg->sta.Dns.toString().c_str());
+      }
+
+      wifi_setup(g_wifi_cfg->sta.ssid, g_wifi_cfg->sta.pass); 
+    }
+    else
+    {
+      /* Smart config enable */
+      ESP_WIFI_PRINTF("\r\n[beginSmartConfig] = %u\r\n", g_wifi_cfg->sta.SmCfg);
+      if(g_wifi_cfg->sta.SmCfg)
+      {
+        WiFi.beginSmartConfig();
+      }
+    }    
   }
 
-  snprintf(ssid, Df_LengSsid + 1, "%s_%08X", g_wifi_cfg->ap.ssid, (uint32_t)ESP.getEfuseMac());
-  WiFi.softAPConfig(g_wifi_cfg->ap.Ip, g_wifi_cfg->ap.Ip, g_wifi_cfg->ap.Sn);
-  if (strlen(g_wifi_cfg->ap.pass) >= 8)
+  /* AP enable */
+  if (!g_wifi_cfg->ap.Dis)
   {
-    WiFi.softAP(ssid, g_wifi_cfg->ap.pass, g_wifi_cfg->ap.Chanel, g_wifi_cfg->ap.Hidden);
-  }
-  else
-  {
-    WiFi.softAP(g_wifi_cfg->ap.ssid);
-  }
+    snprintf(ssid, Df_LengSsid + 1, "%s_%08X", g_wifi_cfg->ap.ssid, (uint32_t)ESP.getEfuseMac());
+    WiFi.softAPConfig(g_wifi_cfg->ap.Ip, g_wifi_cfg->ap.Ip, g_wifi_cfg->ap.Sn);
+    if (strlen(g_wifi_cfg->ap.pass) >= 8)
+    {
+      WiFi.softAP(ssid, g_wifi_cfg->ap.pass, g_wifi_cfg->ap.Chanel, g_wifi_cfg->ap.Hidden);
+    }
+    else
+    {
+      WiFi.softAP(g_wifi_cfg->ap.ssid);
+    }
 
-  IPAddress myIP = WiFi.softAPIP();
-  //In ra AP IP
-  ESP_WIFI_PRINTF("\r\nAP IP address: %s\r\n", myIP.toString().c_str());
+    ESP_WIFI_PRINTF("\r\nAP IP address: %s\r\n", WiFi.softAPIP().toString().c_str());
+  }  
 }
 
 // typedef enum {
@@ -81,10 +140,10 @@ void wifi_off()
   {
     ESP_WIFI_PRINTF("\r\nWifi off\r\n");
     WiFi.disconnect(true);
-    WiFi.enableAP(false);
-    WiFi.mode(WIFI_OFF);
-    esp_wifi_set_mode(WIFI_OFF); // force wifi off. We must be run the function to getmode is really return WIFI_OFF
+    WiFi.enableAP(false);    
   }
+  WiFi.mode(WIFI_OFF);
+  esp_wifi_set_mode(WIFI_OFF); // force wifi off. We must be run the function to getmode is really return WIFI_OFF
 }
 
 /* make json wifi network

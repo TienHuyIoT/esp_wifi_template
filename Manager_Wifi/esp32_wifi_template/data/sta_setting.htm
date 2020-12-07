@@ -1,0 +1,99 @@
+<div style="text-align:left;display:inline-block;min-width:260px;">
+    <br><br>
+    <h3>WIFI SETTING</h3>
+    <table border="0" width="100%" style="margin-bottom: 0px;" id="TableMenu">
+        <tbody>
+            <tr>
+                <td style="text-align: left; color: #00B0F0;" onclick="sta_ap_info()">
+                    <b>Wifi Info</b>
+                </td>
+                <td style="text-align: center; color: #00B0F0;" onclick="sta_network()">
+                    <b>Wifi Network</b>
+                </td>
+                <td style="text-align: center; color: #14AFB4;" onclick="myhttp_get('sta_setting')">
+                    <b>Wifi Setting</b>
+                </td>
+                <td style="text-align: right; color: #00B0F0;" onclick="ap_setting()">
+                    <b>Wifi Hotspot</b>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <div>
+        <table width="100%" id="table_sta_setting">
+            <tbody>
+                <tr>
+                    <td colspan='2' style="text-align: left;padding-left: 0;padding-top: 20; color: #ff5722; font-size: 11px;"><b>WIFI ACCESS POINT</b></td>
+                </tr>
+                <tr>
+                    <td align="left"><b>WIFI NAME</b></td>
+                    <td align="center"><input type="text" id="sta_ssid" size="32" placeholder='wifi name'>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="left"><b>PASSWORD</b></td>
+                    <td align="center"><input type="text" id="sta_pass" size="32" placeholder='passwork'>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="left"><b>IP ADDRESS</b></td>
+                    <td align="center"><input type="text" id="sta_ip" size="32" placeholder='192.168.1.100'>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="left"><b>GATEWAY</b></td>
+                    <td align="center"><input type="text" id="sta_gw" size="32" placeholder='192.168.1.1'>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="left"><b>SUBNET MASK</b></td>
+                    <td align="center"><input type="text" id="sta_sm" size="32" placeholder='255.255.255.0'>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="left"><b>DNS SERVER</b></td>
+                    <td align="center"><input type="text" id="sta_dns" size="32" placeholder='192.168.1.1'>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="left"><b>IP DHCP</b></td>
+                    <td align="left"><label class="switch"><input type="checkbox" id="sta_dhcp" value=1 checked>
+                            <div class="slider round"></div>
+                        </label></td>
+                </tr>
+                <tr>
+                    <td align="left"><b>ENABLE</b></td>
+                    <td align="left"><label class="switch"><input type="checkbox" id="sta_on" value=1 checked>
+                            <div class="slider round"></div>
+                        </label></td>
+                </tr>
+                <tr>
+                    <td colspan='2' style="text-align: left;padding-left: 0;padding-top: 20; color: #ff5722; font-size: 11px;"><b>WEB SERVICE PORT</b></td>
+                </tr>
+                <tr>
+                    <td align="left"><b>UDP PORT</b></td>
+                    <td align="center"><input type="text" id="udp_port" size="32" placeholder='udp port'>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="left"><b>TCP PORT</b></td>
+                    <td align="center"><input type="text" id="tcp_port" size="32" placeholder='tcp port'>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="left"><b>WS PORT</b></td>
+                    <td align="center"><input type="text" id="ws_port" size="32" placeholder='ws port'>
+                    </td>
+                </tr>
+                <tr>
+                    <td><input type="button" onclick="myhttp_post('sta_setting')" value="Save"></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p style="text-align: center;">
+        <font size="0" face="arial" color="gray">
+            Copyright © 2020 - TienHuyIoT</font>
+    </p>
+</div>

@@ -9,6 +9,6 @@ SPI BUS
 #define SPI_MOSI_PIN     		17
 
 /* GPIO to reset factory */
-#define FACTORY_INPUT_PIN       -1
+#define FACTORY_INPUT_PIN       0
 
 #endif

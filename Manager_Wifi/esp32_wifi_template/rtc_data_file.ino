@@ -49,15 +49,11 @@ uint8_t rtc_info_read(rtc_time_t *r_rtc_info)
     }
 
     fs_handle = NAND_FS_SYSTEM.open(RTC_FILE_PATH, FILE_READ);
-    size_t size = fs_handle.size();
-    std::unique_ptr<char[]> buff(new char[size + 1]);
-    fs_handle.readBytes(buff.get(), size);
-    buff.get()[size] = 0;
-    fs_handle.close();
-    RTC_FILE_PRINTF("\r\nrtc file content: %s", buff.get());
 
-    DynamicJsonBuffer djbpo(size + 100);
-    JsonObject &root = djbpo.parseObject(buff.get());
+    DynamicJsonBuffer djbpo;
+    JsonObject &root = djbpo.parseObject(fs_handle);
+    fs_handle.close();
+
     if (!root.success())
     {
         RTC_FILE_PRINTF("\r\nJSON parsing failed!");

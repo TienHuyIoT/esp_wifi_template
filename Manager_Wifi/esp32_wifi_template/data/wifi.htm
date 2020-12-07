@@ -14,10 +14,23 @@
         var table_sta_network = "";
 
         function myhttp_get(element) {
+            if (element == 'sta_ap_info') {
+                client.get('/get?' + 'param_wifi=' + element, function(response) {
+                    console.log(response);
+                    var obj = JSON.parse(response);
+
+                    document.getElementById('ap_ssid').value = obj.ap_ssid;
+                    document.getElementById('ap_ip_adress').value = obj.ap_ip_adress;
+                    document.getElementById('sta_ssid').value = obj.sta_ssid;
+                    document.getElementById('sta_ip_address').value = obj.sta_ip_address;
+                    document.getElementById('sta_ip_dhcp').value = obj.sta_ip_dhcp;
+                    document.getElementById('sta_status').value = obj.sta_status;
+                });
+            }
             if (element == 'sta_network') {
                 table_sta_network = "";
-                document.getElementById('TableStaNetwork').innerHTML = "<tr><td style='text-align: left;''>WiFi is scanning</td><td></td></tr>";
-                client.get('/get?' + element + '=true', function(response) {
+                document.getElementById('table_sta_network').innerHTML = "<tr><td style='text-align: left; color: navy;'><b>WiFi is scanning ...</b></td><td></td></tr>";
+                client.get('/get?' + 'param_wifi=' + element, function(response) {
                     console.log(response);
                     var tr_table_sta_network = "<tr><td style = 'text-align: left;'onclick = 'fill_ssid(this)'>{ssid}</td><td><span class = 'quality {secure}'>{rssi}%</span></td></tr>";
                     var obj = JSON.parse(response);
@@ -46,39 +59,75 @@
 
                             ++i;
                         }
-                        document.getElementById('TableStaNetwork').innerHTML = table_sta_network;
+                        document.getElementById('table_sta_network').innerHTML = table_sta_network;
                     } else {
-                        document.getElementById('TableStaNetwork').innerHTML = "<tr><td style='text-align: left;''>Not find any Network</td><td></td></tr>";
+                        document.getElementById('table_sta_network').innerHTML = "<tr><td style='text-align: left;''>Not find any Network</td><td></td></tr>";
                     }
+                });
+            }
+            if (element == 'sta_setting') {
+                client.get('/get?' + 'param_wifi=' + element, function(response) {
+                    console.log(response);
+                    var obj = JSON.parse(response);
+
+                    document.getElementById('sta_ssid').value = obj.sta_ssid;
+                    document.getElementById('sta_pass').value = obj.sta_pass;
+                    document.getElementById('sta_ip').value = obj.sta_ip;
+                    document.getElementById('sta_gw').value = obj.sta_gw;
+                    document.getElementById('sta_sm').value = obj.sta_sm;
+                    document.getElementById('sta_dns').value = obj.sta_dns;
+                    document.getElementById("sta_dhcp").checked = obj.sta_dhcp;
+                    document.getElementById("sta_on").checked = obj.sta_on;
+
+                    document.getElementById('udp_port').value = obj.udp_port;
+                    document.getElementById('tcp_port').value = obj.tcp_port;
+                    document.getElementById('ws_port').value = obj.ws_port;
+                });
+            }
+            if (element == 'ap_setting') {
+                client.get('/get?' + 'param_wifi=' + element, function(response) {
+                    console.log(response);
+                    var obj = JSON.parse(response);
+
+                    document.getElementById('ap_ssid').value = obj.ap_ssid;
+                    document.getElementById('ap_pass').value = obj.ap_pass;
+                    document.getElementById("ap_on").checked = obj.ap_on;
+
+                    document.getElementById('ap_channel').value = obj.ap_channel;
+                    document.getElementById("ap_hidden").checked = obj.ap_hidden;
                 });
             }
         }
 
         function myhttp_post(element) {
             if (element == 'sta_network') {
-                var myJSON = {
-                    "STASsid": "Quyen_2.4G",
-                    "STAPass": "12345679"
+                var pass = prompt("Please Enter Password");
+                if (pass.length < 4) {
+                    alert('Password Input Fail');
+                    return;
+                }
+                var obj = {
+                    "sta_ssid": "Quyen_2.4G"
                 };
-                var table = document.getElementById('TableSsidPass');
-                var STASsid = document.getElementById('sta_ssid').value;
-                var STAPass = document.getElementById('sta_pass').value;
-                if (STASsid.length != 0) {
-                    if (STAPass.length > 0 && STAPass.length < 8) {
+                var table = document.getElementById('table_ssid_psk');
+                var sta_ssid = document.getElementById('sta_ssid').value;
+                var sta_pass = document.getElementById('sta_pass').value;
+                if (sta_ssid.length != 0) {
+                    if (sta_pass.length > 0 && sta_pass.length < 8) {
                         alert('Password length error !');
                         return;
                     }
                 }
 
-                myJSON.STASsid = STASsid;
-                myJSON.STAPass = STAPass;
-                myJSON.access_code = prompt("Please Enter Password");
-                var StrJSON = JSON.stringify(myJSON);
+                obj.sta_ssid = sta_ssid;
+                obj.sta_pass = sta_pass;
+                obj.access_code = pass;
+                var StrJSON = JSON.stringify(obj);
                 console.log(StrJSON);
                 /*
                 {
-                    "STASsid": "Quyen_2.4G",
-                    "STAPass": "12345679",
+                    "sta_ssid": "Quyen_2.4G",
+                    "sta_pass": "12345679",
                     "access_code": "1234"
                 }
                 */
@@ -86,14 +135,66 @@
                     alert(response);
                 });
             }
-        }
+            if (element == 'sta_setting') {
+                var pass = prompt("Please Enter Password");
+                if (pass.length < 4) {
+                    alert('Password Input Fail');
+                    return;
+                }
+                var obj = {
+                    "sta_ssid": "Quyen_2.4G"
+                };
 
-        function sta_ap_info() {
-            document.getElementById('Body').innerHTML = body_sta_ap_info;
+                obj.sta_ssid = document.getElementById('sta_ssid').value;
+                obj.sta_pass = document.getElementById('sta_pass').value;
+                obj.sta_ip = document.getElementById('sta_ip').value;
+                obj.sta_gw = document.getElementById('sta_gw').value;
+                obj.sta_sm = document.getElementById('sta_sm').value;
+                obj.sta_dns = document.getElementById('sta_dns').value;
+                obj.sta_dhcp = Number(document.getElementById("sta_dhcp").checked);
+                obj.sta_on = Number(document.getElementById("sta_on").checked);
+
+                obj.udp_port = Number(document.getElementById('udp_port').value);
+                obj.tcp_port = Number(document.getElementById('tcp_port').value);
+                obj.ws_port = Number(document.getElementById('ws_port').value);
+
+                obj.access_code = pass;
+                var StrJSON = JSON.stringify(obj);
+
+                console.log(StrJSON);
+                client.post('/post', element + "=" + StrJSON, function(response) {
+                    alert(response);
+                });
+            }
+            if (element == 'ap_setting') {
+                var pass = prompt("Please Enter Password");
+                if (pass.length < 4) {
+                    alert('Password Input Fail');
+                    return;
+                }
+                var obj = {
+                    "ap_ssid": "Quyen_2.4G"
+                };
+
+                obj.ap_ssid = document.getElementById('ap_ssid').value;
+                obj.ap_pass = document.getElementById('ap_pass').value;
+                obj.ap_on = Number(document.getElementById("ap_on").checked);
+
+                obj.ap_channel = Number(document.getElementById('ap_channel').value);
+                obj.ap_hidden = Number(document.getElementById("ap_hidden").checked);
+
+                obj.access_code = pass;
+                var StrJSON = JSON.stringify(obj);
+
+                console.log(StrJSON);
+                client.post('/post', element + "=" + StrJSON, function(response) {
+                    alert(response);
+                });
+            }
         }
 
         function fill_ssid(element) {
-            var table = document.getElementById('TableStaNetwork');
+            var table = document.getElementById('table_sta_network');
             var row = element.parentNode.rowIndex;
             var ssid = table.rows[row].cells[0].innerHTML;
 
@@ -101,32 +202,48 @@
             document.getElementById('sta_pass').focus();
         }
 
+        function sta_ap_info() {
+            document.getElementById('Body').innerHTML = body_sta_ap_info;
+            myhttp_get('sta_ap_info');
+        }
+
         function sta_network() {
             document.getElementById('Body').innerHTML = body_sta_network;
             if (table_sta_network.length) {
-                document.getElementById('TableStaNetwork').innerHTML = table_sta_network;
+                document.getElementById('table_sta_network').innerHTML = table_sta_network;
             } else {
                 myhttp_get('sta_network');
             }
         }
 
+        function sta_setting() {
+            document.getElementById('Body').innerHTML = body_sta_setting;
+            myhttp_get('sta_setting');
+        }
+
+        function ap_setting() {
+            document.getElementById('Body').innerHTML = body_ap_setting;
+            myhttp_get('ap_setting');
+        }
+
         function onBodyLoad() {
             body_sta_ap_info = document.getElementById('Body').innerHTML;
+            myhttp_get('sta_ap_info');
 
             client.get('/sta_network.htm', function(response) {
-                console.log("sta_network ok");
+                console.log("Load body_sta_network ok");
                 body_sta_network = response;
             });
 
-            // client.get('/sta_setting.htm', function(response) {
-            //     console.log("sta_advance_cfg ok");
-            //     body_sta_setting = response;
-            // });
+            client.get('/sta_setting.htm', function(response) {
+                console.log("Load body_sta_setting ok");
+                body_sta_setting = response;
+            });
 
-            // client.get('/ap_setting.htm', function(response) {
-            //     console.log("ap_setting ok");
-            //     body_ap_setting = response;
-            // });
+            client.get('/ap_setting.htm', function(response) {
+                console.log("Load body_ap_setting ok");
+                body_ap_setting = response;
+            });
         }
     </script>
 </head>
@@ -138,33 +255,35 @@
         <table border="0" width="100%" style="margin-bottom: 0px;" id="TableMenu">
             <tbody>
                 <tr>
-                    <td style="text-align: left;padding-left: 0; color: #14AFB4;"><b>Wifi Info</b></td>
-                    <td style="text-align: center; color: #00B0F0; padding-right: 5;" onclick="sta_network()">
+                    <td style="text-align: left; color: #14AFB4;" onclick="myhttp_get('sta_ap_info')">
+                        <b>Wifi Info</b>
+                    </td>
+                    <td style="text-align: center; color: #00B0F0;" onclick="sta_network()">
                         <b>Wifi Network</b>
                     </td>
                     <td style="text-align: center; color: #00B0F0;" onclick="sta_setting()">
                         <b>Wifi Setting</b>
                     </td>
-                    <td style="text-align: right; color: #00B0F0; padding-right: 0;" onclick="ap_setting()">
+                    <td style="text-align: right; color: #00B0F0;" onclick="ap_setting()">
                         <b>Wifi Hotspot</b>
                     </td>
                 </tr>
             </tbody>
         </table>
         <div>
-            <table width="100%" id="TableInfo">
+            <table width="100%">
                 <tbody>
                     <tr>
                         <td colspan='2' style="text-align: left;padding-left: 0;padding-top: 20; color: #ff5722; font-size: 11px;"><b>WIFI HOTSPOT</b></td>
                     </tr>
                     <tr>
                         <td align="left"><b>Wifi Name</b></td>
-                        <td align="center"><input type="text" id="ap_ssid" name="ap_ssid" size="32" placeholder='TienHuyIoT' readonly>
+                        <td align="center"><input type="text" id="ap_ssid" size="32" placeholder='TienHuyIoT' readonly>
                         </td>
                     </tr>
                     <tr>
                         <td align="left"><b>IP Address</b></td>
-                        <td align="center"><input type="text" id="ap_ip_adress" name="ap_ip_adress" size="32" value='192.168.4.1' readonly>
+                        <td align="center"><input type="text" id="ap_ip_adress" size="32" value='192.168.4.1' readonly>
                         </td>
                     </tr>
                     <tr>
@@ -172,22 +291,22 @@
                     </tr>
                     <tr>
                         <td align="left"><b>Wifi Name</b></td>
-                        <td align="center"><input type="text" id="sta_ssid" name="sta_ssid" size="32" placeholder='TienHuyIoT' readonly>
+                        <td align="center"><input type="text" id="sta_ssid" size="32" placeholder='TienHuyIoT' readonly>
                         </td>
                     </tr>
                     <tr>
                         <td align="left"><b>IP Address</b></td>
-                        <td align="center"><input type="text" id="sta_ip_address" name="sta_ip_address" size="32" placeholder='192.168.1.1' readonly>
+                        <td align="center"><input type="text" id="sta_ip_address" size="32" placeholder='192.168.1.1' readonly>
                         </td>
                     </tr>
                     <tr>
-                        <td align="left"><b>IP Status</b></td>
-                        <td align="center"><input type="text" id="sta_ip_status" name="sta_ip_status" size="32" placeholder='IP dynamic' readonly>
+                        <td align="left"><b>IP DHCP</b></td>
+                        <td align="center"><input type="text" id="sta_ip_dhcp" size="32" placeholder='IP dynamic' readonly>
                         </td>
                     </tr>
                     <tr>
-                        <td align="left"><b>Connection</b></td>
-                        <td align="center"><input type="text" id="sta_connection" name="sta_connection" size="32" placeholder='Success' readonly>
+                        <td align="left"><b>Wifi Status</b></td>
+                        <td align="center"><input type="text" id="sta_status" size="32" placeholder='Success' readonly>
                         </td>
                     </tr>
                 </tbody>

@@ -15,32 +15,43 @@ typedef struct {
     uint16_t 		TCPPort;      /*TCP Port*/
     uint16_t        WSPort;       /*Websocket Port*/
     struct {
-        char    device_name[Df_LengAddr + 1];
-        char    device_addr[Df_LengAddr + 1];
+        char        device_name[Df_LengAddr + 1];
+        char        device_addr[Df_LengAddr + 1];
     }addr;
     struct {
-        char    user[Df_LengAuth + 1];
-        char    pass[Df_LengAuth + 1];
+        char        user[Df_LengAuth + 1];
+        char        pass[Df_LengAuth + 1];
     }auth;
     struct {
-        char 		ssid[Df_LengSsid + 1];
-        char 		pass[Df_LengPass + 1];
-        char    HostName[Df_LengHostName+1];
-        uint8_t 	SaticIp;
         IPAddress 	Ip;
         IPAddress 	Gw;
         IPAddress 	Sn;
         IPAddress 	Dns;
-    }sta;
-    struct {
         char 		ssid[Df_LengSsid + 1];
         char 		pass[Df_LengPass + 1];
-        char    DnsName[Df_LengHostName+1];
+        char        HostName[Df_LengHostName+1];                
+        uint8_t 	Dhcp    : 1;
+        uint8_t     Dis     : 1;
+        uint8_t     SmCfg   : 1; /* SmartConfig */
+    }sta;
+    struct {
         IPAddress   Ip;
-        IPAddress   Sn;
+        IPAddress   Sn; 
+        char 		ssid[Df_LengSsid + 1];
+        char 		pass[Df_LengPass + 1];
+        char        DnsName[Df_LengHostName+1];               
         uint8_t 	Chanel : 4;
         uint8_t 	Hidden : 1;
+        uint8_t     Dis    : 1;
     }ap;
 } wifi_file_json_t;
+
+wifi_file_json_t wifi_file_cfg;
+
+void wifi_info_setup(void);
+wifi_file_json_t* wifi_info_get(void);
+void wifi_info_refactor(void);
+void wifi_info_read(wifi_file_json_t* r_wifi_info);
+void wifi_info_write(wifi_file_json_t* w_wifi_info);
 
 #endif

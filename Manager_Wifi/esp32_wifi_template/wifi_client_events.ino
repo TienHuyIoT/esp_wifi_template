@@ -29,6 +29,8 @@
 25 SYSTEM_EVENT_MAX
 */
 
+#include "wifi_data_file.h"
+
 #define WIFI_EVENT_PORT Serial
 #define WIFI_EVENT_PRINTF(f_, ...) WIFI_EVENT_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
 
@@ -118,10 +120,27 @@ void WiFiEvent(WiFiEvent_t event)
 
 void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 {
+    wifi_file_json_t *g_wifi_cfg;
+    g_wifi_cfg = wifi_info_get();
+    
     WIFI_EVENT_PORT.println("WiFi connected");
     WIFI_EVENT_PORT.println("IP address: ");
     WIFI_EVENT_PORT.println(IPAddress(info.got_ip.ip_info.ip.addr));
     sntp_setup();   // sntp sync time setup
+
+    /* Smart config enable */
+    if(g_wifi_cfg->sta.SmCfg)
+    {
+        if ( strcmp(WiFi.SSID().c_str(), g_wifi_cfg->sta.ssid) 
+        || strcmp(WiFi.psk().c_str(), g_wifi_cfg->sta.pass))
+        {
+            WiFi.SSID().toCharArray(g_wifi_cfg->sta.ssid, Df_LengSsid + 1);
+            WiFi.psk().toCharArray(g_wifi_cfg->sta.pass, Df_LengPass + 1);
+            
+            WIFI_EVENT_PRINTF("Update ssid and pass\r\n");
+            wifi_info_write(g_wifi_cfg);
+        }
+    }    
 }
 
 void wifi_events_setup()
@@ -134,10 +153,6 @@ void wifi_events_setup()
         WIFI_EVENT_PORT.println(info.disconnected.reason);
         WiFi.reconnect();
     }, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
-
-    // Remove WiFi event
-    WIFI_EVENT_PORT.print("WiFi Event ID: ");
-    WIFI_EVENT_PORT.println(eventID);
 }
 
 void wifi_setup(const char* name, const char* pass)
