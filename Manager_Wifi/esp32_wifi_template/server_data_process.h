@@ -1,38 +1,45 @@
 #ifndef	_SERVER_DATA_PROCESS_
 #define _SERVER_DATA_PROCESS_
 
+#include <ESPAsyncWebServer.h>
+
 #define DATA_GET_HANDLE_NUM     11
 #define DATA_POST_HANDLE_NUM    7
 
 typedef struct {
     char *path_arg;
-    void (*cb)(void);
+    void (*cb)(AsyncWebServerRequest *request);
 } server_post_handle_t;
 
 typedef struct {
     char *path_arg;
-    void (*cb)(void);
+    void (*cb)(AsyncWebServerRequest *request);
 } server_get_handle_t;
 
-void sta_ap_info_get(void);
-void sta_network_get(void);
-void sta_setting_get(void);
-void ap_setting_get(void);
-void device_address_get(void);
-void time_setting_get(void);
-void fw_version_get(void);
-void restart_device_get(void);
-void heap_temperature_get(void);
-void activated_get(void);
-void format_sd_card_get(void);
+void server_data_get_process(AsyncWebServerRequest *request);
+void server_data_post_process(AsyncWebServerRequest *request);
 
-void sta_ap_info_post(void);
-void sta_network_post(void);
-void sta_setting_post(void);
-void ap_setting_post(void);
-void device_address_post(void);
-void auth_access_post(void);
-void time_setting_post(void);
+void print_handlerequest(AsyncWebServerRequest *request, String &message);
+
+void sta_ap_info_get(AsyncWebServerRequest *request);
+void sta_network_get(AsyncWebServerRequest *request);
+void sta_setting_get(AsyncWebServerRequest *request);
+void ap_setting_get(AsyncWebServerRequest *request);
+void device_address_get(AsyncWebServerRequest *request);
+void time_setting_get(AsyncWebServerRequest *request);
+void fw_version_get(AsyncWebServerRequest *request);
+void restart_device_get(AsyncWebServerRequest *request);
+void heap_temperature_get(AsyncWebServerRequest *request);
+void activated_get(AsyncWebServerRequest *request);
+void format_sd_card_get(AsyncWebServerRequest *request);
+
+void sta_ap_info_post(AsyncWebServerRequest *request);
+void sta_network_post(AsyncWebServerRequest *request);
+void sta_setting_post(AsyncWebServerRequest *request);
+void ap_setting_post(AsyncWebServerRequest *request);
+void device_address_post(AsyncWebServerRequest *request);
+void auth_access_post(AsyncWebServerRequest *request);
+void time_setting_post(AsyncWebServerRequest *request);
 
 /* /get?param_wifi=[param] */
 server_get_handle_t client_get_handle[DATA_GET_HANDLE_NUM] = {

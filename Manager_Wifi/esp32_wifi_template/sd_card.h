@@ -1,6 +1,7 @@
 #ifndef	_SD_CARD_
 #define _SD_CARD_
 
+#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 #include "app_config.h"
 #include "board.h"
 
@@ -32,5 +33,7 @@ SD INTERFACE
 #define SD_SCK_PIN     			        SPI_SCK_PIN
 #define SD_MISO_PIN     		        SPI_MISO_PIN
 #define SD_MOSI_PIN     		        SPI_MOSI_PIN   
+
+#endif
 
 #endif

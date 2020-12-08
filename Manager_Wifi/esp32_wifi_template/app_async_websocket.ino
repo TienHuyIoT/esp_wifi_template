@@ -1,11 +1,11 @@
 #include <ArduinoJson.h>
-#include "app_websocket.h"
+#include "app_async_websocket.h"
 #include "rtc_data_file.h"
 
 #define APP_WS_DBG_PORT Serial
 #define APP_WS_DBG_PRINT(fmt, ...) APP_WS_DBG_PORT.printf_P(PSTR("\r\n<APP_WS> " fmt), ##__VA_ARGS__)
 
-void ws_receive_txt_callback(uint8_t ws_index, uint8_t * payload)
+void ws_receive_txt_callback(uint8_t ws_index, char * payload)
 {
     uint8_t page;
     uint8_t cmd;  

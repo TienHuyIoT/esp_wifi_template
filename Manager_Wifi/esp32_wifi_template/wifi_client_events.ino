@@ -28,7 +28,7 @@
 24 SYSTEM_EVENT_ETH_GOT_IP               < ESP32 ethernet got IP from connected AP
 25 SYSTEM_EVENT_MAX
 */
-
+#include <ESPmDNS.h>
 #include "wifi_data_file.h"
 
 #define WIFI_EVENT_PORT Serial
@@ -128,6 +128,22 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
     WIFI_EVENT_PORT.println(IPAddress(info.got_ip.ip_info.ip.addr));
     sntp_setup();   // sntp sync time setup
 
+    // Set up mDNS responder:
+    // - first argument is the domain name, in this example
+    //   the fully-qualified domain name is "esp32.local"
+    // - second argument is the IP address to advertise
+    //   we send our IP address on the WiFi network
+    if (!MDNS.begin("tienhuyiot")) 
+    {
+        WIFI_EVENT_PORT.println("Error setting up MDNS responder!");
+    }
+    else
+    {
+        WIFI_EVENT_PORT.println("mDNS responder started");
+    }    
+
+    MDNS.addService("http","tcp",g_wifi_cfg->TCPPort);
+
     /* Smart config enable */
     if(g_wifi_cfg->sta.SmCfg)
     {
@@ -140,7 +156,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
             WIFI_EVENT_PRINTF("Update ssid and pass\r\n");
             wifi_info_write(g_wifi_cfg);
         }
-    }    
+    }
 }
 
 void wifi_events_setup()

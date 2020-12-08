@@ -1,4 +1,4 @@
-<!--This is the plain html source of the hex encoded Editor-Page embedded in SPIFFSEditor.cpp -->
+<!--This is the plain html source of the hex encoded Editor-Page embedded in SDEditor.cpp -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -113,7 +113,7 @@
             top: 28px;
             bottom: 0;
             left: 0;
-            width: 300px;
+            width: 600px;
             padding: 8px;
         }
         
@@ -315,7 +315,7 @@
             function createPath(p) {
                 var formData = new FormData();
                 formData.append("path", p);
-                requests.add("PUT", "/edit", formData, httpPostProcessRequest);
+                requests.add("PUT", "/edit_sdfs", formData, httpPostProcessRequest);
             }
 
             mkfile.onclick = function(e) {
@@ -338,7 +338,7 @@
                 }
                 var formData = new FormData();
                 formData.append("data", input.files[0], path.value);
-                requests.add("POST", "/edit", formData, httpPostProcessRequest);
+                requests.add("POST", "/edit_sdfs", formData, httpPostProcessRequest);
                 var uploadPath = ge("upload-path");
                 uploadPath.value = "/";
                 var uploadSelect = ge("upload-select");
@@ -363,7 +363,7 @@
             ge(element).appendChild(treeRoot);
 
             function loadDownload(path) {
-                ge('download-frame').src = "/edit?download=" + path;
+                ge('download-frame').src = "/edit_sdfs?download=" + path;
             }
 
             function loadPreview(path) {
@@ -371,7 +371,7 @@
                 edfname.value = path;
                 ge("editor").style.display = "none";
                 preview.style.display = "block";
-                preview.innerHTML = '<img src="/edit?edit=' + path + '&_cb=' + Date.now() + '" style="max-width:100%; max-height:100%; margin:auto; display:block;" />';
+                preview.innerHTML = '<img src="/edit_sdfs?edit=' + path + '&_cb=' + Date.now() + '" style="max-width:100%; max-height:100%; margin:auto; display:block;" />';
             }
 
             function fillFileMenu(el, path) {
@@ -522,7 +522,7 @@
             function httpDelete(filename) {
                 var formData = new FormData();
                 formData.append("path", filename);
-                requests.add("DELETE", "/edit", formData, delCb(filename));
+                requests.add("DELETE", "/edit_sdfs", formData, delCb(filename));
             }
 
             function getCb(parent, path) {
@@ -534,7 +534,7 @@
             }
 
             function httpGet(parent, path) {
-                requests.add("GET", "/edit", {
+                requests.add("GET", "/edit_sdfs", {
                     list: path
                 }, getCb(parent, path));
             }
@@ -587,7 +587,7 @@
                 return lang;
             }
 
-            if (typeof file === "undefined") file = "/index.html";
+            if (typeof file === "undefined") file = "/filetag.txt";
 
             if (typeof lang === "undefined") {
                 lang = getLangFromFilename(file);
@@ -611,7 +611,7 @@
                 formData.append("data", new Blob([data], {
                     type: type
                 }), filename);
-                requests.add("POST", "/edit", formData, httpPostProcessRequest);
+                requests.add("POST", "/edit_sdfs", formData, httpPostProcessRequest);
             }
 
             function httpGetProcessRequest(status, responseText) {
@@ -625,7 +625,7 @@
             }
 
             function httpGet(theUrl) {
-                requests.add("GET", "/edit", {
+                requests.add("GET", "/edit_sdfs", {
                     edit: theUrl
                 }, httpGetProcessRequest);
             }
@@ -690,7 +690,7 @@
             var editor = createEditor("editor", vars.file, vars.lang, vars.theme);
             var tree = createTree("tree", editor);
             createFileUploader("uploader", tree, editor);
-            if (typeof vars.file === "undefined") vars.file = "/index.htm";
+            if (typeof vars.file === "undefined") vars.file = "/filetag.txt";
             editor.loadUrl(vars.file);
         };
     </script>

@@ -1,4 +1,10 @@
+#include <ArduinoOTA.h>
+#include <ESPmDNS.h>
+#include <Update.h>
 #include <WiFi.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include <SPIFFSEditor.h>
 #include <WiFiClient.h>
 #include <WiFiAP.h>
 #include <SPIFFS.h>
@@ -12,9 +18,6 @@
 #include <soc/rtc.h>
 #include <lwip/apps/sntp.h>
 #include <time.h>
-#include <Update.h>
-#include <WebServer.h>
-#include <WebSocketsServer.h>
 #include <TimeOutEvent.h>
 #include <IOInput.h>
 #include "Tools.h"
@@ -24,9 +27,11 @@
 #include "app_config.h"
 #include "board.h"
 #include "sd_card.h"
-#include "WebSocket.h"
-#include "app_websocket.h"
+#include "sd_editor.h"
 #include "server_data_process.h"
+#include "async_webserver.h"
+#include "async_websocket.h"
+#include "app_async_websocket.h"
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 #include <FS.h>
@@ -52,13 +57,6 @@ const int   daylightOffset_sec = 0;
 /* Object input factory reset */
 IOInput input_factory_reset(FACTORY_INPUT_PIN,HIGH,10,10,10);
 #endif
-
-/* =========================================================
- * Web server 
- * =========================================================*/
-WebServer server(25123);
-WebServer server80(80);
-WebSocketsServer webSocket = WebSocketsServer(25124);
 
 /* 
 *  https://circuits4you.com
@@ -103,7 +101,7 @@ void setup()
   COMMON_PRINTF("\r\n==== Firmware version %u.%u.%u ====\r\n", 
                 FW_VERSION_MAJOR,
                 FW_VERSION_MINOR,
-                FW_VERSION_BUILD);
+                FW_VERSION_BUILD);                
 
   /* Init nand memory file system */
   NAND_FS_SYSTEM.begin();
@@ -119,7 +117,7 @@ void setup()
   sd_card_init();
   /* List file in sd card memory file system */
   listDir(SD_FS_SYSTEM, "/", 0);
-#endif
+#endif  
 
   /* Init eeprom system */
   eeprom_setup();  
@@ -135,18 +133,40 @@ void setup()
 
   /* Update log wakeup reason */
   wakeup_reason_log();
-
-  /* Init wifi and web server */
-  wifi_info_setup();
+  
+  /* Init wifi */    
   wifi_events_setup();
-  web_server_setup();
+  wifi_info_setup();
   wifi_init();
+
+  //Send OTA events to the browser
+  ArduinoOTA.onStart([]() { events.send("Update Start", "ota"); });
+  ArduinoOTA.onEnd([]() { events.send("Update End", "ota"); });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    char p[32];
+    sprintf(p, "Progress: %u%%\n", (progress/(total/100)));
+    events.send(p, "ota");
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    if(error == OTA_AUTH_ERROR) events.send("Auth Failed", "ota");
+    else if(error == OTA_BEGIN_ERROR) events.send("Begin Failed", "ota");
+    else if(error == OTA_CONNECT_ERROR) events.send("Connect Failed", "ota");
+    else if(error == OTA_RECEIVE_ERROR) events.send("Recieve Failed", "ota");
+    else if(error == OTA_END_ERROR) events.send("End Failed", "ota");
+  });
+  ArduinoOTA.setHostname("tienhuyiot");
+  ArduinoOTA.begin();
+
+  /* Init web server */    
+  web_server_setup();  
   web_server_init();
   web_socket_init(&ws_receive_txt_callback);
 }
 
 void loop()
 {
+  
+
   /* Watch dog timer feed */
   hw_wdt_feed();
 
@@ -164,11 +184,8 @@ void loop()
   factory_reset_handle();
 #endif
 
-  /* Webserver handler */
-  server.handleClient();
-  server80.handleClient();
-
   /* Ws handle */
-  webSocket.loop();
+  ws.cleanupClients();
   ws_interval_sync();
+  ArduinoOTA.handle();
 }

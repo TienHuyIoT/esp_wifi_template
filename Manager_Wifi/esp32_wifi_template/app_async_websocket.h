@@ -1,5 +1,5 @@
-#ifndef	_APP_WS_H
-#define _APP_WS_H
+#ifndef	_APP_ASYNC_WS_H
+#define _APP_ASYNC_WS_H
 
 typedef enum {
     WS_PAGE_CARD_HISTORY = 0,
@@ -32,6 +32,6 @@ const char *const page_card_user_list[] PROGMEM = {
     "PAGE_CMD_ASYCN_DATA"
 };
 
-void ws_receive_txt_callback(uint8_t ws_index, uint8_t * payload);
+void ws_receive_txt_callback(uint8_t ws_index, char * payload);
 
 #endif

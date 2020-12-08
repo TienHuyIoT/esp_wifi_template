@@ -1,4 +1,5 @@
 #include <ArduinoJson.h>
+#include <ESPAsyncWebServer.h>
 #include "app_config.h"
 #include "eeprom_data.h"
 #include "rtc_data_file.h"
@@ -8,35 +9,39 @@
 #define SERVER_DATA_PORT Serial
 #define SERVER_DATA_PRINTF(f_, ...) SERVER_DATA_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
 
-void server_data_get_process(void)
+void server_data_get_process(AsyncWebServerRequest *request)
 {
+    uint8_t cb = 0;
     /* param wifi get 
      * /get?argName=arg(0)
      * using argName(0) = "param_wifi" is parameter to get wifi information 
      * using arg(0) is parameter to find callback_post
      */
-    if (server.argName(0) == "param_wifi")
-    {
+    AsyncWebParameter* p = request->getParam(0);
+    if (p->name() == "param_wifi")
+    {              
         for (uint8_t i = 0; i < DATA_GET_HANDLE_NUM; ++i)
         {
-            if (server.arg(0) == client_get_handle[i].path_arg)
+            if (p->value() == client_get_handle[i].path_arg)
             {
                 SERVER_DATA_PRINTF("\r\nProcess get callback [%u]", i);
-                client_get_handle[i].cb();
+                client_get_handle[i].cb(request);
+                cb = 1;
                 break;
             }
         }
     }
-    else
+    /* non process callback, so return arg parse */
+    if (!cb)
     {
         String arg_str = "";
-        print_handlerequest(arg_str);
-        server.send(200, "text/html", arg_str);
+        print_handlerequest(request, arg_str);
+        request->send(200, "text/html", arg_str);
     }
     
 }
 
-void server_data_post_process(void)
+void server_data_post_process(AsyncWebServerRequest *request)
 {
     uint8_t cb = 0;
     /* param wifi post 
@@ -45,12 +50,13 @@ void server_data_post_process(void)
      * using argName(0) is parameter to find callback_post
      * using arg(0) is data
      */
+    AsyncWebParameter* p = request->getParam(0);
     for (uint8_t i = 0; i < DATA_POST_HANDLE_NUM; ++i)
     {
-        if (server.argName(0) == client_post_handle[i].path_arg)
+        if (p->name() == client_post_handle[i].path_arg)
         {
             SERVER_DATA_PRINTF("\r\nProcess post callback [%u]", i);
-            client_post_handle[i].cb();
+            client_post_handle[i].cb(request);
             cb = 1;
             break;
         }
@@ -60,15 +66,15 @@ void server_data_post_process(void)
     if (!cb)
     {
         String arg_str = "";
-        print_handlerequest(arg_str);
-        server.send(200, "text/html", arg_str);
+        print_handlerequest(request, arg_str);
+        request->send(200, "text/html", arg_str);
     }
 }
 
 /*---------------------------------------------------------------------*
  *----------------------------data get process-------------------------*
  *---------------------------------------------------------------------*/
-void sta_ap_info_get(void)
+void sta_ap_info_get(AsyncWebServerRequest *request)
 {
     String json_network;
     wifi_file_json_t *g_wifi_cfg;
@@ -109,17 +115,17 @@ void sta_ap_info_get(void)
     }
     
     root.prettyPrintTo(json_network);
-    server.send(200, "text/json", json_network);
+    request->send(200, "text/json", json_network);
 }
 
 /* Get json sta_network */
-void sta_network_get(void)
+void sta_network_get(AsyncWebServerRequest *request)
 {
     String json_network = "{\"status\":\"error\",\"mgs\":\"No network\"}";
     esp_ssid_scan(json_network);
-    server.send(200, "text/json", json_network);
+    request->send(200, "text/json", json_network);
 }
-void sta_setting_get(void) 
+void sta_setting_get(AsyncWebServerRequest *request) 
 {
     String json_network;
     wifi_file_json_t *g_wifi_cfg;
@@ -162,10 +168,10 @@ void sta_setting_get(void)
     root["ws_port"].set(g_wifi_cfg->WSPort);
 
     root.prettyPrintTo(json_network);
-    server.send(200, "text/json", json_network);
+    request->send(200, "text/json", json_network);
 }
 
-void ap_setting_get(void) 
+void ap_setting_get(AsyncWebServerRequest *request) 
 {
     String json_network;
     wifi_file_json_t *g_wifi_cfg;
@@ -180,10 +186,10 @@ void ap_setting_get(void)
     root["ap_hidden"].set(g_wifi_cfg->ap.Hidden);
 
     root.prettyPrintTo(json_network);
-    server.send(200, "text/json", json_network);
+    request->send(200, "text/json", json_network);
 }
 
-void device_address_get(void)
+void device_address_get(AsyncWebServerRequest *request)
 {
     String json_network;
     wifi_file_json_t *g_wifi_cfg;
@@ -195,10 +201,10 @@ void device_address_get(void)
     root["device_addr"].set(g_wifi_cfg->addr.device_addr);
 
     root.prettyPrintTo(json_network);
-    server.send(200, "text/json", json_network);
+    request->send(200, "text/json", json_network);
 }
 
-void time_setting_get(void)
+void time_setting_get(AsyncWebServerRequest *request)
 {    
     String json_network;
     rtc_time_t rtc;
@@ -224,35 +230,35 @@ void time_setting_get(void)
     }
 
     root.prettyPrintTo(json_network);
-    server.send(200, "text/json", json_network);
+    request->send(200, "text/json", json_network);
 }
 
 /* /get?param_wifi=fw_version */
-void fw_version_get(void)
+void fw_version_get(AsyncWebServerRequest *request)
 {
     char buf[30];
     snprintf(buf, 30, "{\"fw_version\":\"%u.%u.%u\"}",
             FW_VERSION_MAJOR, FW_VERSION_MINOR, FW_VERSION_BUILD);
-    server.send(200, "text/json", buf);
+    request->send(200, "text/json", buf);
 }
 
 /* /get?param_wifi=restart */
-void restart_device_get(void)
+void restart_device_get(AsyncWebServerRequest *request)
 {
-    server.send(200, "text/json", "Reset OK");
+    request->send(200, "text/json", "Reset OK");
     log_report(LOG_REPORT_RESET, (char *)"Web reset3");
     esp_reset_enable();
 }
 
 /* /get?param_wifi=heap_temperature */
-void heap_temperature_get(void)
+void heap_temperature_get(AsyncWebServerRequest *request)
 {
     String json = "{";
     json += "\"heap\":" + String(ESP.getFreeHeap());
     json += ", \"analog\":" + String(esp32_internal_temp());
     json += ", \"gpio\":1";
     json += "}";
-    server.send(200, "text/json", json);
+    request->send(200, "text/json", json);
     json = String();
 }
 
@@ -261,11 +267,11 @@ void heap_temperature_get(void)
  * [X] = 1: Active
  * [X] > 1: Read status
  */
-void activated_get(void)
+void activated_get(AsyncWebServerRequest *request)
 {    
-    if (server.argName(1) == "cmd")
+    if (request->argName(1) == "cmd")
     {
-        uint8_t cmd = atoi(server.arg(1).c_str());
+        uint8_t cmd = atoi(request->arg(1).c_str());
         if (0 == cmd || 1 == cmd)
         {
             if (1 == cmd)
@@ -278,24 +284,24 @@ void activated_get(void)
                 eeprom_device_inactive();
             }
         }
-        server.send(200, "text/html", "Vaule: " + String(eeprom_device_is_activated()));
+        request->send(200, "text/html", "Vaule: " + String(eeprom_device_is_activated()));
     }    
 }
 
-void format_sd_card_get(void)
+void format_sd_card_get(AsyncWebServerRequest *request)
 {
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)    
     sd_format(SD_FS_SYSTEM, "/");
-    server.send(200, "text/html", "Format SD card Succeed");
+    request->send(200, "text/html", "Format SD card Succeed");
 #else
-    server.send(200, "text/html", "No Support SD Card");
+    request->send(200, "text/html", "No Support SD Card");
 #endif        
 }
 
 /*---------------------------------------------------------------------*
  *----------------------------data post process------------------------*
  *---------------------------------------------------------------------*/
-void sta_ap_info_post(void)
+void sta_ap_info_post(AsyncWebServerRequest *request)
 {
 }
 
@@ -306,12 +312,13 @@ void sta_ap_info_post(void)
 "access_code": "1234"
 }
 */
-void sta_network_post(void) 
+void sta_network_post(AsyncWebServerRequest *request) 
 {
     wifi_file_json_t *g_wifi_cfg;
+    AsyncWebParameter* p = request->getParam(0);
 
     DynamicJsonBuffer djbpo;
-    JsonObject& root = djbpo.parseObject(server.arg(0));
+    JsonObject& root = djbpo.parseObject(p->value());
     if (!root.success())
     {
         SERVER_DATA_PRINTF("JSON parsing failed!");
@@ -322,12 +329,12 @@ void sta_network_post(void)
 
     if("1234" == root["access_code"])
     {
-        server.send(200, "text/json", "Wifi Setting Succeed");
+        request->send(200, "text/json", "Wifi Setting Succeed");
 
         root["sta_ssid"].as<String>().toCharArray(g_wifi_cfg->sta.ssid, Df_LengSsid + 1);
         root["sta_pass"].as<String>().toCharArray(g_wifi_cfg->sta.pass, Df_LengPass + 1);
-        WEB_SERVER_PRINTF("\r\nSSID: %s", g_wifi_cfg->sta.ssid);
-        WEB_SERVER_PRINTF("\r\nPASS: %s\r\n", g_wifi_cfg->sta.pass);        
+        SERVER_DATA_PRINTF("\r\nSSID: %s", g_wifi_cfg->sta.ssid);
+        SERVER_DATA_PRINTF("\r\nPASS: %s\r\n", g_wifi_cfg->sta.pass);        
 
         wifi_info_write(g_wifi_cfg);
 
@@ -336,16 +343,17 @@ void sta_network_post(void)
     }
     else
     {
-        server.send(200, "text/json", "Password Setting Wrong");
+        request->send(200, "text/json", "Password Setting Wrong");
     }
 }
 
-void sta_setting_post(void)
+void sta_setting_post(AsyncWebServerRequest *request)
 {
-    wifi_file_json_t *g_wifi_cfg;    
+    wifi_file_json_t *g_wifi_cfg;  
+    AsyncWebParameter* p = request->getParam(0);  
 
     DynamicJsonBuffer djbpo;
-    JsonObject& root = djbpo.parseObject(server.arg(0));
+    JsonObject& root = djbpo.parseObject(p->value());
     if (!root.success())
     {
         SERVER_DATA_PRINTF("JSON parsing failed!");
@@ -356,7 +364,7 @@ void sta_setting_post(void)
 
     if("1234" == root["access_code"])
     {
-        server.send(200, "text/json", "Wifi Advance Setting Succeed");
+        request->send(200, "text/json", "Wifi Advance Setting Succeed");
 
         root["sta_ssid"].as<String>().toCharArray(g_wifi_cfg->sta.ssid, Df_LengSsid + 1);
         root["sta_pass"].as<String>().toCharArray(g_wifi_cfg->sta.pass, Df_LengPass + 1);
@@ -377,15 +385,16 @@ void sta_setting_post(void)
     }
     else
     {
-        server.send(200, "text/json", "Password Setting Wrong");
+        request->send(200, "text/json", "Password Setting Wrong");
     }
 }
-void ap_setting_post(void) 
+void ap_setting_post(AsyncWebServerRequest *request) 
 {
     wifi_file_json_t *g_wifi_cfg;    
+    AsyncWebParameter* p = request->getParam(0);
 
     DynamicJsonBuffer djbpo;
-    JsonObject& root = djbpo.parseObject(server.arg(0));
+    JsonObject& root = djbpo.parseObject(p->value());
     if (!root.success())
     {
         SERVER_DATA_PRINTF("JSON parsing failed!");
@@ -396,7 +405,7 @@ void ap_setting_post(void)
 
     if("1234" == root["access_code"])
     {
-        server.send(200, "text/json", "Wifi Advance Setting Succeed");
+        request->send(200, "text/json", "Wifi Advance Setting Succeed");
 
         root["ap_ssid"].as<String>().toCharArray(g_wifi_cfg->ap.ssid, Df_LengSsid + 1);
         root["ap_pass"].as<String>().toCharArray(g_wifi_cfg->ap.pass, Df_LengPass + 1);
@@ -411,16 +420,17 @@ void ap_setting_post(void)
     }
     else
     {
-        server.send(200, "text/json", "Password Setting Wrong");
+        request->send(200, "text/json", "Password Setting Wrong");
     }
 }
 
-void device_address_post(void)
+void device_address_post(AsyncWebServerRequest *request)
 {
     wifi_file_json_t *g_wifi_cfg;    
+    AsyncWebParameter* p = request->getParam(0);
 
     DynamicJsonBuffer djbpo;
-    JsonObject& root = djbpo.parseObject(server.arg(0));
+    JsonObject& root = djbpo.parseObject(p->value());
     if (!root.success())
     {
         SERVER_DATA_PRINTF("JSON parsing failed!");
@@ -431,7 +441,7 @@ void device_address_post(void)
 
     if("1234" == root["access_code"])
     {
-        server.send(200, "text/json", "Wifi Advance Setting Succeed");
+        request->send(200, "text/json", "Wifi Advance Setting Succeed");
 
         root["device_name"].as<String>().toCharArray(g_wifi_cfg->addr.device_name, Df_LengDevName + 1);
         root["device_addr"].as<String>().toCharArray(g_wifi_cfg->addr.device_addr, Df_LengAddr + 1);        
@@ -443,16 +453,17 @@ void device_address_post(void)
     }
     else
     {
-        server.send(200, "text/json", "Password Setting Wrong");
+        request->send(200, "text/json", "Password Setting Wrong");
     }
 }
 
-void auth_access_post(void)
+void auth_access_post(AsyncWebServerRequest *request)
 {
-    wifi_file_json_t *g_wifi_cfg;    
+    wifi_file_json_t *g_wifi_cfg;   
+    AsyncWebParameter* p = request->getParam(0);
 
     DynamicJsonBuffer djbpo;
-    JsonObject& root = djbpo.parseObject(server.arg(0));
+    JsonObject& root = djbpo.parseObject(p->value());
     if (!root.success())
     {
         SERVER_DATA_PRINTF("JSON parsing failed!");
@@ -465,7 +476,7 @@ void auth_access_post(void)
     {
         if (root["old_pass"] == g_wifi_cfg->auth.pass)
         {
-            server.send(200, "text/json", "Wifi Advance Setting Succeed");
+            request->send(200, "text/json", "Wifi Advance Setting Succeed");
 
             root["new_pass"].as<String>().toCharArray(g_wifi_cfg->auth.pass, Df_LengAuth + 1);        
 
@@ -476,25 +487,44 @@ void auth_access_post(void)
         }
         else
         {
-            server.send(200, "text/json", "Old pass Wrong");
+            request->send(200, "text/json", "Old pass Wrong");
         }
         
     }
     else
     {
-        server.send(200, "text/json", "Password Setting Wrong");
+        request->send(200, "text/json", "Password Setting Wrong");
     }
 }
 
-void time_setting_post(void)
-{
-    const char *rtc_str = server.arg(0).c_str();
+void time_setting_post(AsyncWebServerRequest *request)
+{    
+    AsyncWebParameter* p = request->getParam(0);
+    const char *rtc_str = p->value().c_str();
     if (rtc_parse_utility((char*)rtc_str))
     {
-        server.send(200, "text/json", "Time Setting Succeed");
+        request->send(200, "text/json", "Time Setting Succeed");
     }
     else
     {
-        server.send(200, "text/json", "Time Setting Wrong");
+        request->send(200, "text/json", "Time Setting Wrong");
     }    
+}
+
+void print_handlerequest(AsyncWebServerRequest *request, String &message)
+{
+  message = "";
+  message += "\r\nURI: ";
+  message += request->url();
+  message += "\nMethod: ";
+  message += (HTTP_GET == request->method()) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += request->params();
+  message += "\n";
+  for (uint8_t i = 0; i < request->params(); i++)
+  {
+    AsyncWebParameter* p = request->getParam(i);
+    message += " NAME:" + p->name() + "\n VALUE:" + p->value() + "\n";
+  }
+  WEB_SERVER_DBG_PORT.println(message);
 }
