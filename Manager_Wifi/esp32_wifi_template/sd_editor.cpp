@@ -1,6 +1,13 @@
+#include <Arduino.h>
 #include <FS.h>
 #include "sd_editor.h"
 
+#define SDEDITOR_DBG_PORT Serial
+#if (defined SD_EDITOR_DEBUG) && (SD_EDITOR_DEBUG == 1)
+#define SDEDITOR_DBG_PRINTF(f_, ...) SDEDITOR_DBG_PORT.printf_P(PSTR("\r\n[SD_EDITOR] " f_), ##__VA_ARGS__)
+#else
+#define SDEDITOR_DBG_PRINTF(f_, ...)
+#endif
 /* Convert htm to gzip. Select "Compress this file, output-gz"
  * https://online-converting.com/archives/convert-to-gzip/ 
  * Convert file to array C
@@ -476,10 +483,15 @@ SDEditor::SDEditor(const String& username, const String& password, const fs::FS&
 ,_password(password)
 ,_authenticated(false)
 ,_startTime(0)
+,_filesize(0)
 {}
 
-bool SDEditor::canHandle(AsyncWebServerRequest *request){
+bool SDEditor::canHandle(AsyncWebServerRequest *request){  
   if(request->url().equalsIgnoreCase("/edit_sdfs")){
+#if (defined SD_EDITOR_DEBUG) && (SD_EDITOR_DEBUG == 1)
+    SDEDITOR_DBG_PRINTF("canHandle");
+    debug(request);
+#endif
     if(request->method() == HTTP_GET){
       if(request->hasParam("list"))
         return true;
@@ -511,7 +523,10 @@ bool SDEditor::canHandle(AsyncWebServerRequest *request){
       return true;
     }
     else if(request->method() == HTTP_POST)
+    {
+      _filesize = request->contentLength();
       return true;
+    }      
     else if(request->method() == HTTP_DELETE)
       return true;
     else if(request->method() == HTTP_PUT)
@@ -525,6 +540,11 @@ bool SDEditor::canHandle(AsyncWebServerRequest *request){
 void SDEditor::handleRequest(AsyncWebServerRequest *request){
   if(_username.length() && _password.length() && !request->authenticate(_username.c_str(), _password.c_str()))
     return request->requestAuthentication();
+
+#if (defined SD_EDITOR_DEBUG) && (SD_EDITOR_DEBUG == 1)
+  SDEDITOR_DBG_PRINTF("handleRequest");
+  debug(request);
+#endif
 
   if(request->method() == HTTP_GET){
     if(request->hasParam("list")){
@@ -591,8 +611,13 @@ void SDEditor::handleRequest(AsyncWebServerRequest *request){
     } else
       request->send(404);
   } else if(request->method() == HTTP_POST){
-    if(request->hasParam("data", true, true) && _fs.exists(request->getParam("data", true, true)->value()))
+    bool exist = _fs.exists(request->getParam("data", true, true)->value());
+    SDEDITOR_DBG_PRINTF("Exist(%u)", exist);
+    if(request->hasParam("data", true, true) && exist)
+    {
+      SDEDITOR_DBG_PRINTF("UPLOADED");
       request->send(200, "", "UPLOADED: "+request->getParam("data", true, true)->value());
+    }
     else
       request->send(500);
   } else if(request->method() == HTTP_PUT){
@@ -621,14 +646,68 @@ void SDEditor::handleUpload(AsyncWebServerRequest *request, const String& filena
       _authenticated = true;
       request->_tempFile = _fs.open(filename, "w");
       _startTime = millis();
+#if (defined SD_EDITOR_DEBUG) && (SD_EDITOR_DEBUG == 1)
+      SDEDITOR_DBG_PRINTF("Start file upload (%u)", _startTime);
+#endif
     }
   }
   if(_authenticated && request->_tempFile){
     if(len){
       request->_tempFile.write(data,len);
+#if (defined SD_EDITOR_DEBUG) && (SD_EDITOR_DEBUG == 1)
+      SDEDITOR_DBG_PRINTF("Write %u%% (%u/%u)", len * 100 / _filesize, len, _filesize);
+      _filesize -= len;
+#endif      
     }
     if(final){
       request->_tempFile.close();
+#if (defined SD_EDITOR_DEBUG) && (SD_EDITOR_DEBUG == 1)
+      SDEDITOR_DBG_PRINTF("Finish file upload time = %u(ms)", millis() - _startTime);
+#endif
+    }
+  }
+}
+
+void SDEditor::debug(AsyncWebServerRequest *request) {
+  if(request->method() == HTTP_GET)
+    SDEDITOR_DBG_PRINTF("GET");
+  else if(request->method() == HTTP_POST)
+    SDEDITOR_DBG_PRINTF("POST");
+  else if(request->method() == HTTP_DELETE)
+    SDEDITOR_DBG_PRINTF("DELETE");
+  else if(request->method() == HTTP_PUT)
+    SDEDITOR_DBG_PRINTF("PUT");
+  else if(request->method() == HTTP_PATCH)
+    SDEDITOR_DBG_PRINTF("PATCH");
+  else if(request->method() == HTTP_HEAD)
+    SDEDITOR_DBG_PRINTF("HEAD");
+  else if(request->method() == HTTP_OPTIONS)
+    SDEDITOR_DBG_PRINTF("OPTIONS");
+  else
+    SDEDITOR_DBG_PRINTF("UNKNOWN");
+  SDEDITOR_DBG_PRINTF(" http://%s%s\n", request->host().c_str(), request->url().c_str());
+
+  if(request->contentLength()){
+    SDEDITOR_DBG_PRINTF("_CONTENT_TYPE: %s\n", request->contentType().c_str());
+    SDEDITOR_DBG_PRINTF("_CONTENT_LENGTH: %u\n", request->contentLength());
+  }
+
+  int headers = request->headers();
+  int i;
+  for(i=0;i<headers;i++){
+    AsyncWebHeader* h = request->getHeader(i);
+    SDEDITOR_DBG_PRINTF("_HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
+  }
+
+  int params = request->params();
+  for(i=0;i<params;i++){
+    AsyncWebParameter* p = request->getParam(i);
+    if(p->isFile()){
+      SDEDITOR_DBG_PRINTF("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
+    } else if(p->isPost()){
+      SDEDITOR_DBG_PRINTF("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
+    } else {
+      SDEDITOR_DBG_PRINTF("_GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
     }
   }
 }

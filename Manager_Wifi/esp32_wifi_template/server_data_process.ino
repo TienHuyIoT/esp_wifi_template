@@ -236,9 +236,10 @@ void time_setting_get(AsyncWebServerRequest *request)
 /* /get?param_wifi=fw_version */
 void fw_version_get(AsyncWebServerRequest *request)
 {
-    char buf[30];
-    snprintf(buf, 30, "{\"fw_version\":\"%u.%u.%u\"}",
-            FW_VERSION_MAJOR, FW_VERSION_MINOR, FW_VERSION_BUILD);
+    char buf[100];
+    const char * buildTime = __DATE__ " " __TIME__ " GMT";
+    snprintf(buf, 100, "{\"fw_version\":\"%u.%u.%u\",\"buildTime\":\"%s\"}",
+            FW_VERSION_MAJOR, FW_VERSION_MINOR, FW_VERSION_BUILD, buildTime);
     request->send(200, "text/json", buf);
 }
 

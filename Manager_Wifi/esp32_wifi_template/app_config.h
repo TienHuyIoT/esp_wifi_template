@@ -26,13 +26,13 @@
 0: Disable
 1: Enable
 */
-#define SD_CARD_ENABLE  0
+#define SD_CARD_ENABLE  1
 
 /* Select sd card interface
 0: SD_MMC
 1: SD interface over SPI
 */
-#define SD_CARD_SYSTEM  1
+#define SD_CARD_SYSTEM  0
 
 /* Enable control power sd card 
 0: not use

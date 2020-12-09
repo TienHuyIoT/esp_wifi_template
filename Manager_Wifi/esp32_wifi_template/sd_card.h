@@ -18,7 +18,7 @@ HIGH:	GSM off
 LOW:	GSM on
 */
 #if (defined SD_POWER_ENABLE) && (SD_POWER_ENABLE == 1)
-#define SD_POWER_PIN     		        21
+#define SD_POWER_PIN     		        22
 #define SD_POWER_PINMODE_INIT()         pinMode(SD_POWER_PIN, OUTPUT_OPEN_DRAIN)
 #define SD_POWER_ON()                   digitalWrite(SD_POWER_PIN, LOW)
 #define SD_POWER_OFF()                  digitalWrite(SD_POWER_PIN, HIGH)

@@ -4,12 +4,6 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <title>Update</title>
-    <script>
-        function c(l) {
-            document.getElementById('s').value = l.innerText || l.textContent;
-            document.getElementById('p').focus();
-        }
-    </script>
     <style>
         div,
         input {
@@ -50,9 +44,9 @@
                 <th align='left'>Upload Internal Memory</th>
             </tr>
         </table>
-        <form method="POST" action="/upload" enctype="multipart/form-data">
-            <input type="file" name="upload">
-            <input type="submit" value="Upload File">
+        <form method="POST" action="/edit" enctype="multipart/form-data">
+            <input type="file" id="data_spifs" name="data">
+            <input type="button" id="button_spifs" value="Upload File">
         </form>
         <br>
         <br>
@@ -61,11 +55,81 @@
                 <th align='left'>Upload External Memory</th>
             </tr>
         </table>
-        <form method="POST" action="/upload_sd" enctype="multipart/form-data">
-            <input type="file" name="upload_sd">
-            <input type="submit" value="Upload File">
+        <form method="POST" action="/edit_sdfs" enctype="multipart/form-data">
+            <input type="file" id="data_sd" name="data">
+            <input type="button" id="button_sd" value="Upload File">
         </form>
     </div>
+
+    <script>
+        document.getElementById("button_spifs").addEventListener("click", function() {
+            // Get the file the user picked
+            var files = document.getElementById("data_spifs").files;
+            if (!files.length) {
+                return;
+            }
+            var file = files[0];
+            var filename = "/" + file.name;
+            // Create a new one with the data but a new name
+            var newFile = new File([file], filename, {
+                type: file.type,
+            });
+            // Build the FormData to send
+            var data = new FormData();
+            data.set("data", newFile);
+            // Send it
+            fetch("/edit", {
+                    method: "POST",
+                    body: data
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("HTTP error " + response.status);
+                    }
+                    return response.text(); // or response.json() or whatever
+                })
+                .then(response => {
+                    // Do something with the response
+                })
+                .catch(error => {
+                    // Do something with the error
+                });
+        });
+
+        document.getElementById("button_sd").addEventListener("click", function() {
+            // Get the file the user picked
+            var files = document.getElementById("data_sd").files;
+            if (!files.length) {
+                return;
+            }
+            var file = files[0];
+            var filename = "/" + file.name;
+            // Create a new one with the data but a new name
+            var newFile = new File([file], filename, {
+                type: file.type,
+            });
+            // Build the FormData to send
+            var data = new FormData();
+            data.set("data", newFile);
+            // Send it
+            fetch("/edit_sdfs", {
+                    method: "POST",
+                    body: data
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("HTTP error " + response.status);
+                    }
+                    return response.text(); // or response.json() or whatever
+                })
+                .then(response => {
+                    // Do something with the response
+                })
+                .catch(error => {
+                    // Do something with the error
+                });
+        });
+    </script>
 </body>
 
 </html>
