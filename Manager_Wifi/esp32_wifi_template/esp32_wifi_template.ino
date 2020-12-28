@@ -79,8 +79,6 @@ uint8_t temprature_sens_read();
  * handle file system
  * =========================================================*/
 File fs_handle;
-File fsUploadFile;
-File sd_uploadfile;
 
 #define LOG_REPORT_SIZE_BYTE      (1024 * 200)
 #define LOG_REPORT_INIT           0
@@ -165,8 +163,6 @@ void setup()
 
 void loop()
 {
-  
-
   /* Watch dog timer feed */
   hw_wdt_feed();
 

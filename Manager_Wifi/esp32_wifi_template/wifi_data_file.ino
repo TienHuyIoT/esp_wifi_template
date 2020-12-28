@@ -9,7 +9,7 @@ const char wifi_file_default[] PROGMEM =
 "{\"device_name\":\"THIẾT BỊ BÁN XĂNG BẰNG THẺ\","
 "\n\"device_addr\":\"102 Phan Huy Ích, Phường 15, Quận Tân Bình, Tp HCM\"," 
 "\n\"UDPPort\":25123,"	
-"\n\"TCPPort\":80,"
+"\n\"TCPPort\":25123,"
 "\n\"WSPort\":25124,"
 "\n\"AuthUser\":\"admin\","
 "\n\"AuthPass\":\"admin\","

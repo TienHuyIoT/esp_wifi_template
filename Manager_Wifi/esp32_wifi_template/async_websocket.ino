@@ -49,7 +49,8 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
     if (type == WS_EVT_CONNECT)
     {
         IPAddress ip = client->remoteIP();
-        WS_DBG_PRINT("[%u] Connected from %d.%d.%d.%d url: %s\n", client->id(), ip[0], ip[1], ip[2], ip[3], server->url());
+        uint16_t port = client->remotePort();
+        WS_DBG_PRINT("[%u] Connected from %d.%d.%d.%d port: %u url: %s\n", client->id(), ip[0], ip[1], ip[2], ip[3], port, server->url());
         /* NUM_WS_CONNECTION_MAX < DEFAULT_MAX_WS_CLIENTS 
          * Because at least have a socket connection free
          */

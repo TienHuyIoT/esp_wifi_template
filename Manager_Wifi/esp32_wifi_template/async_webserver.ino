@@ -189,7 +189,8 @@ void web_server_init(void)
   }
 
   WEB_SERVER_DBG_PRINTF("\r\nInit Web Server Port: %u\r\n", g_wifi_cfg->TCPPort);
-  server.begin();
+
+  server.begin(g_wifi_cfg->TCPPort);
 }
 
 void web_server_end(void)
