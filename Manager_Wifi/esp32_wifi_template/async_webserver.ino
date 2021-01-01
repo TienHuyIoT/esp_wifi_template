@@ -7,17 +7,55 @@
 #include "async_websocket.h"
 #include "server_data_process.h"
 #include "esp_reset.h"
+#include "fs_editor.h"
 
 #define WEB_SERVER_DBG_PORT Serial
 #define WEB_SERVER_DBG_PRINTF(...) WEB_SERVER_DBG_PORT.printf(__VA_ARGS__)
 
 static size_t update_content_len;
 
+FSEditor spiffs_editor(NAND_FS_SYSTEM, "/edit");
+#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
+FSEditor sd_editor(SD_FS_SYSTEM, "/edit_sdfs");
+#endif
+
 void update_printProgress(size_t prg, size_t sz) {
-  WEB_SERVER_DBG_PRINTF("Progress: %d%%\n", (prg*100)/update_content_len);
-  char p[32];
-  sprintf(p, "Progress: %u%%\n", (prg/(update_content_len/100)));
-  events.send(p, "ota");
+  static uint32_t update_percent = 0;
+  uint32_t per = prg * 100 / update_content_len;
+  if (update_percent != per)
+  {
+    char p[5];
+    update_percent = per;
+    WEB_SERVER_DBG_PRINTF("Progress: %u%%\n", update_percent);    
+    sprintf(p, "%u", update_percent);
+    events.send(p, "dfu");
+  }  
+}
+
+void sdfs_printProgress(size_t prg, size_t sz) {
+  static uint32_t sdfs_percent = 0;
+  uint32_t per = prg * 100 / sz;
+  if (sdfs_percent != per)
+  {
+    char p[5];
+    sdfs_percent = per;
+    WEB_SERVER_DBG_PRINTF("Progress: %u%%\n", sdfs_percent);    
+    sprintf(p, "%u", sdfs_percent);
+    events.send(p, "sdfs");
+  }  
+}
+
+void spiffs_printProgress(size_t prg, size_t sz) {
+  static uint32_t spiffs_percent = 0;
+  uint32_t per = prg * 100 / sz;
+  if (spiffs_percent != per)
+  {
+    char p[5];
+    spiffs_percent = per;
+    WEB_SERVER_DBG_PRINTF("Progress: %u%%\n", spiffs_percent);    
+    sprintf(p, "%u", spiffs_percent);
+    events.send(p, "spiffs");
+  }  
 }
 
 void web_server_setup(void)
@@ -35,10 +73,14 @@ void web_server_setup(void)
     client->send("hello!",NULL,millis(),1000);
   });
   server.addHandler(&events);
-      
-  server.addHandler(new SPIFFSEditor(NAND_FS_SYSTEM, http_username, http_password));
-#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)  
-  server.addHandler(new SDEditor(SD_FS_SYSTEM, http_username, http_password));
+
+  spiffs_editor.setAuthentication(http_username, http_password);
+  spiffs_editor.onProgress(spiffs_printProgress);
+  server.addHandler(&spiffs_editor);
+#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
+  sd_editor.setAuthentication(http_username, http_password);
+  sd_editor.onProgress(sdfs_printProgress);
+  server.addHandler(&sd_editor);
 #endif  
 
   server.on("/get", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -57,22 +99,28 @@ void web_server_setup(void)
     server_data_get_process(request);
   });
 
-  server.serveStatic("/", NAND_FS_SYSTEM, "/").setDefaultFile("index.htm");
+  /* Serving files in directory. Serving static files with authentication */
+  server.serveStatic("/", NAND_FS_SYSTEM, "/").setDefaultFile("index.htm").setAuthentication(http_username, http_password);
 
 #ifdef ESP32
   Update.onProgress(update_printProgress);
 #endif
   // Simple Firmware Update Form
   server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){
+    if(!request->authenticate(http_username, http_password))
+    {
+      return request->requestAuthentication();
+    }
     request->send(200, "text/html", "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>");
   });
   server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){
-    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", !Update.hasError()?"OK":"FAIL");
+    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", !Update.hasError()?"Update OK":"Update FAIL");
     response->addHeader("Connection", "close");
     request->send(response);
     if (!Update.hasError())
     {
-      esp_reset_enable();
+      update_printProgress(update_content_len, UPDATE_SIZE_UNKNOWN);
+      esp_reset_enable(500);
     }    
   },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
     if(!index){

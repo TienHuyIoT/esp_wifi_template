@@ -19,7 +19,7 @@ void factory_reset_handle(void)
             RESET_FACTORY_PRINTF("OK");
             
             /* Restart esp */
-            esp_reset_enable();
+            esp_reset_enable(100);
         }
     }
 }

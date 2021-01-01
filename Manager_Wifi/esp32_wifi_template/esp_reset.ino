@@ -1,23 +1,24 @@
 #include "esp_reset.h"
 
 // need non block function
-void esp_reset_enable()
+void esp_reset_enable(uint32_t timeout)
 {
-    // save rtc current into fs before restart
-    rtc_time_t rtc;
-    rtc_get(&rtc);
-    rtc_info_write(&rtc);
-
-    Serial.println("Rebooting...");
-
-    delay(500);
-    ESP.restart();
+    esp_should_reboot = 1;
+    esp_reboot_timeout = timeout;
 }
 
-void esp_reboot(void)
+void esp_reboot_handle(void)
 {
-    if (shouldReboot)
+    if (esp_should_reboot)
     {
-        esp_reset_enable();
+        // save rtc current into fs before restart
+        rtc_time_t rtc;
+        rtc_get(&rtc);
+        rtc_info_write(&rtc);
+
+        Serial.println("Rebooting...");
+
+        delay(esp_reboot_timeout);
+        ESP.restart();
     }    
 }

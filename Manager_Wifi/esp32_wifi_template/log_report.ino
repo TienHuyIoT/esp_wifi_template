@@ -1,5 +1,6 @@
 void log_report(uint8_t log_id, char *p_log)
 {
+    File fs_handle;
     if (!NAND_FS_SYSTEM.exists(LOG_REPORT_PATH))
     {
         fs_handle = NAND_FS_SYSTEM.open(LOG_REPORT_PATH, FILE_WRITE);

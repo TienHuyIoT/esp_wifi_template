@@ -20,9 +20,61 @@
             font-family: verdana;
         }
     </style>
+    <script>
+        function addMessage(n, m) {
+            var bt_value;
+            var id;
+            if (0 == n) {
+                bt_value = "Program ";
+                id = 'button_update';
+            } else if (1 == n) {
+                bt_value = "Upload File ";
+                id = 'button_spifs';
+            } else {
+                bt_value = "Upload File ";
+                id = 'button_sd';
+            }
+
+            if (Number(m) == 100) {
+                bt_value += "(Done)"
+            } else {
+                bt_value += m + "%";
+            }
+
+            document.getElementById(id).value = bt_value;
+        }
+
+        function startEvents() {
+            var es = new EventSource('/events');
+            es.onopen = function(e) {
+                console.log("Events Opened");
+            };
+            es.onerror = function(e) {
+                if (e.target.readyState != EventSource.OPEN) {
+                    console.log("Events Closed");
+                }
+            };
+            es.onmessage = function(e) {
+                console.log("Event: " + e.data);
+            };
+            es.addEventListener('dfu', function(e) {
+                addMessage(0, e.data);
+            }, false);
+            es.addEventListener('spiffs', function(e) {
+                addMessage(1, e.data);
+            }, false);
+            es.addEventListener('sdfs', function(e) {
+                addMessage(2, e.data);
+            }, false);
+        }
+
+        function onBodyLoad() {
+            startEvents();
+        }
+    </script>
 </head>
 
-<body>
+<body id="body" onload="onBodyLoad()">
     <div style="text-align: left; display: inline-block; min-width: 260px;">
         <br>
         <br>
@@ -34,8 +86,8 @@
             </tr>
         </table>
         <form method="POST" action="/update" enctype="multipart/form-data">
-            <input type="file" name="updateesp8266">
-            <input type="submit" value="Program">
+            <input type="file" name="update">
+            <input type="submit" id="button_update" value="Program">
         </form>
         <br>
         <br>

@@ -1,13 +1,16 @@
+#if CONFIG_FREERTOS_UNICORE
+#define ARDUINO_RUNNING_CORE 0
+#else
+#define ARDUINO_RUNNING_CORE 1
+#endif
 #include <ArduinoOTA.h>
 #include <ESPmDNS.h>
 #include <Update.h>
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <SPIFFSEditor.h>
 #include <WiFiClient.h>
 #include <WiFiAP.h>
-#include <SPIFFS.h>
 #include <EEPROM.h>
 #include <ArduinoJson.h>
 #include <esp_wifi.h>
@@ -20,28 +23,19 @@
 #include <time.h>
 #include <TimeOutEvent.h>
 #include <IOInput.h>
+#include <IOBlink.h>
+#include "app_config.h"
 #include "Tools.h"
 #include "rtc_data_file.h"
 #include "wifi_data_file.h"
 #include "eeprom_data.h"
-#include "app_config.h"
 #include "board.h"
 #include "sd_card.h"
-#include "sd_editor.h"
+#include "fs_editor.h"
 #include "server_data_process.h"
 #include "async_webserver.h"
 #include "async_websocket.h"
 #include "app_async_websocket.h"
-
-#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-#include <FS.h>
-#if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1)
-#include <SD.h>
-#include <SPI.h>
-#else
-#include <SD_MMC.h>
-#endif
-#endif
 
 #define COMMON_PORT Serial
 #define COMMON_PRINTF(f_, ...) COMMON_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
@@ -75,11 +69,6 @@ uint8_t temprature_sens_read();
  
 uint8_t temprature_sens_read();
 
-/* =========================================================
- * handle file system
- * =========================================================*/
-File fs_handle;
-
 #define LOG_REPORT_SIZE_BYTE      (1024 * 200)
 #define LOG_REPORT_INIT           0
 #define LOG_REPORT_SLEEP          1
@@ -95,6 +84,11 @@ TimeOutEvent internal_temp_to(60000);
 
 void setup()
 {
+  // vSemaphoreCreateBinary( xBinarySemaphore );
+  // if( xBinarySemaphore != NULL )
+  // {
+  //   xTaskCreate( vTaskWifiScan, "Task wifi scan", 4096, NULL, 1, NULL );
+  // }
   COMMON_PORT.begin(115200);
   COMMON_PRINTF("\r\n==== Firmware version %u.%u.%u ====\r\n", 
                 FW_VERSION_MAJOR,
@@ -163,6 +157,9 @@ void setup()
 
 void loop()
 {
+  /* Restart esp handle */
+  esp_reboot_handle();
+  
   /* Watch dog timer feed */
   hw_wdt_feed();
 

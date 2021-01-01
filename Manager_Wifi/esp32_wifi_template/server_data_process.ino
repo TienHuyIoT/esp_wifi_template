@@ -125,6 +125,7 @@ void sta_network_get(AsyncWebServerRequest *request)
     esp_ssid_scan(json_network);
     request->send(200, "text/json", json_network);
 }
+
 void sta_setting_get(AsyncWebServerRequest *request) 
 {
     String json_network;
@@ -248,7 +249,7 @@ void restart_device_get(AsyncWebServerRequest *request)
 {
     request->send(200, "text/json", "Reset OK");
     log_report(LOG_REPORT_RESET, (char *)"Web reset3");
-    esp_reset_enable();
+    esp_reset_enable(500);
 }
 
 /* /get?param_wifi=heap_temperature */
@@ -340,7 +341,7 @@ void sta_network_post(AsyncWebServerRequest *request)
         wifi_info_write(g_wifi_cfg);
 
         /* Reset to access new network */
-        esp_reset_enable();
+        esp_reset_enable(500);
     }
     else
     {
@@ -382,7 +383,7 @@ void sta_setting_post(AsyncWebServerRequest *request)
         wifi_info_write(g_wifi_cfg);
 
         /* Reset to access new network */
-        esp_reset_enable();
+        esp_reset_enable(500);
     }
     else
     {
@@ -417,7 +418,7 @@ void ap_setting_post(AsyncWebServerRequest *request)
         wifi_info_write(g_wifi_cfg);
 
         /* Reset to access new network */
-        esp_reset_enable();
+        esp_reset_enable(500);
     }
     else
     {
@@ -450,7 +451,7 @@ void device_address_post(AsyncWebServerRequest *request)
         wifi_info_write(g_wifi_cfg);
 
         /* Reset to access new network */
-        esp_reset_enable();
+        esp_reset_enable(500);
     }
     else
     {
@@ -484,7 +485,7 @@ void auth_access_post(AsyncWebServerRequest *request)
             wifi_info_write(g_wifi_cfg);
 
             /* Reset to access new network */
-            esp_reset_enable();
+            esp_reset_enable(500);
         }
         else
         {

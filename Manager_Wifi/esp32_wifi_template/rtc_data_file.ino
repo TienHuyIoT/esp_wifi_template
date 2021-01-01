@@ -18,6 +18,7 @@ const char rtc_file_default[] PROGMEM =
 
 void rtc_info_write(rtc_time_t *w_rtc_info)
 {
+    File fs_handle;
     DynamicJsonBuffer djbco;
     JsonObject &root = djbco.createObject();
     root["year"].set(w_rtc_info->year);
@@ -38,6 +39,7 @@ void rtc_info_write(rtc_time_t *w_rtc_info)
 
 uint8_t rtc_info_read(rtc_time_t *r_rtc_info)
 {
+    File fs_handle;
     // check file exist
     if (!NAND_FS_SYSTEM.exists(RTC_FILE_PATH))
     {

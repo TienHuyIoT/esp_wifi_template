@@ -49,6 +49,7 @@ void wifi_info_refactor(void)
 
 void wifi_info_write(wifi_file_json_t* w_wifi_info)
 {
+    File fs_handle;
     DynamicJsonBuffer djbco;
     JsonObject& root = djbco.createObject();
     root["device_name"].set(w_wifi_info->addr.device_name);
@@ -87,6 +88,7 @@ void wifi_info_write(wifi_file_json_t* w_wifi_info)
 
 void wifi_info_read(wifi_file_json_t* r_wifi_info)
 {
+    File fs_handle;
     // check file exist
     if (!NAND_FS_SYSTEM.exists(WIFI_FILE_PATH))
     {

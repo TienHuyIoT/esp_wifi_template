@@ -1,0 +1,60 @@
+Chạy qio không được thì chạy dio
+
+B1. Download và cài đặt Python nếu chưa cài lần nào
+https://www.python.org/downloads/
+
+B2. Bấm nút để mạch vào chế độ nạp chương trình
+    - Bấm đồng thời 2 nút RST + BOOT trên board
+    - Sau đó nhả nút RST trước rồi nhả BOOT ra sau. Thời gian cách nhau > 1s là OK
+
+B3. Dùng mạch USB - TTL kết nối vào jack J2 chân (GND - RD - TX) của mạch tương ứng với
+    chân (GND - TXD - RXD) của USB.
+
+B4. Chạy file "flash_reader.bat"
+Màn hình sẽ hiển thị nội dung sau
+
+========================================================
+Nap chuong trinh esp32
+esptool.py v2.6
+Serial port COM10
+Connecting....
+Chip is ESP32D0WDQ6 (revision 1)
+Features: WiFi, BT, Dual Core, 240MHz, VRef calibration in efuse, Coding Scheme None
+MAC: 80:7d:3a:eb:c7:9c
+Uploading stub...
+Running stub...
+Stub running...
+Changing baud rate to 921600
+Changed.
+Configuring flash size...
+Auto-detected Flash size: 4MB
+Compressed 8192 bytes to 47...
+Wrote 8192 bytes (47 compressed) at 0x0000e000 in 0.0 seconds (effective 3276.8 kbit/s)...
+Hash of data verified.
+Compressed 18608 bytes to 12030...
+Wrote 18608 bytes (12030 compressed) at 0x00001000 in 0.2 seconds (effective 936.3 kbit/s)...
+Hash of data verified.
+Compressed 969616 bytes to 549556...
+Wrote 969616 bytes (549556 compressed) at 0x00010000 in 9.2 seconds (effective 846.6 kbit/s)...
+Hash of data verified.
+Compressed 3072 bytes to 128...
+Wrote 3072 bytes (128 compressed) at 0x00008000 in 0.0 seconds (effective 1068.5 kbit/s)...
+Hash of data verified.
+Compressed 1507328 bytes to 21238...
+Wrote 1507328 bytes (21238 compressed) at 0x00290000 in 0.5 seconds (effective 23012.6 kbit/s)...
+Hash of data verified.
+
+Leaving...
+Hard resetting via RTS pin...
+Complete.
+========================================================
+Press any key to continue . . .
+
+Đến đây là quá trình nạp thành công.
+
+B5. Bấm rút RST để khởi động lại mạch để chạy chương trình chính
+
+/*
+Chú ý:
+- Nếu quá trình đang nạp bị lỗi thì thực hiện lại từ bước 2 để nạp lại.
+*/
