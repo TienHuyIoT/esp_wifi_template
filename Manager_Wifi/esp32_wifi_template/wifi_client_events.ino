@@ -28,6 +28,11 @@
 24 SYSTEM_EVENT_ETH_GOT_IP               < ESP32 ethernet got IP from connected AP
 25 SYSTEM_EVENT_MAX
 */
+#include "app_config.h"
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+#include <ETH.h>
+#include "lan8720a_cfg.h"
+#endif
 #include <ESPmDNS.h>
 #include <NetBIOS.h>
 #include "wifi_data_file.h"
@@ -102,8 +107,16 @@ void WiFiEvent(WiFiEvent_t event)
             WIFI_EVENT_PORT.println("IPv6 is preferred");
             break;
         case SYSTEM_EVENT_ETH_START:
+        {
+            //set eth hostname here
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+            wifi_file_json_t *g_wifi_cfg;
+            g_wifi_cfg = wifi_info_get();     
+            ETH.setHostname(g_wifi_cfg->sta.HostName);
+#endif
             WIFI_EVENT_PORT.println("Ethernet started");
             break;
+        }
         case SYSTEM_EVENT_ETH_STOP:
             WIFI_EVENT_PORT.println("Ethernet stopped");
             break;
@@ -123,10 +136,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 {
     wifi_file_json_t *g_wifi_cfg;
     g_wifi_cfg = wifi_info_get();
-    
-    WIFI_EVENT_PORT.println("WiFi connected");
-    WIFI_EVENT_PORT.println("IP address: ");
-    WIFI_EVENT_PORT.println(IPAddress(info.got_ip.ip_info.ip.addr));
+        
     sntp_setup();   // sntp sync time setup
 
     // Set up mDNS responder:
@@ -147,6 +157,21 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 
     NBNS.begin(g_wifi_cfg->sta.HostName);
 
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+    WIFI_EVENT_PORT.print("ETH MAC: ");
+    WIFI_EVENT_PORT.print(ETH.macAddress());
+    WIFI_EVENT_PORT.print(", IPv4: ");
+    WIFI_EVENT_PORT.print(ETH.localIP());
+    if (ETH.fullDuplex()) {
+        WIFI_EVENT_PORT.print(", FULL_DUPLEX");
+    }
+    WIFI_EVENT_PORT.print(", ");
+    WIFI_EVENT_PORT.print(ETH.linkSpeed());
+    WIFI_EVENT_PORT.println("Mbps");
+#else
+    WIFI_EVENT_PORT.println("WiFi connected");
+    WIFI_EVENT_PORT.println("IP address: ");
+    WIFI_EVENT_PORT.println(IPAddress(info.got_ip.ip_info.ip.addr));
     /* Smart config enable */
     if(g_wifi_cfg->sta.SmCfg)
     {
@@ -160,24 +185,28 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
             wifi_info_write(g_wifi_cfg);
         }
     }
+#endif    
 }
 
 void wifi_events_setup()
 {
     // Examples of different ways to register wifi events
     WiFi.onEvent(WiFiEvent);
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+    WiFi.onEvent(WiFiGotIP, WiFiEvent_t::SYSTEM_EVENT_ETH_GOT_IP);
+#else    
     WiFi.onEvent(WiFiGotIP, WiFiEvent_t::SYSTEM_EVENT_STA_GOT_IP);
     WiFiEventId_t eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info){
         WIFI_EVENT_PORT.print("WiFi lost connection. Reason: ");
         WIFI_EVENT_PORT.println(info.disconnected.reason);
         WiFi.reconnect();
     }, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
+#endif    
 }
 
 void wifi_setup(const char* name, const char* pass)
 {
     // We start by connecting to a WiFi network
-    WIFI_EVENT_PORT.println();
     WIFI_EVENT_PORT.println();
     WIFI_EVENT_PORT.print("Connecting to ");
     WIFI_EVENT_PORT.println(name); 

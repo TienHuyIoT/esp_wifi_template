@@ -27,6 +27,11 @@
 1: Enable
 */
 #define DNS_SERVER_ENABLE  1
+/* LAN network
+0: Disable
+1: Enable
+*/
+#define ETH_ENABLE    1
 
 /* Enable sd card
 0: Disable
@@ -44,7 +49,7 @@
 0: not use
 1: use
 */
-#define SD_POWER_ENABLE 1
+#define SD_POWER_ENABLE 0
 
 /* Nand memory file system
 0: SPIFFS

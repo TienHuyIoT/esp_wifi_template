@@ -27,6 +27,7 @@
 #include <IOInput.h>
 #include <IOBlink.h>
 #include "app_config.h"
+#include "lan8720a_cfg.h"
 #include "Tools.h"
 #include "rtc_data_file.h"
 #include "wifi_data_file.h"
@@ -133,7 +134,13 @@ void setup()
   wifi_events_setup();
   wifi_info_setup();
   g_wifi_cfg = wifi_info_get();
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)  
+  ETH.begin(ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_TYPE, ETH_CLK_MODE);
+  /* Config must be after begin function */
+  ETH.config(g_wifi_cfg->sta.Ip, g_wifi_cfg->sta.Gw, g_wifi_cfg->sta.Sn, g_wifi_cfg->sta.Dns);
+#else  
   wifi_init();
+#endif  
 
   //Send OTA events to the browser
   ArduinoOTA.onStart([]() { events.send("Update Start", "ota"); });
@@ -150,6 +157,7 @@ void setup()
     else if(error == OTA_RECEIVE_ERROR) events.send("Recieve Failed", "ota");
     else if(error == OTA_END_ERROR) events.send("End Failed", "ota");
   });
+    
   ArduinoOTA.setHostname(g_wifi_cfg->sta.HostName);
   ArduinoOTA.begin();
 

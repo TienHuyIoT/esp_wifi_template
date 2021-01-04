@@ -58,6 +58,12 @@ void begin();
 AsyncWebServer server(25123);
 AsyncWebServer server80(80);
 
+FSEditor spiffs_editor(NAND_FS_SYSTEM, "/edit");
+#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
+FSEditor sd_editor(SD_FS_SYSTEM, "/edit_sdfs");
+#endif
+size_t update_content_len;
+
 char* http_username;
 char* http_password;
 
