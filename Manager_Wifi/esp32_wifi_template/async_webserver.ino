@@ -12,13 +12,6 @@
 #define WEB_SERVER_DBG_PORT Serial
 #define WEB_SERVER_DBG_PRINTF(...) WEB_SERVER_DBG_PORT.printf(__VA_ARGS__)
 
-static size_t update_content_len;
-
-FSEditor spiffs_editor(NAND_FS_SYSTEM, "/edit");
-#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-FSEditor sd_editor(SD_FS_SYSTEM, "/edit_sdfs");
-#endif
-
 void update_printProgress(size_t prg, size_t sz) {
   static uint32_t update_percent = 0;
   uint32_t per = prg * 100 / update_content_len;

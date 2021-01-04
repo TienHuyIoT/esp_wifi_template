@@ -22,6 +22,12 @@
 #define FW_VERSION_BUILD 0
 #endif
 
+/* LAN network
+0: Disable
+1: Enable
+*/
+#define ETH_ENABLE    1
+
 /* Enable sd card
 0: Disable
 1: Enable
@@ -38,7 +44,7 @@
 0: not use
 1: use
 */
-#define SD_POWER_ENABLE 1
+#define SD_POWER_ENABLE 0
 
 /* Nand memory file system
 0: SPIFFS
