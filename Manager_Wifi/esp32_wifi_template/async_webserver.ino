@@ -96,7 +96,7 @@ void web_server_setup(void)
     {
       return request->requestAuthentication();
     }
-    server_data_get_process(request);
+    server_data_post_process(request);
   });
 
   /* Serving files in directory. Serving static files with authentication */
