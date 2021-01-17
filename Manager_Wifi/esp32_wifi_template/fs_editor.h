@@ -26,6 +26,7 @@ update.htm
 class FSEditor: public AsyncWebHandler {  
   public:
     typedef std::function<void(size_t, size_t)> THandlerFunction_Progress;
+    typedef std::function<void(AsyncWebServerRequest*)> fs_status;
 #ifdef ESP32
     FSEditor(const fs::FS& fs, const String& uri=String("edit"), const String& username=String(), const String& password=String());
 #else
@@ -35,6 +36,7 @@ class FSEditor: public AsyncWebHandler {
       This callback will be called when Update is receiving data
     */
     FSEditor& onProgress(THandlerFunction_Progress fn);
+    FSEditor& onStatus(fs_status fn);
     FSEditor& setAuthentication(const char *username, const char *password){  _username = String(username);_password = String(password); return *this; };
     virtual bool canHandle(AsyncWebServerRequest *request) override final;
     virtual void handleRequest(AsyncWebServerRequest *request) override final;
@@ -52,6 +54,7 @@ class FSEditor: public AsyncWebHandler {
     uint32_t _progress;
     uint8_t* _edit_htm;
     uint32_t _size_htm;
+    fs_status _status_callback;
     THandlerFunction_Progress _progress_callback;
 };
 

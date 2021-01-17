@@ -22,6 +22,12 @@
 #define FW_VERSION_BUILD 0
 #endif
 
+/* DNS Server
+0: Disable
+1: Enable
+*/
+#define DNS_SERVER_ENABLE  1
+
 /* Enable sd card
 0: Disable
 1: Enable
@@ -69,7 +75,7 @@ Usage ESP32 Sketch Data Upload
   - Restart Arduino IDE after any steps above
   - Tools --> ESP32 Sketch Data Upload --> [LITTLEFS, SPIFFS, FATFS, Erase Flash]
 */
-#define USE_NAND_FS_SYSTEM 2
+#define USE_NAND_FS_SYSTEM 1
 
 /* Include header fife system */
 #if (defined USE_NAND_FS_SYSTEM) && (USE_NAND_FS_SYSTEM == 2)

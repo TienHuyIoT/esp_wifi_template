@@ -6,7 +6,7 @@
     <title>ESP Editor</title>
     <style type="text/css" media="screen">
         .cm {
-            z-index: 300;
+            z-index: 270;
             position: absolute;
             left: 5px;
             border: 1px solid #444;
@@ -113,7 +113,7 @@
             top: 28px;
             bottom: 0;
             left: 0;
-            width: 300px;
+            width: 270px;
             padding: 8px;
         }
         
@@ -123,7 +123,7 @@
             top: 28px;
             right: 0;
             bottom: 0;
-            left: 160px;
+            left: 270px;
             border-left: 1px solid #EEE;
         }
         
@@ -136,6 +136,18 @@
             position: absolute;
             top: 36%;
             right: 40%;
+        }
+        
+        #status {
+            position: absolute;
+            top: 3px;
+            right: 10px;
+            font-size: 15px;
+        }
+        
+        #fsMeter {
+            width: 100px;
+            padding-bottom: 2px;
         }
         
         .loader {
@@ -176,6 +188,49 @@
                 } catch (e) {}
                 throw new Error("This browser does not support XMLHttpRequest.");
             };
+        }
+
+        function readableSize(bytes) {
+            if (bytes < 1024) return bytes + " B";
+            var units = [' KiB', ' MiB', ' GiB', ' TiB', 'PiB'];
+            var i = -1;
+            do {
+                bytes = bytes / 1024;
+                i++;
+            } while (bytes > 1024);
+            return bytes.toFixed(2) + units[i];
+        }
+
+        function refreshStatus() {
+            document.getElementById("status").innerHTML = "(refreshing...)";
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onload = function() {
+                if (xmlHttp.status != 200) showHttpError(xmlHttp);
+                else {
+                    fsInfo = JSON.parse(xmlHttp.responseText);
+                    var status = fsInfo.type + " (" + readableSize(fsInfo.totalBytes) + ") ";
+                    if (fsInfo.isOk) {
+                        var percent = (1 + Math.round(99 * fsInfo.usedBytes / fsInfo.totalBytes)); // fake to see the "used" bar in any case
+                        var text = readableSize(fsInfo.totalBytes - fsInfo.usedBytes) + " free of " + readableSize(fsInfo.totalBytes);
+                        status += "<meter id='fsMeter' min='0' optimum='0'low='90' high='95' max='100' value='" + percent + "' title='" + text + "'>" + text + "</meter>"
+                        if (fsInfo.unsupportedFiles) {
+                            status += " <span id='warning'>WARNING<span class='tooltip'>" +
+                                "Filesystem&nbsp;contains&nbsp;unsupported&nbsp;filenames:<br/>" +
+                                fsInfo.unsupportedFiles +
+                                "</span></span>";
+                        }
+                    } else {
+                        status += "<span style='background-color:red;color:white;font-weight:bold'>INIT ERROR !</span>";
+                    }
+                    document.getElementById("status").innerHTML = status;
+                }
+            };
+            xmlHttp.open("GET", "/edit?status=spiffs", true);
+            xmlHttp.send(null);
+        }
+
+        function showHttpError(request) {
+            alert("ERROR: [" + request.status + "] " + request.responseText);
         }
 
         function ge(a) {
@@ -277,6 +332,7 @@
             input.multiple = false;
             input.name = "data";
             input.id = "upload-select";
+            input.style = "width: 200px;";
             ge(element).appendChild(input);
 
             var path = ce("input");
@@ -284,6 +340,7 @@
             path.type = "text";
             path.name = "path";
             path.defaultValue = "/";
+            path.style = "width: 120px;";
             ge(element).appendChild(path);
 
             var button = ce("button");
@@ -299,11 +356,17 @@
             filename.type = "text";
             filename.disabled = true;
             filename.size = 20;
+            filename.style = "width: 120px;";
             ge(element).appendChild(filename);
 
             var savefile = ce("button");
             savefile.innerHTML = ' Save ';
             ge(element).appendChild(savefile);
+
+            var status = ce("span");
+            status.id = "status";
+            status.innerHTML = "(loading)";
+            ge(element).appendChild(status);
 
             function httpPostProcessRequest(status, responseText) {
                 if (status != 200)
@@ -433,7 +496,7 @@
                 var leaf = ce("li");
                 leaf.id = name;
                 var label = ce("span");
-                label.innerHTML = name;
+                label.innerHTML = name + " <i>(" + readableSize(size) + ")</i>";
                 leaf.appendChild(label);
                 leaf.onclick = function(e) {
                     if (isTextFile(leaf.id.toLowerCase())) {
@@ -506,6 +569,7 @@
             this.refreshPath = function(path) {
                 treeRoot.removeChild(treeRoot.childNodes[0]);
                 httpGet(treeRoot, "/");
+                refreshStatus();
             };
 
             function delCb(path) {
@@ -515,6 +579,7 @@
                     } else {
                         treeRoot.removeChild(treeRoot.childNodes[0]);
                         httpGet(treeRoot, "/");
+                        refreshStatus();
                     }
                 }
             }
@@ -692,6 +757,7 @@
             createFileUploader("uploader", tree, editor);
             if (typeof vars.file === "undefined") vars.file = "/index.htm";
             editor.loadUrl(vars.file);
+            refreshStatus();
         };
     </script>
     <script id='ace' src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.6/ace.js" type="text/javascript" charset="utf-8"></script>

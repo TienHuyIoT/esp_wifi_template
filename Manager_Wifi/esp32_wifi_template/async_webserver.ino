@@ -1,3 +1,4 @@
+#include <DNSServer.h>
 #include <ESPAsyncWebServer.h>
 #include <Update.h>
 #include "app_config.h"
@@ -18,6 +19,98 @@ FSEditor spiffs_editor(NAND_FS_SYSTEM, "/edit");
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 FSEditor sd_editor(SD_FS_SYSTEM, "/edit_sdfs");
 #endif
+
+#if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)
+class RedirectUrlHandler : public AsyncWebHandler {
+public:
+  RedirectUrlHandler() {}
+  virtual ~RedirectUrlHandler() {}
+
+  bool canHandle(AsyncWebServerRequest *request){
+    return true;
+  }
+
+  void handleRequest(AsyncWebServerRequest *request) {
+    wifi_file_json_t *g_wifi_cfg;  
+    g_wifi_cfg = wifi_info_get();
+    String RedirectUrl = "http://";
+
+    RedirectUrl += WiFi.softAPIP().toString();
+    RedirectUrl += ":";
+    RedirectUrl += g_wifi_cfg->TCPPort;
+    RedirectUrl += "/wifi.htm";
+
+    request->redirect(RedirectUrl);
+
+    WEB_SERVER_DBG_PRINTF("\r\nDNS server handle: %s", RedirectUrl.c_str());
+
+    // AsyncResponseStream *response = request->beginResponseStream("text/html");
+    // response->print("<!DOCTYPE html><html><head><title>Captive Portal</title></head><body>");
+    // response->print("<p>This is out captive portal front page.</p>");
+    // response->printf("<p>You were trying to reach: http://%s%s</p>", request->host().c_str(), request->url().c_str());
+    // response->printf("<p>Try opening <a href='%s'>this link</a> instead</p>", RedirectUrl.c_str());
+    // response->print("</body></html>");
+    // request->send(response);
+  }
+};
+#endif
+
+void fs_editor_status(AsyncWebServerRequest *request)
+{
+  char buf_ttb[64];
+  char buf_udb[64];
+  String status = request->getParam("status")->value();
+  
+  if(status == "spiffs")
+  {
+#ifdef ESP8266
+    FSInfo fs_info;
+    NAND_FS_SYSTEM.info(fs_info);
+    sprintf(buf_ttb,"%lu", fs_info.totalBytes);
+    sprintf(buf_udb,"%lu", fs_info.usedBytes);
+    WEB_SERVER_DBG_PORT.printf("\nNandflash Total space: %lu\n", fs_info.totalBytes);
+    WEB_SERVER_DBG_PORT.printf("Nandflash Used space: %lu\n", fs_info.usedBytes);
+#elif defined(ESP32)
+    sprintf(buf_ttb,"%lu", NAND_FS_SYSTEM.totalBytes());
+    sprintf(buf_udb,"%lu", NAND_FS_SYSTEM.usedBytes());
+    WEB_SERVER_DBG_PORT.printf("\nNandflash Total space: %lu\n", NAND_FS_SYSTEM.totalBytes());
+    WEB_SERVER_DBG_PORT.printf("Nandflash Used space: %lu\n", NAND_FS_SYSTEM.usedBytes());
+#endif
+  }
+  else
+  {
+    sprintf(buf_ttb,"%llu", SD_FS_SYSTEM.totalBytes());
+    sprintf(buf_udb,"%llu", SD_FS_SYSTEM.usedBytes());
+    WEB_SERVER_DBG_PORT.printf("\nSD Total space: %lu\n", SD_FS_SYSTEM.totalBytes());
+    WEB_SERVER_DBG_PORT.printf("SD Used space: %lu\n", SD_FS_SYSTEM.usedBytes());
+  }
+
+
+  String output = "{";
+
+  output += "\"type\":\"";
+  if(status == "spiffs")
+  {
+    output += "ESP";
+  }
+  else
+  {
+    output += "SD";
+  }  
+  output += "\", \"isOk\":";
+
+  output += F("\"true\", \"totalBytes\":\"");
+  output += buf_ttb;
+  output += F("\", \"usedBytes\":\"");
+  output += buf_udb;
+  output += "\"";
+
+  output += F(",\"unsupportedFiles\":\"");
+  output += "";
+  output += "\"}";
+  request->send(200, "application/json", output);
+  output = String();
+}
 
 void update_printProgress(size_t prg, size_t sz) {
   static uint32_t update_percent = 0;
@@ -65,7 +158,10 @@ void web_server_setup(void)
   g_wifi_cfg = wifi_info_get();
   http_username = g_wifi_cfg->auth.user;
   http_password = g_wifi_cfg->auth.pass;
-  
+
+  /* only when requested from AP */
+  server80.addHandler(new RedirectUrlHandler()).setFilter(ON_AP_FILTER);
+
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
 
@@ -76,10 +172,12 @@ void web_server_setup(void)
 
   spiffs_editor.setAuthentication(http_username, http_password);
   spiffs_editor.onProgress(spiffs_printProgress);
+  spiffs_editor.onStatus(fs_editor_status);
   server.addHandler(&spiffs_editor);
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
   sd_editor.setAuthentication(http_username, http_password);
   sd_editor.onProgress(sdfs_printProgress);
+  sd_editor.onStatus(fs_editor_status);
   server.addHandler(&sd_editor);
 #endif  
 
@@ -238,7 +336,8 @@ void web_server_init(void)
 
   WEB_SERVER_DBG_PRINTF("\r\nInit Web Server Port: %u\r\n", g_wifi_cfg->TCPPort);
 
-  server.begin(g_wifi_cfg->TCPPort);
+  server.begin(g_wifi_cfg->TCPPort);  
+  server80.begin();
 }
 
 void web_server_end(void)

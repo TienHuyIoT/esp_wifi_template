@@ -4,6 +4,7 @@
 #define ARDUINO_RUNNING_CORE 1
 #endif
 #include <ArduinoOTA.h>
+#include <DNSServer.h>
 #include <ESPmDNS.h>
 #include <Update.h>
 #include <WiFi.h>
@@ -36,6 +37,10 @@
 #include "async_webserver.h"
 #include "async_websocket.h"
 #include "app_async_websocket.h"
+
+#if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)
+DNSServer dnsServer;
+#endif
 
 #define COMMON_PORT Serial
 #define COMMON_PRINTF(f_, ...) COMMON_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
@@ -84,11 +89,8 @@ TimeOutEvent internal_temp_to(60000);
 
 void setup()
 {
-  // vSemaphoreCreateBinary( xBinarySemaphore );
-  // if( xBinarySemaphore != NULL )
-  // {
-  //   xTaskCreate( vTaskWifiScan, "Task wifi scan", 4096, NULL, 1, NULL );
-  // }
+  wifi_file_json_t *g_wifi_cfg;
+
   COMMON_PORT.begin(115200);
   COMMON_PRINTF("\r\n==== Firmware version %u.%u.%u ====\r\n", 
                 FW_VERSION_MAJOR,
@@ -96,7 +98,7 @@ void setup()
                 FW_VERSION_BUILD);                
 
   /* Init nand memory file system */
-  NAND_FS_SYSTEM.begin();
+  NAND_FS_SYSTEM.begin(true);
   
   /* Init rtc of system */
   rtc_setup();
@@ -129,6 +131,7 @@ void setup()
   /* Init wifi */    
   wifi_events_setup();
   wifi_info_setup();
+  g_wifi_cfg = wifi_info_get();
   wifi_init();
 
   //Send OTA events to the browser
@@ -146,8 +149,13 @@ void setup()
     else if(error == OTA_RECEIVE_ERROR) events.send("Recieve Failed", "ota");
     else if(error == OTA_END_ERROR) events.send("End Failed", "ota");
   });
-  ArduinoOTA.setHostname("tienhuyiot");
+  ArduinoOTA.setHostname(g_wifi_cfg->sta.HostName);
   ArduinoOTA.begin();
+
+#if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)
+  dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
+  dnsServer.start(53, "*", WiFi.softAPIP());  
+#endif  
 
   /* Init web server */    
   web_server_setup();  
@@ -181,4 +189,8 @@ void loop()
   ws.cleanupClients();
   ws_interval_sync();
   ArduinoOTA.handle();
+  
+#if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)  
+  dnsServer.processNextRequest();
+#endif  
 }

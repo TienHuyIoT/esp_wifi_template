@@ -1,8 +1,9 @@
 #ifndef	_SD_CARD_
 #define _SD_CARD_
 
-#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 #include "app_config.h"
+
+#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 #include "board.h"
 
 #if (SD_CARD_SYSTEM == 0)
@@ -14,8 +15,8 @@
 /*
 SD POWER
 DIR: 	OUTPUT
-HIGH:	GSM off
-LOW:	GSM on
+HIGH:	SD off
+LOW:	SD on
 */
 #if (defined SD_POWER_ENABLE) && (SD_POWER_ENABLE == 1)
 #define SD_POWER_PIN     		        22

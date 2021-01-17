@@ -133,7 +133,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
     //   the fully-qualified domain name is "esp32.local"
     // - second argument is the IP address to advertise
     //   we send our IP address on the WiFi network
-    if (!MDNS.begin("tienhuyiot")) 
+    if (!MDNS.begin(g_wifi_cfg->sta.HostName)) 
     {
         WIFI_EVENT_PORT.println("Error setting up MDNS responder!");
     }

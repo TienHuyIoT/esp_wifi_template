@@ -753,6 +753,7 @@ FSEditor::FSEditor(const String& username, const String& password, const fs::FS&
 ,_progress(0)
 ,_progress_callback(NULL)
 ,_uri(uri)
+,_status_callback(NULL)
 {
   if(_uri == "/edit_sdfs")
   {
@@ -772,6 +773,12 @@ FSEditor& FSEditor::onProgress(THandlerFunction_Progress fn) {
     return *this;
 }
 
+FSEditor& FSEditor::onStatus(fs_status fn)
+{
+  _status_callback = fn;
+  return *this;
+}
+
 bool FSEditor::canHandle(AsyncWebServerRequest *request){  
   if(request->url().equalsIgnoreCase(_uri)){
 #if (defined FS_EDITOR_DEBUG) && (FS_EDITOR_DEBUG == 1)
@@ -780,6 +787,8 @@ bool FSEditor::canHandle(AsyncWebServerRequest *request){
 #endif
     if(request->method() == HTTP_GET){
       if(request->hasParam("list"))
+        return true;
+      if(request->hasParam("status"))
         return true;
       if(request->hasParam("edit")){
         request->_tempFile = _fs.open(request->arg("edit"), "r");
@@ -876,6 +885,17 @@ void FSEditor::handleRequest(AsyncWebServerRequest *request){
       output += "]";
       request->send(200, "application/json", output);
       output = String();
+    }
+    else if(request->hasParam("status"))
+    {
+      if(_status_callback)
+      {
+        _status_callback(request);
+      }
+      else
+      {
+        request->send(200, "application/json", "");
+      }
     }
     else if(request->hasParam("edit") || request->hasParam("download")){
       request->send(request->_tempFile, request->_tempFile.name(), String(), request->hasParam("download"));
