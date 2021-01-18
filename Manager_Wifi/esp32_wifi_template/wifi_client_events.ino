@@ -29,6 +29,7 @@
 25 SYSTEM_EVENT_MAX
 */
 #include <ESPmDNS.h>
+#include <NetBIOS.h>
 #include "wifi_data_file.h"
 
 #define WIFI_EVENT_PORT Serial
@@ -142,7 +143,9 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
         WIFI_EVENT_PORT.println("mDNS responder started");
     }    
 
-    MDNS.addService("http","tcp",g_wifi_cfg->TCPPort);
+    MDNS.addService("http","tcp",80);
+
+    NBNS.begin(g_wifi_cfg->sta.HostName);
 
     /* Smart config enable */
     if(g_wifi_cfg->sta.SmCfg)

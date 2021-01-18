@@ -5,6 +5,7 @@
 #endif
 #include <ArduinoOTA.h>
 #include <DNSServer.h>
+#include <NetBIOS.h>
 #include <ESPmDNS.h>
 #include <Update.h>
 #include <WiFi.h>
@@ -153,8 +154,8 @@ void setup()
   ArduinoOTA.begin();
 
 #if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)
-  dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
-  dnsServer.start(53, "*", WiFi.softAPIP());  
+  dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
+  dnsServer.start(53, g_wifi_cfg->ap.DnsName, WiFi.softAPIP());  
 #endif  
 
   /* Init web server */    

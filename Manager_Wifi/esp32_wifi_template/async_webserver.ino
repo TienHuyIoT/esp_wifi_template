@@ -20,7 +20,6 @@ FSEditor spiffs_editor(NAND_FS_SYSTEM, "/edit");
 FSEditor sd_editor(SD_FS_SYSTEM, "/edit_sdfs");
 #endif
 
-#if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)
 class RedirectUrlHandler : public AsyncWebHandler {
 public:
   RedirectUrlHandler() {}
@@ -35,25 +34,14 @@ public:
     g_wifi_cfg = wifi_info_get();
     String RedirectUrl = "http://";
 
-    RedirectUrl += WiFi.softAPIP().toString();
+    RedirectUrl += request->host();
     RedirectUrl += ":";
     RedirectUrl += g_wifi_cfg->TCPPort;
-    RedirectUrl += "/wifi.htm";
+    RedirectUrl += request->url();
 
     request->redirect(RedirectUrl);
-
-    WEB_SERVER_DBG_PRINTF("\r\nDNS server handle: %s", RedirectUrl.c_str());
-
-    // AsyncResponseStream *response = request->beginResponseStream("text/html");
-    // response->print("<!DOCTYPE html><html><head><title>Captive Portal</title></head><body>");
-    // response->print("<p>This is out captive portal front page.</p>");
-    // response->printf("<p>You were trying to reach: http://%s%s</p>", request->host().c_str(), request->url().c_str());
-    // response->printf("<p>Try opening <a href='%s'>this link</a> instead</p>", RedirectUrl.c_str());
-    // response->print("</body></html>");
-    // request->send(response);
   }
 };
-#endif
 
 void fs_editor_status(AsyncWebServerRequest *request)
 {
@@ -77,6 +65,7 @@ void fs_editor_status(AsyncWebServerRequest *request)
     WEB_SERVER_DBG_PORT.printf("Nandflash Used space: %lu\n", NAND_FS_SYSTEM.usedBytes());
 #endif
   }
+#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)  
   else
   {
     sprintf(buf_ttb,"%llu", SD_FS_SYSTEM.totalBytes());
@@ -84,7 +73,7 @@ void fs_editor_status(AsyncWebServerRequest *request)
     WEB_SERVER_DBG_PORT.printf("\nSD Total space: %lu\n", SD_FS_SYSTEM.totalBytes());
     WEB_SERVER_DBG_PORT.printf("SD Used space: %lu\n", SD_FS_SYSTEM.usedBytes());
   }
-
+#endif
 
   String output = "{";
 
@@ -159,8 +148,8 @@ void web_server_setup(void)
   http_username = g_wifi_cfg->auth.user;
   http_password = g_wifi_cfg->auth.pass;
 
-  /* only when requested from AP */
-  server80.addHandler(new RedirectUrlHandler()).setFilter(ON_AP_FILTER);
+  /* redirect port 80 to tcp port */
+  server80.addHandler(new RedirectUrlHandler());
 
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
