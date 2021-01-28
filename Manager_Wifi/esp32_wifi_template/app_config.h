@@ -31,6 +31,7 @@
 0: Disable
 1: Enable
 */
+
 #define ETH_ENABLE    1
 
 /* Enable sd card
