@@ -76,8 +76,10 @@ void server_data_post_process(AsyncWebServerRequest *request)
  *---------------------------------------------------------------------*/
 void sta_ap_info_get(AsyncWebServerRequest *request)
 {
+    IPAddress local_ip(0,0,0,0);
     String json_network;
     wifi_file_json_t *g_wifi_cfg;
+    uint8_t connect_st = 0;
     g_wifi_cfg = wifi_info_get();
 
     DynamicJsonBuffer djbco;
@@ -93,11 +95,38 @@ void sta_ap_info_get(AsyncWebServerRequest *request)
     else
     {
         root["sta_ip_dhcp"].set("Enable");
-    }    
-    
+    }
+
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+    if(eth_is_enable())
+    {
+        if(ETH.linkUp())
+        {
+            SERVER_DATA_PRINTF("\r\nETH.linkUp OK");
+            connect_st = 1;
+            local_ip = ETH.localIP();
+        }
+    }
+    else
+    {
+        if (WL_CONNECTED == WiFi.status())
+        {
+            connect_st = 1;
+            local_ip = WiFi.localIP();
+        }
+    }
+#else
     if (WL_CONNECTED == WiFi.status())
     {
-        root["sta_ip_address"].set(WiFi.localIP().toString());
+        connect_st = 1;
+        local_ip = WiFi.localIP();
+    }
+#endif
+    
+    
+    if (connect_st)
+    {
+        root["sta_ip_address"].set(local_ip.toString());
         root["sta_status"].set("Connected");
     }
     else
@@ -122,26 +151,73 @@ void sta_ap_info_get(AsyncWebServerRequest *request)
 void sta_network_get(AsyncWebServerRequest *request)
 {
     String json_network = "{\"status\":\"error\",\"mgs\":\"No network\"}";
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+    if(!eth_is_enable())
+    {
+        esp_ssid_scan(json_network);
+    }
+#else
     esp_ssid_scan(json_network);
+#endif        
     request->send(200, "text/json", json_network);
 }
 
 void sta_setting_get(AsyncWebServerRequest *request) 
 {
+    IPAddress local_ip(0,0,0,0);
+    IPAddress gateway_ip(0,0,0,0);
+    IPAddress subnet_ip(0,0,0,0);
+    IPAddress dns_ip(0,0,0,0);
     String json_network;
     wifi_file_json_t *g_wifi_cfg;
+    uint8_t connect_st = 0;
     g_wifi_cfg = wifi_info_get();
+
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+    if(eth_is_enable())
+    {
+        if(ETH.linkUp())
+        {
+            SERVER_DATA_PRINTF("\r\nETH.linkUp OK");
+            connect_st = 1;
+            local_ip = ETH.localIP();
+            gateway_ip = ETH.gatewayIP();
+            subnet_ip = ETH.subnetMask();
+            dns_ip = ETH.dnsIP();
+        }
+    }
+    else
+    {
+        if (WL_CONNECTED == WiFi.status())
+        {
+            connect_st = 1;
+            local_ip = WiFi.localIP();
+            gateway_ip = WiFi.gatewayIP();
+            subnet_ip = WiFi.subnetMask();
+            dns_ip = WiFi.dnsIP();
+        }
+    }
+#else
+    if (WL_CONNECTED == WiFi.status())
+    {
+        connect_st = 1;
+        local_ip = WiFi.localIP();
+        gateway_ip = WiFi.gatewayIP();
+        subnet_ip = WiFi.subnetMask();
+        dns_ip = WiFi.dnsIP();
+    }
+#endif
     
     DynamicJsonBuffer djbco;
     JsonObject& root = djbco.createObject();   
     root["sta_ssid"].set(g_wifi_cfg->sta.ssid);
     root["sta_pass"].set(g_wifi_cfg->sta.pass); 
-    if (WL_CONNECTED == WiFi.status())
+    if (connect_st)
     {
-        root["sta_ip"].set(WiFi.localIP().toString());
-        root["sta_gw"].set(WiFi.gatewayIP().toString());
-        root["sta_sm"].set(WiFi.subnetMask().toString());
-        root["sta_dns"].set(WiFi.dnsIP().toString());   
+        root["sta_ip"].set(local_ip.toString());
+        root["sta_gw"].set(gateway_ip.toString());
+        root["sta_sm"].set(subnet_ip.toString());
+        root["sta_dns"].set(dns_ip.toString());   
     }
     else
     {

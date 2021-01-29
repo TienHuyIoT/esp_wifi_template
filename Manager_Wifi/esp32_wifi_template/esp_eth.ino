@@ -8,6 +8,8 @@
 #define ESP_ETH_PORT Serial
 #define ESP_ETH_PRINTF(f_, ...) ESP_ETH_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
 
+static uint8_t eth_status = 0;
+
 uint8_t eth_init(void)
 {
   wifi_file_json_t *g_wifi_cfg;
@@ -19,9 +21,9 @@ uint8_t eth_init(void)
   {
     ESP_ETH_PRINTF("\r\nETH disable");
     return false;
-  }
+  }  
 #endif  
-
+  
   ESP_ETH_PRINTF("\r\nETH Start");
   
   g_wifi_cfg = wifi_info_get();
@@ -36,13 +38,13 @@ uint8_t eth_init(void)
     ESP_ETH_PRINTF("\r\nSn: %s", g_wifi_cfg->sta.Sn.toString().c_str());
     ESP_ETH_PRINTF("\r\nDns: %s\r\n", g_wifi_cfg->sta.Dns.toString().c_str());
   }
-
+  eth_status = 1;
   return true;
 }
 
 uint8_t eth_is_enable(void)
 {
-  return (ETH_ENABLE_STATUS() == 0);
+  return eth_status;
 }
 
 #endif

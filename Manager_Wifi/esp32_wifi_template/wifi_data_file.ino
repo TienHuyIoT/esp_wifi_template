@@ -18,7 +18,7 @@ const char wifi_file_default[] PROGMEM =
 "\n\"Gw\":\"192.168.1.1\","
 "\n\"Sn\":\"255.255.255.0\","
 "\n\"Dns\":\"192.168.1.1\","
-"\n\"STASsid\":\"TienHuyIoT\","
+"\n\"STASsid\":\"\","
 "\n\"STAPass\":\"12345679\","
 "\n\"STAName\":\"tienhuyiot\","
 "\n\"STADis\":0,"

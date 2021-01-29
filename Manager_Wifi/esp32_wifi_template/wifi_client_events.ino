@@ -219,7 +219,10 @@ void wifi_events_setup()
     // Examples of different ways to register wifi events
     WiFi.onEvent(WiFiEvent);
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
-    WiFi.onEvent(ETHGotIP, WiFiEvent_t::SYSTEM_EVENT_ETH_GOT_IP);
+    if(eth_is_enable())
+    {
+        WiFi.onEvent(ETHGotIP, WiFiEvent_t::SYSTEM_EVENT_ETH_GOT_IP);
+    }    
 #endif
     WiFi.onEvent(WiFiGotIP, WiFiEvent_t::SYSTEM_EVENT_STA_GOT_IP);
     WiFiEventId_t eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info){
@@ -248,7 +251,6 @@ void wifi_setup(const char* name, const char* pass)
     {
         WiFi.begin(name);
     }
-    
 
     WIFI_EVENT_PORT.println();
     WIFI_EVENT_PORT.println();

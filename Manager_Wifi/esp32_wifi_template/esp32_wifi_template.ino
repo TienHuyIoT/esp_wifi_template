@@ -177,6 +177,8 @@ void setup()
   web_socket_init(&ws_receive_txt_callback);
 }
 
+bool eth_linkup = 0;
+
 void loop()
 {
   /* Restart esp handle */
@@ -209,5 +211,5 @@ void loop()
 
 #if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)  
   dnsServer.processNextRequest();
-#endif  
+#endif
 }

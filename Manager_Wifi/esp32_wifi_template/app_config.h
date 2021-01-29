@@ -7,7 +7,7 @@
 // <o> HW_VERSION_STRING
 
 #ifndef HW_VERSION_STRING
-#define HW_VERSION_STRING "RFID.REVA.V2.0"
+#define HW_VERSION_STRING "WEB485_V2.2"
 #endif
 
 // </h>
@@ -54,7 +54,7 @@
 0: Disable
 1: Enable
 */
-#define ETH_ENABLE    1
+#define ETH_ENABLE    0
 
 /* Enable sd card
 0: Disable
