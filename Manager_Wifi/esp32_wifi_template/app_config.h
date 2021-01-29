@@ -1,6 +1,17 @@
 #ifndef	_APP_CONFIG_
 #define _APP_CONFIG_
 
+// <h> Hardware Version
+
+//==========================================================
+// <o> HW_VERSION_STRING
+
+#ifndef HW_VERSION_STRING
+#define HW_VERSION_STRING "RFID.REVA.V2.0"
+#endif
+
+// </h>
+
 //==========================================================
 // <o> FW_VERSION_MAJOR
  
@@ -22,16 +33,27 @@
 #define FW_VERSION_BUILD 0
 #endif
 
+
+#ifndef WDT_TIMEOUT_VALUE
+#define WDT_TIMEOUT_VALUE  2000 /* ms */
+#endif
+
+/* OTA Arduino
+0: Disable
+1: Enable
+*/
+#define OTA_ARDUINO_ENABLE  1
+
 /* DNS Server
 0: Disable
 1: Enable
 */
 #define DNS_SERVER_ENABLE  1
+
 /* LAN network
 0: Disable
 1: Enable
 */
-
 #define ETH_ENABLE    1
 
 /* Enable sd card
@@ -56,30 +78,6 @@
 0: SPIFFS
 1: LITTLEFS
 2: FATFS
-
-Usage ESP32 Sketch Data Upload
-1. Download esp32fs.zip
-  - link: https://github.com/lorol/arduino-esp32fs-plugin/releases
-  - Unpack the tool into "C:\Users\HUY-GAMING\Documents\Arduino\tools\ESP32FS\tool\esp32fs.jar"
-
-2. Download x86_64-w64-mingw32-mklittlefs-295fe9b.zip
-  - Link: https://github.com/earlephilhower/mklittlefs/releases
-  - Unpack the file into C:\Users\HUY-GAMING\Documents\Arduino\hardware\espressif\esp32\tools\mklittlefs\mklittlefs.exe
-
-3. Download mkfatfs_v1.0.exe
-  - Link: https://github.com/labplus-cn/mkfatfs/releases/tag/v1.0
-  - Unpack the file into C:\Users\HUY-GAMING\Documents\Arduino\hardware\espressif\esp32\tools\mkfatfs\mkfatfs.exe
-
-4. mkspiffs.exe is already in directory
-  - C:\Users\HUY-GAMING\Documents\Arduino\hardware\espressif\esp32\tools\mkspiffs\mkspiffs.exe
-
-5. Install LITTLEFS
-  - Link: https://github.com/lorol/LITTLEFS
-  - Or Manage Libraries with search "LITTLEFS"
-
-6. Upload FS
-  - Restart Arduino IDE after any steps above
-  - Tools --> ESP32 Sketch Data Upload --> [LITTLEFS, SPIFFS, FATFS, Erase Flash]
 */
 #define USE_NAND_FS_SYSTEM 1
 
@@ -105,6 +103,10 @@ Usage ESP32 Sketch Data Upload
 #else
 #include <SD_MMC.h>
 #endif
+#endif
+
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+#include "lan8720a_cfg.h"
 #endif
 
 #endif

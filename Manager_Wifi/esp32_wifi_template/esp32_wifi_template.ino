@@ -3,6 +3,7 @@
 #else
 #define ARDUINO_RUNNING_CORE 1
 #endif
+
 #include <ArduinoOTA.h>
 #include <DNSServer.h>
 #include <NetBIOS.h>
@@ -27,7 +28,6 @@
 #include <IOInput.h>
 #include <IOBlink.h>
 #include "app_config.h"
-#include "lan8720a_cfg.h"
 #include "Tools.h"
 #include "rtc_data_file.h"
 #include "wifi_data_file.h"
@@ -118,8 +118,8 @@ void setup()
   /* Init eeprom system */
   eeprom_setup();  
 
-  /* Init watch dog timer system 120s*/
-  hw_wdt_init(120000);
+  /* Init watch dog timers*/
+  hw_wdt_init(WDT_TIMEOUT_VALUE);
 
   /* Update log */
   log_report(LOG_REPORT_INIT, (char*)"Board Initialize");
@@ -134,14 +134,17 @@ void setup()
   wifi_events_setup();
   wifi_info_setup();
   g_wifi_cfg = wifi_info_get();
-#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)  
-  ETH.begin(ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_TYPE, ETH_CLK_MODE);
-  /* Config must be after begin function */
-  ETH.config(g_wifi_cfg->sta.Ip, g_wifi_cfg->sta.Gw, g_wifi_cfg->sta.Sn, g_wifi_cfg->sta.Dns);
-#else  
+
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+  if(!eth_init())
+  {
+    wifi_init();
+  }
+#else
   wifi_init();
 #endif  
 
+#if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)
   //Send OTA events to the browser
   ArduinoOTA.onStart([]() { events.send("Update Start", "ota"); });
   ArduinoOTA.onEnd([]() { events.send("Update End", "ota"); });
@@ -159,7 +162,9 @@ void setup()
   });
     
   ArduinoOTA.setHostname(g_wifi_cfg->sta.HostName);
+  ArduinoOTA.setPassword("1234");
   ArduinoOTA.begin();
+#endif
 
 #if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)
   dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
@@ -197,8 +202,11 @@ void loop()
   /* Ws handle */
   ws.cleanupClients();
   ws_interval_sync();
+
+#if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)  
   ArduinoOTA.handle();
-  
+#endif
+
 #if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)  
   dnsServer.processNextRequest();
 #endif  

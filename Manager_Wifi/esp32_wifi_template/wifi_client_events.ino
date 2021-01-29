@@ -157,18 +157,6 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 
     NBNS.begin(g_wifi_cfg->sta.HostName);
 
-#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
-    WIFI_EVENT_PORT.print("ETH MAC: ");
-    WIFI_EVENT_PORT.print(ETH.macAddress());
-    WIFI_EVENT_PORT.print(", IPv4: ");
-    WIFI_EVENT_PORT.print(ETH.localIP());
-    if (ETH.fullDuplex()) {
-        WIFI_EVENT_PORT.print(", FULL_DUPLEX");
-    }
-    WIFI_EVENT_PORT.print(", ");
-    WIFI_EVENT_PORT.print(ETH.linkSpeed());
-    WIFI_EVENT_PORT.println("Mbps");
-#else
     WIFI_EVENT_PORT.println("WiFi connected");
     WIFI_EVENT_PORT.println("IP address: ");
     WIFI_EVENT_PORT.println(IPAddress(info.got_ip.ip_info.ip.addr));
@@ -185,23 +173,60 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
             wifi_info_write(g_wifi_cfg);
         }
     }
-#endif    
 }
+
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+void ETHGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
+{
+    wifi_file_json_t *g_wifi_cfg;
+    g_wifi_cfg = wifi_info_get();
+        
+    sntp_setup();   // sntp sync time setup
+
+    // Set up mDNS responder:
+    // - first argument is the domain name, in this example
+    //   the fully-qualified domain name is "esp32.local"
+    // - second argument is the IP address to advertise
+    //   we send our IP address on the WiFi network
+    if (!MDNS.begin(g_wifi_cfg->sta.HostName)) 
+    {
+        WIFI_EVENT_PORT.println("Error setting up MDNS responder!");
+    }
+    else
+    {
+        WIFI_EVENT_PORT.println("mDNS responder started");
+    }    
+
+    MDNS.addService("http","tcp",80);
+
+    NBNS.begin(g_wifi_cfg->sta.HostName);
+
+    WIFI_EVENT_PORT.print("ETH MAC: ");
+    WIFI_EVENT_PORT.print(ETH.macAddress());
+    WIFI_EVENT_PORT.print(", IPv4: ");
+    WIFI_EVENT_PORT.print(ETH.localIP());
+    if (ETH.fullDuplex()) {
+        WIFI_EVENT_PORT.print(", FULL_DUPLEX");
+    }
+    WIFI_EVENT_PORT.print(", ");
+    WIFI_EVENT_PORT.print(ETH.linkSpeed());
+    WIFI_EVENT_PORT.println("Mbps");  
+}
+#endif
 
 void wifi_events_setup()
 {
     // Examples of different ways to register wifi events
     WiFi.onEvent(WiFiEvent);
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
-    WiFi.onEvent(WiFiGotIP, WiFiEvent_t::SYSTEM_EVENT_ETH_GOT_IP);
-#else    
+    WiFi.onEvent(ETHGotIP, WiFiEvent_t::SYSTEM_EVENT_ETH_GOT_IP);
+#endif
     WiFi.onEvent(WiFiGotIP, WiFiEvent_t::SYSTEM_EVENT_STA_GOT_IP);
     WiFiEventId_t eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info){
         WIFI_EVENT_PORT.print("WiFi lost connection. Reason: ");
         WIFI_EVENT_PORT.println(info.disconnected.reason);
         WiFi.reconnect();
     }, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
-#endif    
 }
 
 void wifi_setup(const char* name, const char* pass)

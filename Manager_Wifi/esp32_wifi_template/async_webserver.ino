@@ -156,6 +156,7 @@ void web_server_setup(void)
   spiffs_editor.onProgress(spiffs_printProgress);
   spiffs_editor.onStatus(fs_editor_status);
   server.addHandler(&spiffs_editor);
+  
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
   sd_editor.setAuthentication(http_username, http_password);
   sd_editor.onProgress(sdfs_printProgress);

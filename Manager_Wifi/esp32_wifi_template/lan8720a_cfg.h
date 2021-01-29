@@ -2,6 +2,7 @@
 #define _LAN8720A_CONFIG_
 
 #include <ETH.h>
+#include "board.h"
 
 /* 
    * ETH_CLOCK_GPIO0_IN   - default: external clock from crystal oscillator
@@ -28,5 +29,10 @@
 
 // Pin# of the I²C IO signal for the Ethernet PHY
 #define ETH_MDIO_PIN    18
+
+/* GPIO to enable ethernet */
+#define ETH_GPIO_ENABLE 39
+#define ETH_GPIO_ENABLE_INIT()    pinMode(ETH_GPIO_ENABLE, INPUT_PULLUP)
+#define ETH_ENABLE_STATUS()       digitalRead(ETH_GPIO_ENABLE)
 
 #endif
