@@ -41,11 +41,11 @@ void ddns_client_init(void)
     For DDNS Providers where you get username and password: ( Leave the password field empty "" if not required )
       Use this: EasyDDNS.client("domain", "username", "password");
   */
-  EasyDDNS.client(g_wifi_cfg->ddns.domain, g_wifi_cfg->ddns.user, g_wifi_cfg->ddns.pass); // Enter your DDNS Domain & Token
+  EasyDDNS.client(g_wifi_cfg->ddns.domain, g_wifi_cfg->ddns.user, g_wifi_cfg->ddns.pass);
 
   // Get Notified when your IP changes
   EasyDDNS.onUpdate([&](const char* oldIP, const char* newIP){
-    DDNS_CLIENT_PORT.print("EasyDDNS - IP Change Detected: ");
+    DDNS_CLIENT_PORT.print("\r\nEasyDDNS - IP Change Detected: ");
     DDNS_CLIENT_PORT.println(newIP);
   });
 }
@@ -53,11 +53,21 @@ void ddns_client_init(void)
 void ddns_update(void)
 {
   wifi_file_json_t *g_wifi_cfg;
+  uint32_t sync_time;
 
   g_wifi_cfg = wifi_info_get();
   if(!g_wifi_cfg->ddns.disable)
   {
-      EasyDDNS.update(DDNS_CLIENT_SYNC_TIME);
+    if (g_wifi_cfg->ddns.sync_time < 10)
+    {
+      g_wifi_cfg->ddns.sync_time = 10;
+    }
+    if (g_wifi_cfg->ddns.sync_time > 60)
+    {
+      g_wifi_cfg->ddns.sync_time = 60;
+    }
+    sync_time = 1000 * g_wifi_cfg->ddns.sync_time;
+    EasyDDNS.update(sync_time);
   }  
 }
 #endif

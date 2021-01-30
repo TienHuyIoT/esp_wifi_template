@@ -80,7 +80,7 @@ input {
     width: 100%;
     padding: 4px;
     font-size: 1em;
-    text-align: center;
+    text-align: left;
 }
 
 input[type="button"] {

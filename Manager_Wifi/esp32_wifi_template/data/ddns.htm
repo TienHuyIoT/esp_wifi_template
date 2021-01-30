@@ -49,7 +49,21 @@
         <table id="ddns_table" width="100%">
             <tr>
                 <td align="left"><b>SERVICE</b></td>
-                <td><input type="text" id="service"></td>
+                <td>
+                    <select id="service" name="service">
+                        <option value='duckdns'>duckdns</option>
+                        <option value='noip' >noip</option>
+                        <option value='dyndns' selected>dyndns</option>
+                        <option value='dynu' >dynu</option>
+                        <option value='enom' >enom</option>
+                        <option value='all-inkl' >all-inkl</option>
+                        <option value='selfhost.de' >selfhost.de</option>
+                        <option value='dyndns.it' >dyndns.it</option>
+                        <option value='strato' >strato</option>
+                        <option value='freemyip' >freemyip</option>
+                        <option value='afraid.org' >afraid.org</option>
+                    </select>
+                </td>
             </tr>
             <tr>
                 <td align="left"><b>DOMAIN</b></td>
@@ -61,7 +75,7 @@
             </tr>
             <tr>
                 <td align="left"><b>PASS</b></td>
-                <td><input type="text" id="pass"></td>
+                <td><input type="password" id="pass"></td>
             </tr>
             <tr>
                 <td align="left"><b>ENABLE</b></td>

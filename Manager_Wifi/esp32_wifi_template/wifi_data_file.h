@@ -64,6 +64,7 @@ typedef struct {
         char        domain[DDNS_DOMAIN_LENGTH_MAX + 1];
         char        user[DDNS_USER_LENGTH_MAX + 1];
         char        pass[DDNS_PASS_LENGTH_MAX + 1];
+        uint8_t     sync_time;
         uint8_t     disable : 1;
     }ddns;
 } wifi_file_json_t;
@@ -111,6 +112,7 @@ const char wifi_data_json[] PROGMEM = R"=====(
         "domain": "tienhuyiot.ddns.net",
         "user": "admin",
         "pass": "admin",
+        "sync_time": 30,
         "disable":1
     }
 }

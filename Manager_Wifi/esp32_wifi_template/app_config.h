@@ -119,7 +119,6 @@ https://github.com/me-no-dev/ESPAsyncTCP/issues/18
 #endif
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)
-#define DDNS_CLIENT_SYNC_TIME    10000 /* ms */
 #include <EasyDDNS.h>
 #endif
 

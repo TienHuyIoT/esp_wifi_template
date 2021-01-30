@@ -66,10 +66,11 @@ void wifi_info_write(wifi_file_json_t* w_wifi_info)
     ddns["domain"].set(w_wifi_info->ddns.domain);
     ddns["user"].set(w_wifi_info->ddns.user);    
     ddns["pass"].set(w_wifi_info->ddns.pass); 
+    ddns["sync_time"].set(w_wifi_info->ddns.sync_time); 
     ddns["disable"].set(w_wifi_info->ddns.disable);
 
     WIFI_FILE_PRINTF("\r\nJson created:\r\n");
-    root.prettyPrintTo(WIFI_FILE_PORT);
+    // root.prettyPrintTo(WIFI_FILE_PORT);
     fs_handle = NAND_FS_SYSTEM.open(WIFI_FILE_PATH, FILE_WRITE);
     root.prettyPrintTo(fs_handle);
     fs_handle.close();    
@@ -85,7 +86,7 @@ void wifi_info_read(wifi_file_json_t* r_wifi_info)
         // write json string default
         fs_handle = NAND_FS_SYSTEM.open(WIFI_FILE_PATH, FILE_WRITE);
         fs_handle.printf_P(wifi_data_json);
-        WIFI_FILE_PORT.println(wifi_data_json);
+        // WIFI_FILE_PORT.println(wifi_data_json);
         fs_handle.close();
     }
 
@@ -159,6 +160,7 @@ void wifi_info_read(wifi_file_json_t* r_wifi_info)
         ddns["domain"].as<String>().toCharArray(r_wifi_info->ddns.domain, DDNS_DOMAIN_LENGTH_MAX + 1);
         ddns["user"].as<String>().toCharArray(r_wifi_info->ddns.user, DDNS_USER_LENGTH_MAX + 1);
         ddns["pass"].as<String>().toCharArray(r_wifi_info->ddns.pass, DDNS_PASS_LENGTH_MAX + 1);
-        r_wifi_info->ddns.disable = ddns["disable"].as<int>();  
+        r_wifi_info->ddns.sync_time = ddns["sync_time"].as<int>();
+        r_wifi_info->ddns.disable = ddns["disable"].as<int>();
     } 
 }
