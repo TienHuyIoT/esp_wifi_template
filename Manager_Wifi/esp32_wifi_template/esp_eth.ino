@@ -18,15 +18,15 @@ uint8_t eth_init(void)
   
   g_wifi_cfg = wifi_info_get();
   ETH.begin(ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_TYPE, ETH_CLK_MODE);
-  if (!g_wifi_cfg->sta.Dhcp)
+  if (!g_wifi_cfg->sta.dhcp)
   {
     /* Config must be after begin function */
-    ETH.config(g_wifi_cfg->sta.Ip, g_wifi_cfg->sta.Gw, g_wifi_cfg->sta.Sn, g_wifi_cfg->sta.Dns);
+    ETH.config(g_wifi_cfg->sta.ip, g_wifi_cfg->sta.gw, g_wifi_cfg->sta.sn, g_wifi_cfg->sta.dns);
     ESP_ETH_PRINTF("\r\nstatic IP enable");
-    ESP_ETH_PRINTF("\r\nIp: %s", g_wifi_cfg->sta.Ip.toString().c_str());
-    ESP_ETH_PRINTF("\r\nGw: %s", g_wifi_cfg->sta.Gw.toString().c_str());
-    ESP_ETH_PRINTF("\r\nSn: %s", g_wifi_cfg->sta.Sn.toString().c_str());
-    ESP_ETH_PRINTF("\r\nDns: %s\r\n", g_wifi_cfg->sta.Dns.toString().c_str());
+    ESP_ETH_PRINTF("\r\nIp: %s", g_wifi_cfg->sta.ip.toString().c_str());
+    ESP_ETH_PRINTF("\r\nGw: %s", g_wifi_cfg->sta.gw.toString().c_str());
+    ESP_ETH_PRINTF("\r\nSn: %s", g_wifi_cfg->sta.sn.toString().c_str());
+    ESP_ETH_PRINTF("\r\nDns: %s\r\n", g_wifi_cfg->sta.dns.toString().c_str());
   }
   return true;
 }

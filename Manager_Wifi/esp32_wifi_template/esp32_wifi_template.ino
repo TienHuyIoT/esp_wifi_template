@@ -179,14 +179,18 @@ void setup()
     else if(error == OTA_END_ERROR) events.send("End Failed", "ota");
   });
     
-  ArduinoOTA.setHostname(g_wifi_cfg->sta.HostName);
+  ArduinoOTA.setHostname(g_wifi_cfg->sta.hostname);
   ArduinoOTA.setPassword("1234");
   ArduinoOTA.begin();
 #endif
 
 #if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)
   dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
-  dnsServer.start(53, g_wifi_cfg->ap.DnsName, WiFi.softAPIP());  
+  dnsServer.start(53, g_wifi_cfg->ap.dns_name, WiFi.softAPIP());  
+#endif  
+
+#if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)
+  ddns_client_init();
 #endif  
 
   /* Init web server */    
@@ -227,5 +231,9 @@ void loop()
 
 #if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)  
   dnsServer.processNextRequest();
+#endif
+
+#if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
+  ddns_update();
 #endif
 }

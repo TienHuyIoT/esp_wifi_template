@@ -29,7 +29,7 @@ public:
 
     RedirectUrl += request->host();
     RedirectUrl += ":";
-    RedirectUrl += g_wifi_cfg->TCPPort;
+    RedirectUrl += g_wifi_cfg->port.tcp;
     RedirectUrl += request->url();
 
     request->redirect(RedirectUrl);
@@ -312,14 +312,14 @@ void web_server_init(void)
   wifi_file_json_t *g_wifi_cfg;
   g_wifi_cfg = wifi_info_get();
   
-  if (g_wifi_cfg->TCPPort < 80)
+  if (g_wifi_cfg->port.tcp < 80)
   {
-    g_wifi_cfg->TCPPort = 25123;
+    g_wifi_cfg->port.tcp = 25123;
   }
 
-  WEB_SERVER_DBG_PRINTF("\r\nInit Web Server Port: %u\r\n", g_wifi_cfg->TCPPort);
+  WEB_SERVER_DBG_PRINTF("\r\nInit Web Server Port: %u\r\n", g_wifi_cfg->port.tcp);
 
-  server.begin(g_wifi_cfg->TCPPort);  
+  server.begin(g_wifi_cfg->port.tcp);  
   server80.begin();
 }
 

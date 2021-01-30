@@ -112,7 +112,7 @@ void WiFiEvent(WiFiEvent_t event)
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
             wifi_file_json_t *g_wifi_cfg;
             g_wifi_cfg = wifi_info_get();     
-            ETH.setHostname(g_wifi_cfg->sta.HostName);
+            ETH.setHostname(g_wifi_cfg->sta.hostname);
 #endif
             WIFI_EVENT_PORT.println("Ethernet started");
             break;
@@ -144,7 +144,7 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
     //   the fully-qualified domain name is "esp32.local"
     // - second argument is the IP address to advertise
     //   we send our IP address on the WiFi network
-    if (!MDNS.begin(g_wifi_cfg->sta.HostName)) 
+    if (!MDNS.begin(g_wifi_cfg->sta.hostname)) 
     {
         WIFI_EVENT_PORT.println("Error setting up MDNS responder!");
     }
@@ -155,13 +155,13 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 
     MDNS.addService("http","tcp",80);
 
-    NBNS.begin(g_wifi_cfg->sta.HostName);
+    NBNS.begin(g_wifi_cfg->sta.hostname);
 
     WIFI_EVENT_PORT.println("WiFi connected");
     WIFI_EVENT_PORT.println("IP address: ");
     WIFI_EVENT_PORT.println(IPAddress(info.got_ip.ip_info.ip.addr));
     /* Smart config enable */
-    if(g_wifi_cfg->sta.SmCfg)
+    if(g_wifi_cfg->sta.smart_cfg)
     {
         if ( strcmp(WiFi.SSID().c_str(), g_wifi_cfg->sta.ssid) 
         || strcmp(WiFi.psk().c_str(), g_wifi_cfg->sta.pass))
@@ -188,7 +188,7 @@ void ETHGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
     //   the fully-qualified domain name is "esp32.local"
     // - second argument is the IP address to advertise
     //   we send our IP address on the WiFi network
-    if (!MDNS.begin(g_wifi_cfg->sta.HostName)) 
+    if (!MDNS.begin(g_wifi_cfg->sta.hostname)) 
     {
         WIFI_EVENT_PORT.println("Error setting up MDNS responder!");
     }
@@ -199,7 +199,7 @@ void ETHGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 
     MDNS.addService("http","tcp",80);
 
-    NBNS.begin(g_wifi_cfg->sta.HostName);
+    NBNS.begin(g_wifi_cfg->sta.hostname);
 
     WIFI_EVENT_PORT.print("ETH MAC: ");
     WIFI_EVENT_PORT.print(ETH.macAddress());

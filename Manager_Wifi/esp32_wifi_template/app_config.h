@@ -38,6 +38,15 @@
 #define WDT_TIMEOUT_VALUE  10000 /* ms */
 #endif
 
+/* DDNS client service
+0: Disable
+1: Enable
+https://github.com/ayushsharma82/EasyDDNS
+http://ipv4bot.whatismyipaddress.com/
+https://github.com/me-no-dev/ESPAsyncTCP/issues/18
+*/
+#define DDNS_CLIENT_ENABLE  1
+
 /* OTA Arduino
 0: Disable
 1: Enable
@@ -107,6 +116,11 @@
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
 #include "lan8720a_cfg.h"
+#endif
+
+#if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)
+#define DDNS_CLIENT_SYNC_TIME    10000 /* ms */
+#include <EasyDDNS.h>
 #endif
 
 #endif

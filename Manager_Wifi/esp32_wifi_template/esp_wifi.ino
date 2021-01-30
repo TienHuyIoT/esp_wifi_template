@@ -39,10 +39,10 @@ void wifi_init(void)
   WiFi.setTxPower(WIFI_POWER_19_5dBm);
 
   /* Disable sta and ap */
-  if(g_wifi_cfg->sta.Dis && g_wifi_cfg->ap.Dis)
+  if(g_wifi_cfg->sta.disable && g_wifi_cfg->ap.disable)
   {
     /* Enable smart config */
-    if(g_wifi_cfg->sta.SmCfg)
+    if(g_wifi_cfg->sta.smart_cfg)
     {
       wf_mode = WIFI_STA;
       ESP_WIFI_PRINTF("\r\nWifi Mode WIFI_STA using for smart config");
@@ -54,13 +54,13 @@ void wifi_init(void)
     }    
   }
   /* Enable sta and ap */
-  else if (!g_wifi_cfg->sta.Dis && !g_wifi_cfg->ap.Dis)
+  else if (!g_wifi_cfg->sta.disable && !g_wifi_cfg->ap.disable)
   {
     wf_mode = WIFI_AP_STA;
     ESP_WIFI_PRINTF("\r\nWifi Mode WIFI_AP_STA");
   }
   /* Enable sta and Diasble ap */
-  else if (!g_wifi_cfg->sta.Dis && g_wifi_cfg->ap.Dis)
+  else if (!g_wifi_cfg->sta.disable && g_wifi_cfg->ap.disable)
   {
     wf_mode = WIFI_STA;
     ESP_WIFI_PRINTF("\r\nWifi Mode WIFI_STA");
@@ -82,18 +82,18 @@ void wifi_init(void)
   }  
 
   /* STA enable */
-  if (!g_wifi_cfg->sta.Dis)
+  if (!g_wifi_cfg->sta.disable)
   {
     if (strlen(g_wifi_cfg->sta.ssid) > 0)
     {
-      if (!g_wifi_cfg->sta.Dhcp)
+      if (!g_wifi_cfg->sta.dhcp)
       {
-        WiFi.config(g_wifi_cfg->sta.Ip, g_wifi_cfg->sta.Gw, g_wifi_cfg->sta.Sn, g_wifi_cfg->sta.Dns);
+        WiFi.config(g_wifi_cfg->sta.ip, g_wifi_cfg->sta.gw, g_wifi_cfg->sta.sn, g_wifi_cfg->sta.dns);
         ESP_WIFI_PRINTF("\r\nstatic IP enable");
-        ESP_WIFI_PRINTF("\r\nIp: %s", g_wifi_cfg->sta.Ip.toString().c_str());
-        ESP_WIFI_PRINTF("\r\nGw: %s", g_wifi_cfg->sta.Gw.toString().c_str());
-        ESP_WIFI_PRINTF("\r\nSn: %s", g_wifi_cfg->sta.Sn.toString().c_str());
-        ESP_WIFI_PRINTF("\r\nDns: %s\r\n", g_wifi_cfg->sta.Dns.toString().c_str());
+        ESP_WIFI_PRINTF("\r\nIp: %s", g_wifi_cfg->sta.ip.toString().c_str());
+        ESP_WIFI_PRINTF("\r\nGw: %s", g_wifi_cfg->sta.gw.toString().c_str());
+        ESP_WIFI_PRINTF("\r\nSn: %s", g_wifi_cfg->sta.sn.toString().c_str());
+        ESP_WIFI_PRINTF("\r\nDns: %s\r\n", g_wifi_cfg->sta.dns.toString().c_str());
       }
 
       wifi_setup(g_wifi_cfg->sta.ssid, g_wifi_cfg->sta.pass); 
@@ -101,8 +101,8 @@ void wifi_init(void)
     else
     {
       /* Smart config enable */
-      ESP_WIFI_PRINTF("\r\n[beginSmartConfig] = %u\r\n", g_wifi_cfg->sta.SmCfg);
-      if(g_wifi_cfg->sta.SmCfg)
+      ESP_WIFI_PRINTF("\r\n[beginSmartConfig] = %u\r\n", g_wifi_cfg->sta.smart_cfg);
+      if(g_wifi_cfg->sta.smart_cfg)
       {
         WiFi.beginSmartConfig();
       }
@@ -110,13 +110,13 @@ void wifi_init(void)
   }
 
   /* AP enable */
-  if (!g_wifi_cfg->ap.Dis)
+  if (!g_wifi_cfg->ap.disable)
   {
     snprintf(ssid, Df_LengSsid + 1, "%s_%08X", g_wifi_cfg->ap.ssid, (uint32_t)ESP.getEfuseMac());
-    WiFi.softAPConfig(g_wifi_cfg->ap.Ip, g_wifi_cfg->ap.Ip, g_wifi_cfg->ap.Sn);
+    WiFi.softAPConfig(g_wifi_cfg->ap.ip, g_wifi_cfg->ap.ip, g_wifi_cfg->ap.sn);
     if (strlen(g_wifi_cfg->ap.pass) >= 8)
     {
-      WiFi.softAP(ssid, g_wifi_cfg->ap.pass, g_wifi_cfg->ap.Chanel, g_wifi_cfg->ap.Hidden);
+      WiFi.softAP(ssid, g_wifi_cfg->ap.pass, g_wifi_cfg->ap.channel, g_wifi_cfg->ap.hidden);
     }
     else
     {

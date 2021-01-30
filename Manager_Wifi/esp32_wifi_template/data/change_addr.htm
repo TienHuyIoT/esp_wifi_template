@@ -8,20 +8,20 @@
     <script src="/myscripts.js"></script>
     <script>
         function myhttp_get(element) {
-            if (element == 'device_address') {
+            if (element == 'device_info') {
                 client.get('/get?' + 'param_wifi=' + element, function(response) {
                     console.log(response);
                     var obj = JSON.parse(response);
 
-                    var table = document.getElementById('table_device_address');
-                    table.rows[0].cells[1].children[0].value = obj.device_name;
-                    table.rows[1].cells[1].children[0].value = obj.device_addr;
+                    var table = document.getElementById('table_device_info');
+                    table.rows[0].cells[1].children[0].value = obj.name;
+                    table.rows[1].cells[1].children[0].value = obj.addr;
                 });
             }
         }
 
         function myhttp_post(element) {
-            if (element == 'device_address') {
+            if (element == 'device_info') {
                 var pass = prompt("Please Enter Password");
                 if (pass.length < 4) {
                     alert('Password Input Fail');
@@ -30,15 +30,15 @@
                 var obj = {
                     "sta_ssid": "Quyen_2.4G"
                 };
-                var table = document.getElementById('table_device_address');
-                obj.device_name = table.rows[0].cells[1].children[0].value;
-                obj.device_addr = table.rows[1].cells[1].children[0].value;
+                var table = document.getElementById('table_device_info');
+                obj.name = table.rows[0].cells[1].children[0].value;
+                obj.addr = table.rows[1].cells[1].children[0].value;
                 var StrJSON = JSON.stringify(obj);
                 console.log(StrJSON);
                 /*
                 {
-                    "device_name": "Thiet bi ...",
-                    "device_addr": "102 pham van bach",
+                    "name": "Thiet bi ...",
+                    "addr": "102 pham van bach",
                     "access_code": "1234"
                 }
                 */
@@ -49,7 +49,7 @@
         }
 
         function onBodyLoad() {
-            myhttp_get('device_address');
+            myhttp_get('device_info');
         }
     </script>
 </head>
@@ -58,7 +58,7 @@
     <div style="text-align:left;display:inline-block;min-width:260px;">
         <br><br>
         <h3 align="center">DEVICE ADDRESS</h3>
-        <table id="table_device_address" width="100%">
+        <table id="table_device_info" width="100%">
             <tr>
                 <td align="left"><b>NAME</b></td>
                 <td><input type="text" maxlength="100" size="100"></td>
@@ -69,7 +69,7 @@
             </tr>
             <tr>
                 <td></td>
-                <td><input type="button" onclick="myhttp_post('device_address')" value="Save"></td>
+                <td><input type="button" onclick="myhttp_post('device_info')" value="Save"></td>
             </tr>
         </table>
     </div>
