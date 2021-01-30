@@ -35,7 +35,7 @@
 
 
 #ifndef WDT_TIMEOUT_VALUE
-#define WDT_TIMEOUT_VALUE  2000 /* ms */
+#define WDT_TIMEOUT_VALUE  10000 /* ms */
 #endif
 
 /* OTA Arduino
@@ -54,7 +54,7 @@
 0: Disable
 1: Enable
 */
-#define ETH_ENABLE    0
+#define ETH_ENABLE    1
 
 /* Enable sd card
 0: Disable

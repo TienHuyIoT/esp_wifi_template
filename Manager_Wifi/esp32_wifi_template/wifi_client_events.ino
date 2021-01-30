@@ -221,6 +221,7 @@ void wifi_events_setup()
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
     if(eth_is_enable())
     {
+        ESP_ETH_PRINTF("\r\nonEvent SYSTEM_EVENT_ETH_GOT_IP\r\n");
         WiFi.onEvent(ETHGotIP, WiFiEvent_t::SYSTEM_EVENT_ETH_GOT_IP);
     }    
 #endif

@@ -12,19 +12,9 @@ static uint8_t eth_status = 0;
 
 uint8_t eth_init(void)
 {
-  wifi_file_json_t *g_wifi_cfg;
-
-#if (defined ETH_GPIO_ENABLE) && (ETH_GPIO_ENABLE != -1)
-  ETH_GPIO_ENABLE_INIT();
-  delayMicroseconds(20); /* Add delay to stable input logic before read input status */
-  if (ETH_ENABLE_STATUS())
-  {
-    ESP_ETH_PRINTF("\r\nETH disable");
-    return false;
-  }  
-#endif  
+  wifi_file_json_t *g_wifi_cfg;  
   
-  ESP_ETH_PRINTF("\r\nETH Start");
+  ESP_ETH_PRINTF("\r\nETH Start\r\n");
   
   g_wifi_cfg = wifi_info_get();
   ETH.begin(ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_TYPE, ETH_CLK_MODE);
@@ -38,12 +28,24 @@ uint8_t eth_init(void)
     ESP_ETH_PRINTF("\r\nSn: %s", g_wifi_cfg->sta.Sn.toString().c_str());
     ESP_ETH_PRINTF("\r\nDns: %s\r\n", g_wifi_cfg->sta.Dns.toString().c_str());
   }
-  eth_status = 1;
   return true;
+}
+
+uint8_t eth_enable(void)
+{
+  ESP_ETH_PRINTF("\r\nETH Enable\r\n");
+  eth_status = 1;
+}
+
+uint8_t eth_disable(void)
+{
+  ESP_ETH_PRINTF("\r\nETH Disable\r\n");
+  eth_status = 0;
 }
 
 uint8_t eth_is_enable(void)
 {
+  ESP_ETH_PRINTF("\r\neth_status %u", eth_status);
   return eth_status;
 }
 

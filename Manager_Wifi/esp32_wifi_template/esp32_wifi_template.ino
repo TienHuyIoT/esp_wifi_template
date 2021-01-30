@@ -97,7 +97,21 @@ void setup()
   COMMON_PRINTF("\r\n==== Firmware version %u.%u.%u ====\r\n", 
                 FW_VERSION_MAJOR,
                 FW_VERSION_MINOR,
-                FW_VERSION_BUILD);                
+                FW_VERSION_BUILD);   
+
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+#if (defined ETH_GPIO_ENABLE) && (ETH_GPIO_ENABLE != -1)
+  ETH_GPIO_ENABLE_INIT();
+  if(ETH_STATUS_IS_ON())
+  {
+    eth_enable();
+  }
+  else
+  {
+    eth_disable();
+  }
+#endif
+#endif
 
   /* Init nand memory file system */
   NAND_FS_SYSTEM.begin(true);
@@ -136,7 +150,11 @@ void setup()
   g_wifi_cfg = wifi_info_get();
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
-  if(!eth_init())
+  if(eth_is_enable())
+  {
+    eth_init();
+  }
+  else
   {
     wifi_init();
   }
@@ -176,8 +194,6 @@ void setup()
   web_server_init();
   web_socket_init(&ws_receive_txt_callback);
 }
-
-bool eth_linkup = 0;
 
 void loop()
 {
