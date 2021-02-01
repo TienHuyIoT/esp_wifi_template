@@ -5,6 +5,7 @@
 #include "rtc_data_file.h"
 #include "wifi_data_file.h"
 #include "server_data_process.h"
+#include "AsyncEasyDDNS.h"
 
 #define SERVER_DATA_PORT Serial
 #define SERVER_DATA_PRINTF(f_, ...) SERVER_DATA_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
@@ -388,6 +389,12 @@ void ddns_client_get(AsyncWebServerRequest *request)
     root["domain"].set(g_wifi_cfg->ddns.domain);
     root["user"].set(g_wifi_cfg->ddns.user);  
     root["pass"].set(g_wifi_cfg->ddns.pass);
+    root["sync_time"].set(g_wifi_cfg->ddns.sync_time);
+#if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)    
+    root["ip_ddns"].set(AsyncEasyDDNS.ddnsip.toString());
+#else
+    root["ip_ddns"].set("Disable");
+#endif
     root["disable"].set(g_wifi_cfg->ddns.disable);
 
     root.prettyPrintTo(json_resp);
@@ -631,8 +638,12 @@ void ddns_client_post(AsyncWebServerRequest *request)
         root["domain"].as<String>().toCharArray(g_wifi_cfg->ddns.domain, DDNS_DOMAIN_LENGTH_MAX + 1);
         root["user"].as<String>().toCharArray(g_wifi_cfg->ddns.user, DDNS_USER_LENGTH_MAX + 1);
         root["pass"].as<String>().toCharArray(g_wifi_cfg->ddns.pass, DDNS_PASS_LENGTH_MAX + 1);
+        g_wifi_cfg->ddns.sync_time = root["sync_time"].as<int>();  
         g_wifi_cfg->ddns.disable = root["disable"].as<int>();  
-        
+#if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)        
+        AsyncEasyDDNS.service(g_wifi_cfg->ddns.service);
+        AsyncEasyDDNS.client(g_wifi_cfg->ddns.domain, g_wifi_cfg->ddns.user, g_wifi_cfg->ddns.pass);
+#endif        
         wifi_info_write(g_wifi_cfg);
     }
     else

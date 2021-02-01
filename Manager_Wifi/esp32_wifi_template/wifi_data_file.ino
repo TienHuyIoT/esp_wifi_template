@@ -39,6 +39,16 @@ void wifi_info_write(wifi_file_json_t* w_wifi_info)
     auth["user"].set(w_wifi_info->auth.user);
     auth["pass"].set(w_wifi_info->auth.pass);
 
+    JsonObject& auth_user = root.createNestedObject("auth_user");
+    auth_user["user"].set(w_wifi_info->auth_user.user);
+    auth_user["pass"].set(w_wifi_info->auth_user.pass);
+
+    JsonArray& confirm = root.createNestedArray("confirm");
+    for(uint8_t i = 0; i < CONFIRM_NUM_MAX; ++i)
+    {
+        confirm.add(w_wifi_info->confirm[i]);
+    }
+
     JsonObject& sta = root.createNestedObject("sta");
     sta["ip"].set(w_wifi_info->sta.ip.toString());
     sta["gw"].set(w_wifi_info->sta.gw.toString());
@@ -123,6 +133,23 @@ void wifi_info_read(wifi_file_json_t* r_wifi_info)
     {
         auth["user"].as<String>().toCharArray(r_wifi_info->auth.user, Df_LengAuth + 1);
         auth["pass"].as<String>().toCharArray(r_wifi_info->auth.pass, Df_LengAuth + 1);
+    }
+
+    JsonObject& auth_user = root["auth_user"];
+    if (auth_user.success())
+    {
+        auth_user["user"].as<String>().toCharArray(r_wifi_info->auth_user.user, Df_LengAuth + 1);
+        auth_user["pass"].as<String>().toCharArray(r_wifi_info->auth_user.pass, Df_LengAuth + 1);
+    }
+
+    JsonArray& confirm = root["confirm"];
+    if (confirm.success())
+    {
+        uint8_t num = min((int)(confirm.size()), CONFIRM_NUM_MAX);
+        for(uint8_t i = 0; i < num; ++i)
+        {
+            r_wifi_info->confirm[i] = confirm[i];
+        }        
     }
 
     JsonObject& sta = root["sta"];

@@ -20,6 +20,7 @@ Json arduino assistant: https://arduinojson.org/v5/assistant/
 #define DDNS_DOMAIN_LENGTH_MAX  31
 #define DDNS_USER_LENGTH_MAX    15
 #define DDNS_PASS_LENGTH_MAX    15
+#define CONFIRM_NUM_MAX         5
 
 
 typedef struct {
@@ -37,6 +38,13 @@ typedef struct {
         char        user[Df_LengAuth + 1];
         char        pass[Df_LengAuth + 1];
     }auth;
+    struct {
+        char        user[Df_LengAuth + 1];
+        char        pass[Df_LengAuth + 1];
+    }auth_user;
+    
+    uint16_t confirm[CONFIRM_NUM_MAX];
+
     struct {
         IPAddress 	ip;
         IPAddress 	gw;
@@ -85,6 +93,17 @@ const char wifi_data_json[] PROGMEM = R"=====(
         "user": "admin",
         "pass": "admin"
     },
+    "auth_user":{
+        "user": "admin",
+        "pass": "admin"
+    },
+    "confirm":[
+        1234,
+        1234,
+        1234,
+        1234,
+        1234
+    ],
     "sta":{        
         "ip":"192.168.1.100",
         "gw":"192.168.1.1",
@@ -108,7 +127,7 @@ const char wifi_data_json[] PROGMEM = R"=====(
         "hidden":0
     },
     "ddns":{
-        "service": "dyndns",
+        "service": "noip",
         "domain": "tienhuyiot.ddns.net",
         "user": "admin",
         "pass": "admin",

@@ -2,6 +2,7 @@
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)
 #include <EasyDDNS.h>
+#include "AsyncEasyDDNS.h"
 #include "wifi_data_file.h"
 
 #define DDNS_CLIENT_PORT Serial
@@ -32,20 +33,20 @@ void ddns_client_init(void)
     - "freemyip"
     - "afraid.org"
   */
-  EasyDDNS.service(g_wifi_cfg->ddns.service);
+  AsyncEasyDDNS.service(g_wifi_cfg->ddns.service);
 
   /*
     For DDNS Providers where you get a token:
-      Use this: EasyDDNS.client("domain", "token");
+      Use this: AsyncEasyDDNS.client("domain", "token");
     
     For DDNS Providers where you get username and password: ( Leave the password field empty "" if not required )
-      Use this: EasyDDNS.client("domain", "username", "password");
+      Use this: AsyncEasyDDNS.client("domain", "username", "password");
   */
-  EasyDDNS.client(g_wifi_cfg->ddns.domain, g_wifi_cfg->ddns.user, g_wifi_cfg->ddns.pass);
+  AsyncEasyDDNS.client(g_wifi_cfg->ddns.domain, g_wifi_cfg->ddns.user, g_wifi_cfg->ddns.pass);
 
   // Get Notified when your IP changes
-  EasyDDNS.onUpdate([&](const char* oldIP, const char* newIP){
-    DDNS_CLIENT_PORT.print("\r\nEasyDDNS - IP Change Detected: ");
+  AsyncEasyDDNS.onUpdate([&](const char* oldIP, const char* newIP){
+    DDNS_CLIENT_PORT.print("\r\nAsyncEasyDDNS - IP Change Detected: ");
     DDNS_CLIENT_PORT.println(newIP);
   });
 }
@@ -67,7 +68,7 @@ void ddns_update(void)
       g_wifi_cfg->ddns.sync_time = 60;
     }
     sync_time = 1000 * g_wifi_cfg->ddns.sync_time;
-    EasyDDNS.update(sync_time);
+    AsyncEasyDDNS.update(sync_time);
   }  
 }
 #endif

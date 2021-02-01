@@ -16,6 +16,15 @@
                 alert('Password Input Fail');
                 return;
             }
+            var sync_time = Number(document.getElementById('sync_time').value);
+            if (sync_time < 10) {
+                sync_time = 10;
+            }
+            if (sync_time > 60) {
+                sync_time = 60;
+            }
+            document.getElementById('sync_time').value = sync_time;
+            obj.sync_time = sync_time;
             obj.service = document.getElementById('service').value;
             obj.domain = document.getElementById('domain').value;
             obj.user = document.getElementById('user').value;
@@ -36,6 +45,8 @@
                 document.getElementById('domain').value = obj.domain;
                 document.getElementById('user').value = obj.user;
                 document.getElementById('pass').value = obj.pass;
+                document.getElementById('sync_time').value = obj.sync_time;
+                document.getElementById('ip_ddns').value = obj.ip_ddns;
                 document.getElementById("enable").checked = !obj.disable;
             });
         }
@@ -52,8 +63,8 @@
                 <td>
                     <select id="service" name="service">
                         <option value='duckdns'>duckdns</option>
-                        <option value='noip' >noip</option>
-                        <option value='dyndns' selected>dyndns</option>
+                        <option value='noip' selected>noip</option>
+                        <option value='dyndns' >dyndns</option>
                         <option value='dynu' >dynu</option>
                         <option value='enom' >enom</option>
                         <option value='all-inkl' >all-inkl</option>
@@ -76,6 +87,14 @@
             <tr>
                 <td align="left"><b>PASS</b></td>
                 <td><input type="password" id="pass"></td>
+            </tr>
+            <tr>
+                <td align="left"><b>SYNC TIME</b></td>
+                <td><input type="number" id="sync_time"></td>
+            </tr>
+            <tr>
+                <td align="left"><b>IP DDNS</b></td>
+                <td><input type="text" id="ip_ddns" readonly></td>
             </tr>
             <tr>
                 <td align="left"><b>ENABLE</b></td>
