@@ -44,6 +44,7 @@
 https://github.com/ayushsharma82/EasyDDNS
 http://ipv4bot.whatismyipaddress.com/
 https://github.com/me-no-dev/ESPAsyncTCP/issues/18
+https://github.com/khoih-prog/AsyncHTTPRequest_Generic
 */
 #define DDNS_CLIENT_ENABLE  1
 
