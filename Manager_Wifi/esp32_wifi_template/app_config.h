@@ -18,21 +18,21 @@ const char * build_time = "Sat " __DATE__ " " __TIME__ " GMT";
 // <o> FW_VERSION_MAJOR
  
 #ifndef FW_VERSION_MAJOR
-#define FW_VERSION_MAJOR 2
+#define FW_VERSION_MAJOR 1
 #endif
 
 //==========================================================
 // <o> FW_VERSION_MINOR
  
 #ifndef FW_VERSION_MINOR
-#define FW_VERSION_MINOR 2
+#define FW_VERSION_MINOR 0
 #endif
 
 //==========================================================
 // <o> FW_VERSION_BUILD
  
 #ifndef FW_VERSION_BUILD
-#define FW_VERSION_BUILD 0
+#define FW_VERSION_BUILD 1
 #endif
 
 
