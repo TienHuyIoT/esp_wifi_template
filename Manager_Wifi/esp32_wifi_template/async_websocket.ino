@@ -22,26 +22,22 @@ void ws_send_broadcast_txt(char *payload)
 void ws_interval_sync(void)
 {
     uint8_t ws_cnt;
-    /* Waiting timeout */
-    if (!ws_interval_broadcast.ToEExpired())
-    {
-        return;
-    }
-
-    /* Update Timout 10s */
-    ws_interval_broadcast.ToEUpdate(WS_INTERVAL_TIMEOUT_NUM);
 
     ws_cnt = ws_connection_connected();
     if (ws_cnt)
     {
         ws.textAll("{\"page\":100,\"socket_num\":" + String(ws_cnt) + "}");
+        WS_DBG_PRINT("Heap: %u", ESP.getFreeHeap()); 
     }
+
+    ws.cleanupClients();
 }
 
 /* Init and register callback receive message */
 void web_socket_init(void (*cb)(uint8_t, char *))
 {
     ws_txt_callback = cb;
+    ws_ticker.attach(WS_INTERVAL_TIMEOUT_NUM, ws_interval_sync); 
 }
 
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)

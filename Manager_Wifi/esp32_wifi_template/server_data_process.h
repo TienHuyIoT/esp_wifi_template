@@ -3,8 +3,8 @@
 
 #include <ESPAsyncWebServer.h>
 
-#define DATA_GET_HANDLE_NUM     12
-#define DATA_POST_HANDLE_NUM    8
+#define DATA_GET_HANDLE_NUM     13
+#define DATA_POST_HANDLE_NUM    10
 
 typedef struct {
     char *path_arg;
@@ -33,6 +33,7 @@ void heap_temperature_get(AsyncWebServerRequest *request);
 void activated_get(AsyncWebServerRequest *request);
 void format_sd_card_get(AsyncWebServerRequest *request);
 void ddns_client_get(AsyncWebServerRequest *request);
+void pass_common_get(AsyncWebServerRequest *request);
 
 void sta_ap_info_post(AsyncWebServerRequest *request);
 void sta_network_post(AsyncWebServerRequest *request);
@@ -42,6 +43,8 @@ void device_info_post(AsyncWebServerRequest *request);
 void auth_access_post(AsyncWebServerRequest *request);
 void time_setting_post(AsyncWebServerRequest *request);
 void ddns_client_post(AsyncWebServerRequest *request);
+void auth_user_access_post(AsyncWebServerRequest *request);
+void pass_common_post(AsyncWebServerRequest *request);
 
 /* /get?param_wifi=[param] */
 server_get_handle_t client_get_handle[DATA_GET_HANDLE_NUM] = {
@@ -56,7 +59,8 @@ server_get_handle_t client_get_handle[DATA_GET_HANDLE_NUM] = {
 /*08*/{(char*)"heap_temperature", heap_temperature_get},
 /*09*/{(char*)"activated", activated_get},
 /*10*/{(char*)"format_sd_card", format_sd_card_get},
-/*11*/{(char*)"ddns_client", ddns_client_get}
+/*11*/{(char*)"ddns_client", ddns_client_get},
+/*12*/{(char*)"pass_common", pass_common_get}
 };
 
 server_post_handle_t client_post_handle[DATA_POST_HANDLE_NUM] = {
@@ -67,7 +71,9 @@ server_post_handle_t client_post_handle[DATA_POST_HANDLE_NUM] = {
 /*04*/{(char*)"device_info", device_info_post},
 /*05*/{(char*)"auth_access", auth_access_post},
 /*06*/{(char*)"time_setting", time_setting_post},
-/*07*/{(char*)"ddns_client", ddns_client_post}
+/*07*/{(char*)"ddns_client", ddns_client_post},
+/*08*/{(char*)"auth_user_access", auth_user_access_post},
+/*09*/{(char*)"pass_common", pass_common_post}
 };
 
 #endif

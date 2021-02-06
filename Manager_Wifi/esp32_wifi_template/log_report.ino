@@ -1,3 +1,6 @@
+#include <fs.h>
+#include "rtc_data_file.h"
+
 void log_report(uint8_t log_id, char *p_log)
 {
     File fs_handle;

@@ -33,6 +33,6 @@ uint8_t rtc_level_update = RTC_NON_UPATE;
 
 void rtc_level_update_set(uint8_t level);
 uint8_t rtc_level_update_get(void);
-uint8_t rtc_parse_utility(char *rtc_web);
+uint8_t rtc_parse_utility(const char *rtc_web, rtc_level_update_t level);
 
 #endif

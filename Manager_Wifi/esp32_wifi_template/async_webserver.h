@@ -55,6 +55,14 @@ Change to
 void port(uint16_t port);
 void begin();
 */
+
+typedef enum {
+  HTTP_AUTH_LV0 = 0,
+  HTTP_AUTH_LV1,
+  HTTP_AUTH_LV2,
+  HTTP_AUTH_FAIL
+} http_auth_level_t;
+
 AsyncWebServer server(25123);
 AsyncWebServer server80(80);
 
@@ -66,6 +74,8 @@ size_t update_content_len;
 
 char* http_username;
 char* http_password;
+char* http_username1;
+char* http_password1;
 
 void web_server_setup(void);
 void web_server_init(void);

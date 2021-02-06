@@ -1,0 +1,57 @@
+{
+  "port": {
+    "udp": 25123,
+    "tcp": 25123,
+    "ws": 25124
+  },
+  "device": {
+    "name": "Công Ty TNHH Điện Tử Tiến Huy",
+    "addr": "102 Phan Huy Ích, Phường 15, Quận Tân Bình, Tp HCM",
+    "tell": "0983497310"
+  },
+  "auth": {
+    "user": "admin",
+    "pass": "admin"
+  },
+  "auth_user": {
+    "user": "admin",
+    "pass": "12345"
+  },
+  "confirm": [
+    1234,
+    1234,
+    1234,
+    1234,
+    1234
+  ],
+  "sta": {
+    "ip": "192.168.0.120",
+    "gw": "192.168.0.1",
+    "sn": "255.255.255.0",
+    "dns": "192.168.0.1",
+    "ssid": "TienHuyIoT",
+    "psk": "12345679",
+    "hostname": "tienhuyiot",
+    "dhcp": 0,
+    "disable": 0,
+    "smart_cfg": 1
+  },
+  "ap": {
+    "ip": "192.168.4.1",
+    "sn": "255.255.255.0",
+    "ssid": "tienhuyiot",
+    "psk": "88888888",
+    "dns_name": "tienhuyiot.vn",
+    "disable": 0,
+    "hidden": 0,
+    "channel": 2
+  },
+  "ddns": {
+    "service": "noip",
+    "domain": "tienhuyiot.vn",
+    "user": "admin",
+    "pass": "admin",
+    "sync_time": 30,
+    "disable": 1
+  }
+}

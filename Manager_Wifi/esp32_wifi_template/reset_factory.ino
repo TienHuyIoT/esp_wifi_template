@@ -5,8 +5,9 @@
 #include "board.h"
 
 #if (defined FACTORY_INPUT_PIN) && (FACTORY_INPUT_PIN != -1)
-void factory_reset_handle(void)
+uint8_t factory_reset_handle(void)
 {
+    uint8_t result = 0;
     input_factory_reset.loop();
     if (input_factory_reset.GetStatus() == LOW)
     {
@@ -17,10 +18,11 @@ void factory_reset_handle(void)
 
             wifi_info_refactor();
             RESET_FACTORY_PRINTF("OK");
-            
-            /* Restart esp */
-            esp_reset_enable(100);
+
+            result = 1;
         }
     }
+
+    return result;
 }
 #endif

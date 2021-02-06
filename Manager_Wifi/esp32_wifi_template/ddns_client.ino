@@ -1,12 +1,14 @@
 #include "app_config.h"
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)
-#include <EasyDDNS.h>
+#include <Ticker.h>
 #include "AsyncEasyDDNS.h"
 #include "wifi_data_file.h"
 
 #define DDNS_CLIENT_PORT Serial
 #define DDNS_CLIENT_PRINTF(f_, ...) DDNS_CLIENT_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+
+Ticker ddns_ticker;
 
 void ddns_client_init(void)
 {
@@ -49,6 +51,17 @@ void ddns_client_init(void)
     DDNS_CLIENT_PORT.print("\r\nAsyncEasyDDNS - IP Change Detected: ");
     DDNS_CLIENT_PORT.println(newIP);
   });
+
+  if (g_wifi_cfg->ddns.sync_time < 10)
+  {
+    g_wifi_cfg->ddns.sync_time = 10;
+  }
+  if (g_wifi_cfg->ddns.sync_time > 60)
+  {
+    g_wifi_cfg->ddns.sync_time = 60;
+  }
+
+  ddns_ticker.attach(g_wifi_cfg->ddns.sync_time, ddns_update); 
 }
 
 void ddns_update(void)
@@ -59,16 +72,7 @@ void ddns_update(void)
   g_wifi_cfg = wifi_info_get();
   if(!g_wifi_cfg->ddns.disable)
   {
-    if (g_wifi_cfg->ddns.sync_time < 10)
-    {
-      g_wifi_cfg->ddns.sync_time = 10;
-    }
-    if (g_wifi_cfg->ddns.sync_time > 60)
-    {
-      g_wifi_cfg->ddns.sync_time = 60;
-    }
-    sync_time = 1000 * g_wifi_cfg->ddns.sync_time;
-    AsyncEasyDDNS.update(sync_time);
+    AsyncEasyDDNS.update();
   }  
 }
 #endif

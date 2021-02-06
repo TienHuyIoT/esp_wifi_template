@@ -85,7 +85,7 @@ void rtc_info_remove()
 }
 
 /* "Thu Jan 25 2018 19:39:48 GMT+0700 (SE Asia Standard Time)" */
-uint8_t rtc_parse_utility(char *rtc_web)
+uint8_t rtc_parse_utility(const char *rtc_web, rtc_level_update_t level)
 {
     rtc_time_t rtc = {0};
     char wday[15], mon[15];
@@ -117,7 +117,7 @@ uint8_t rtc_parse_utility(char *rtc_web)
             RTC_FILE_PRINTF("\r\ntime update");
             rtc_set(&rtc);
             rtc_get(&rtc);
-            rtc_level_update_set(RTC_WEB_UPATE);
+            rtc_level_update_set((uint8_t)level);
         }
         else
         {

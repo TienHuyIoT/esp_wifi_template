@@ -25,9 +25,7 @@ public:
   IPAddress ddnsip;
   void service(String ddns_service);
   void client(String ddns_domain, String ddns_username, String ddns_password = "");
-  void update(unsigned long ddns_update_interval);
-  void request_get_ip_cb(void* optParm, asyncHTTPrequest* request, int readyState);
-  void request_post_ip_cb(void* optParm, asyncHTTPrequest* request, int readyState);
+  void update();  
 
   // Callback
   void onUpdate(AsyncDDNSUpdateHandler handler) {
@@ -36,8 +34,6 @@ public:
 
 private:
   AsyncDDNSUpdateHandler _ddnsUpdateFunc = nullptr;
-  unsigned long interval;
-  unsigned long previousMillis;  
   String new_ip;
   String old_ip;
   String ddns_u;
@@ -47,6 +43,8 @@ private:
   String base64Authorization;
   void run_get_ip();
   void run_post_ip();
+  void request_get_ip_cb(void* optParm, asyncHTTPrequest* request, int readyState);
+  void request_post_ip_cb(void* optParm, asyncHTTPrequest* request, int readyState);
 };
 extern AsyncEasyDDNSClass AsyncEasyDDNS;
 #endif

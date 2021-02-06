@@ -14,6 +14,32 @@ wifi_file_json_t* wifi_info_get()
     return &wifi_file_cfg;
 }
 
+void wifi_info_pass_refactor(void)
+{
+    strncpy(wifi_file_cfg.auth.pass, (char *)"admin", Df_LengAuth);
+    strncpy(wifi_file_cfg.auth_user.pass, (char *)"admin", Df_LengAuth);
+    wifi_file_cfg.confirm[CONFIRM_COMMON] = PASS_COMMON_DEFAULT;
+    wifi_file_cfg.confirm[CONFIRM_PU3] = PASS_PU3_DEFAULT;
+    wifi_file_cfg.confirm[CONFIRM_COST] = PASS_COST_DEFAULT;
+    wifi_file_cfg.confirm[CONFIRM_LOGFILE] = PASS_LOGFILE_DEFAULT;
+    wifi_info_write(&wifi_file_cfg);
+}
+
+uint8_t pass_superadmin_is_ok(const String &pass)
+{
+    return (pass == "25251325");
+}
+
+uint8_t pass_type_is_ok(const String &pass, uint8_t type)
+{
+    uint8_t result = 0;
+    if(pass == String(wifi_file_cfg.confirm[type]) || pass_superadmin_is_ok(pass))
+    {
+        result = 1;
+    }
+    return result;
+}
+
 void wifi_info_refactor(void)
 {
     NAND_FS_SYSTEM.remove(WIFI_FILE_PATH);
@@ -30,10 +56,10 @@ void wifi_info_write(wifi_file_json_t* w_wifi_info)
     port["tcp"].set(w_wifi_info->port.tcp);
     port["ws"].set(w_wifi_info->port.ws);
 
-    JsonObject& addr = root.createNestedObject("device");
-    addr["name"].set(w_wifi_info->addr.name);
-    addr["addr"].set(w_wifi_info->addr.addr);
-    addr["tell"].set(w_wifi_info->addr.tell);
+    JsonObject& device = root.createNestedObject("device");
+    device["name"].set(w_wifi_info->device.name);
+    device["addr"].set(w_wifi_info->device.addr);
+    device["tell"].set(w_wifi_info->device.tell);
 
     JsonObject& auth = root.createNestedObject("auth");
     auth["user"].set(w_wifi_info->auth.user);
@@ -90,10 +116,9 @@ void wifi_info_write(wifi_file_json_t* w_wifi_info)
 void wifi_info_read(wifi_file_json_t* r_wifi_info)
 {
     File fs_handle;
-    // check file exist
+
     if (!NAND_FS_SYSTEM.exists(WIFI_FILE_PATH))
     {
-        // write json string default
         fs_handle = NAND_FS_SYSTEM.open(WIFI_FILE_PATH, FILE_WRITE);
         fs_handle.printf_P(wifi_data_json);
         // WIFI_FILE_PORT.println(wifi_data_json);
@@ -115,17 +140,17 @@ void wifi_info_read(wifi_file_json_t* r_wifi_info)
     JsonObject& port = root["port"];
     if (port.success())
     {
-        r_wifi_info->port.udp  = port["udp"].as<int>();
-        r_wifi_info->port.tcp  = port["tcp"].as<int>();
-        r_wifi_info->port.ws   = port["ws"].as<int>();
+        r_wifi_info->port.udp = port["udp"].as<int>();
+        r_wifi_info->port.tcp = port["tcp"].as<int>();
+        r_wifi_info->port.ws  = port["ws"].as<int>();
     }
 
-    JsonObject& addr = root["device"];
-    if (addr.success())
+    JsonObject& device = root["device"];
+    if (device.success())
     {
-        addr["name"].as<String>().toCharArray(r_wifi_info->addr.name, Df_LengDevName + 1);
-        addr["addr"].as<String>().toCharArray(r_wifi_info->addr.addr, Df_LengAddr + 1);
-        addr["tell"].as<String>().toCharArray(r_wifi_info->addr.tell, df_LengTell + 1);
+        device["name"].as<String>().toCharArray(r_wifi_info->device.name, Df_LengDevName + 1);
+        device["addr"].as<String>().toCharArray(r_wifi_info->device.addr, Df_LengAddr + 1);
+        device["tell"].as<String>().toCharArray(r_wifi_info->device.tell, df_LengTell + 1);
     }
 
     JsonObject& auth = root["auth"];
