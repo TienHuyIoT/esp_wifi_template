@@ -19,7 +19,7 @@ void wifi_init(void)
     */
   WiFi.persistent(false);
 
-  esp_wifi_set_protocol(ESP_IF_WIFI_AP, WIFI_PROTOCOL_11B);
+  esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B);
   /*
     typedef enum {
         WIFI_POWER_19_5dBm = 78,// 19.5dBm
