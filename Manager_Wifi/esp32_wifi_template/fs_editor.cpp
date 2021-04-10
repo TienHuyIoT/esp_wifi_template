@@ -1018,8 +1018,23 @@ bool FSEditor::canHandle(AsyncWebServerRequest *request){
 
 
 void FSEditor::handleRequest(AsyncWebServerRequest *request){
-  if(_username.length() && _password.length() && !request->authenticate(_username.c_str(), _password.c_str()))
-    return request->requestAuthentication();
+  if(_username.length() && _password.length())
+  {
+    if(!request->authenticate(_username.c_str(), _password.c_str()))
+    {
+      return request->requestAuthentication();
+    } 
+  }     
+  else
+  {
+    if(_onAuthenticate)
+    {
+      if(!_onAuthenticate(request))
+      {
+        return;
+      }
+    }
+  }
 
 #if (defined FS_EDITOR_DEBUG) && (FS_EDITOR_DEBUG == 1)
   FSEDITOR_DBG_PRINTF("handleRequest");

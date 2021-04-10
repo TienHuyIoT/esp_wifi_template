@@ -4,6 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <title>Update</title>
+    <script src="/myscripts.js"></script>
     <style>
         div,
         input {
@@ -35,8 +36,10 @@
                 id = 'button_sd';
             }
 
-            if (Number(m) == 100) {
-                bt_value += "(Done)"
+            if (Number(m) > 100) {
+                bt_value += "(Fail)";
+            } else if (Number(m) == 100) {
+                bt_value += "(Done)";
             } else {
                 bt_value += m + "%";
             }
@@ -68,13 +71,30 @@
             }, false);
         }
 
+        function verify_pass(Pass) {
+            client.get("/get?param_wifi=pass_common&Pass=" + Pass, function(response) {
+                console.log(response);
+                var obj = JSON.parse(response);
+                if (obj.St && obj.St == "Error") onBodyLoad();
+                else {
+                    startEvents();
+                }
+            });
+        }
+
         function onBodyLoad() {
-            startEvents();
+            var pass = "";
+            pass = prompt("Please enter your pass");
+            if (!pass) {
+                document.getElementById('Body').innerHTML = 'Please enter password';
+            } else {
+                verify_pass(pass);
+            }
         }
     </script>
 </head>
 
-<body id="body" onload="onBodyLoad()">
+<body id="Body" onload="onBodyLoad()">
     <div style="text-align: left; display: inline-block; min-width: 260px;">
         <br>
         <br>
@@ -86,8 +106,8 @@
             </tr>
         </table>
         <form method="POST" action="/update" enctype="multipart/form-data">
-            <input type="file" name="update">
-            <input type="submit" id="button_update" value="Program">
+            <input type="file" id="update" name="update">
+            <input type="button" id="button_update" value="Program">
         </form>
         <br>
         <br>
@@ -114,6 +134,40 @@
     </div>
 
     <script>
+        document.getElementById("button_update").addEventListener("click", function() {
+            // Get the file the user picked
+            var files = document.getElementById("update").files;
+            if (!files.length) {
+                return;
+            }
+            var file = files[0];
+            var filename = "/" + file.name;
+            // Create a new one with the data but a new name
+            var newFile = new File([file], filename, {
+                type: file.type,
+            });
+            // Build the FormData to send
+            var data = new FormData();
+            data.set("data", newFile);
+            // Send it
+            fetch("/update", {
+                    method: "POST",
+                    body: data
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("HTTP error " + response.status);
+                    }
+                    return response.text(); // or response.json() or whatever
+                })
+                .then(response => {
+                    // Do something with the response
+                })
+                .catch(error => {
+                    // Do something with the error
+                });
+        });
+
         document.getElementById("button_spifs").addEventListener("click", function() {
             // Get the file the user picked
             var files = document.getElementById("data_spifs").files;

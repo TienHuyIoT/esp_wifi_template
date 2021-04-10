@@ -87,7 +87,9 @@ void sta_ap_info_get(AsyncWebServerRequest *request)
     JsonObject& root = djbco.createObject();
     root["ap_ssid"].set(g_wifi_cfg->ap.ssid);
     root["ap_ip_adress"].set(g_wifi_cfg->ap.ip.toString());
-    root["sta_ssid"].set(g_wifi_cfg->sta.ssid);   
+    root["sta_ssid"].set(g_wifi_cfg->sta.ssid);
+    root["sta_hostname"].set(g_wifi_cfg->sta.hostname); 
+    root["ap_dns_name"].set(g_wifi_cfg->ap.dns_name); 
 
     if(!g_wifi_cfg->sta.dhcp) 
     {
@@ -213,6 +215,7 @@ void sta_setting_get(AsyncWebServerRequest *request)
     JsonObject& root = djbco.createObject();   
     root["sta_ssid"].set(g_wifi_cfg->sta.ssid);
     root["sta_pass"].set(g_wifi_cfg->sta.pass); 
+    root["sta_hostname"].set(g_wifi_cfg->sta.hostname); 
     if (connect_st)
     {
         root["sta_ip"].set(local_ip.toString());
@@ -259,6 +262,7 @@ void ap_setting_get(AsyncWebServerRequest *request)
     JsonObject& root = djbco.createObject();   
     root["ap_ssid"].set(g_wifi_cfg->ap.ssid);
     root["ap_pass"].set(g_wifi_cfg->ap.pass);
+    root["ap_dns_name"].set(g_wifi_cfg->ap.dns_name); 
     root["ap_on"].set(!g_wifi_cfg->ap.disable);  
     root["ap_channel"].set(g_wifi_cfg->ap.channel);
     root["ap_hidden"].set(g_wifi_cfg->ap.hidden);
@@ -275,8 +279,8 @@ void device_info_get(AsyncWebServerRequest *request)
     
     DynamicJsonBuffer djbco;
     JsonObject& root = djbco.createObject();   
-    root["name"].set(g_wifi_cfg->addr.name);
-    root["addr"].set(g_wifi_cfg->addr.addr);
+    root["name"].set(g_wifi_cfg->device.name);
+    root["addr"].set(g_wifi_cfg->device.addr);
 
     root.prettyPrintTo(json_network);
     request->send(200, "text/json", json_network);
@@ -369,12 +373,19 @@ void activated_get(AsyncWebServerRequest *request)
 
 void format_sd_card_get(AsyncWebServerRequest *request)
 {
+    if (request->argName(1) == "pass" && pass_type_is_ok(request->arg(1), (uint8_t)CONFIRM_COMMON))
+    {
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)    
-    sd_format(SD_FS_SYSTEM, "/");
-    request->send(200, "text/html", "Format SD card Succeed");
+        sd_format(SD_FS_SYSTEM, "/");
+        request->send(200, "text/html", "Format SD card Succeed");
 #else
-    request->send(200, "text/html", "No Support SD Card");
-#endif        
+        request->send(200, "text/html", "No Support SD Card");
+#endif     
+    }
+    else
+    {
+        request->send(200, "text/json", "Password Setting Wrong");
+    }       
 }
 
 void ddns_client_get(AsyncWebServerRequest *request)
@@ -399,6 +410,20 @@ void ddns_client_get(AsyncWebServerRequest *request)
 
     root.prettyPrintTo(json_resp);
     request->send(200, "text/json", json_resp);
+}
+
+void pass_common_get(AsyncWebServerRequest *request)
+{
+    wifi_file_json_t *g_wifi_cfg;
+    g_wifi_cfg = wifi_info_get();
+    if (request->argName(1) != "Pass" || !pass_type_is_ok(request->arg(1), (uint8_t)CONFIRM_COMMON))
+    {
+        request->send(200, "text/json", "{\"St\":\"Error\"}");
+    }
+    else
+    {
+        request->send(200, "text/json", "{\"St\":\"OK\"}");
+    }
 }
 
 /*---------------------------------------------------------------------*
@@ -430,7 +455,7 @@ void sta_network_post(AsyncWebServerRequest *request)
 
     g_wifi_cfg = wifi_info_get();
 
-    if("1234" == root["access_code"])
+    if(pass_type_is_ok(root["access_code"].as<String>(), (uint8_t)CONFIRM_COMMON))
     {
         request->send(200, "text/json", "Wifi Setting Succeed");
 
@@ -465,12 +490,13 @@ void sta_setting_post(AsyncWebServerRequest *request)
 
     g_wifi_cfg = wifi_info_get();
 
-    if("1234" == root["access_code"])
+    if(pass_type_is_ok(root["access_code"].as<String>(), (uint8_t)CONFIRM_COMMON))
     {
         request->send(200, "text/json", "Wifi Advance Setting Succeed");
 
         root["sta_ssid"].as<String>().toCharArray(g_wifi_cfg->sta.ssid, Df_LengSsid + 1);
         root["sta_pass"].as<String>().toCharArray(g_wifi_cfg->sta.pass, Df_LengPass + 1);
+        root["sta_hostname"].as<String>().toCharArray(g_wifi_cfg->sta.hostname, Df_LengHostName + 1);
         g_wifi_cfg->sta.ip.fromString(root["sta_ip"].as<String>());
         g_wifi_cfg->sta.gw.fromString(root["sta_gw"].as<String>());
         g_wifi_cfg->sta.sn.fromString(root["sta_sm"].as<String>());
@@ -479,7 +505,7 @@ void sta_setting_post(AsyncWebServerRequest *request)
         g_wifi_cfg->port.udp   = root["udp_port"].as<int>();
         g_wifi_cfg->port.tcp   = root["tcp_port"].as<int>();
         g_wifi_cfg->port.ws    = root["ws_port"].as<int>(); 
-        g_wifi_cfg->sta.disable   = !root["sta_on"].as<int>();
+        g_wifi_cfg->sta.disable = !root["sta_on"].as<int>();
 
         wifi_info_write(g_wifi_cfg);
 
@@ -507,13 +533,14 @@ void ap_setting_post(AsyncWebServerRequest *request)
 
     g_wifi_cfg = wifi_info_get();
 
-    if("1234" == root["access_code"])
+    if(pass_type_is_ok(root["access_code"].as<String>(), (uint8_t)CONFIRM_COMMON))
     {
         request->send(200, "text/json", "Wifi Advance Setting Succeed");
 
         root["ap_ssid"].as<String>().toCharArray(g_wifi_cfg->ap.ssid, Df_LengSsid + 1);
         root["ap_pass"].as<String>().toCharArray(g_wifi_cfg->ap.pass, Df_LengPass + 1);
-        g_wifi_cfg->ap.disable    = !root["ap_on"].as<int>();
+        root["ap_dns_name"].as<String>().toCharArray(g_wifi_cfg->ap.dns_name, Df_LengHostName + 1);
+        g_wifi_cfg->ap.disable = !root["ap_on"].as<int>();
         g_wifi_cfg->ap.channel = root["ap_channel"].as<int>();
         g_wifi_cfg->ap.hidden = root["ap_hidden"].as<int>(); 
         
@@ -543,12 +570,12 @@ void device_info_post(AsyncWebServerRequest *request)
 
     g_wifi_cfg = wifi_info_get();
 
-    if("1234" == root["access_code"])
+    if(pass_type_is_ok(root["access_code"].as<String>(), (uint8_t)CONFIRM_COMMON))
     {
         request->send(200, "text/json", "Wifi Advance Setting Succeed");
 
-        root["name"].as<String>().toCharArray(g_wifi_cfg->addr.name, Df_LengDevName + 1);
-        root["addr"].as<String>().toCharArray(g_wifi_cfg->addr.addr, Df_LengAddr + 1);        
+        root["name"].as<String>().toCharArray(g_wifi_cfg->device.name, Df_LengDevName + 1);
+        root["addr"].as<String>().toCharArray(g_wifi_cfg->device.addr, Df_LengAddr + 1);        
 
         wifi_info_write(g_wifi_cfg);
 
@@ -576,11 +603,11 @@ void auth_access_post(AsyncWebServerRequest *request)
 
     g_wifi_cfg = wifi_info_get();
 
-    if("1234" == root["access_code"])
+    if(pass_type_is_ok(root["access_code"].as<String>(), (uint8_t)CONFIRM_COMMON))
     {
         if (root["old_pass"] == g_wifi_cfg->auth.pass)
         {
-            request->send(200, "text/json", "Wifi Advance Setting Succeed");
+            request->send(200, "text/json", "Setting Password Succeed");
 
             root["new_pass"].as<String>().toCharArray(g_wifi_cfg->auth.pass, Df_LengAuth + 1);        
 
@@ -605,14 +632,14 @@ void time_setting_post(AsyncWebServerRequest *request)
 {    
     AsyncWebParameter* p = request->getParam(0);
     const char *rtc_str = p->value().c_str();
-    if (rtc_parse_utility((char*)rtc_str))
+    if (rtc_parse_utility(rtc_str, RTC_WEB_UPATE))
     {
         request->send(200, "text/json", "Time Setting Succeed");
     }
     else
     {
         request->send(200, "text/json", "Time Setting Wrong");
-    }    
+    }   
 }
 
 void ddns_client_post(AsyncWebServerRequest *request) 
@@ -630,7 +657,7 @@ void ddns_client_post(AsyncWebServerRequest *request)
 
     g_wifi_cfg = wifi_info_get();
 
-    if("1234" == root["access_code"])
+    if(pass_type_is_ok(root["access_code"].as<String>(), (uint8_t)CONFIRM_COMMON))
     {
         request->send(200, "text/json", "DDNS Setting Succeed");
 
@@ -649,6 +676,74 @@ void ddns_client_post(AsyncWebServerRequest *request)
     else
     {
         request->send(200, "text/json", "Password Setting Wrong");
+    }
+}
+
+void auth_user_access_post(AsyncWebServerRequest *request)
+{
+    wifi_file_json_t *g_wifi_cfg;   
+    AsyncWebParameter* p = request->getParam(0);
+
+    DynamicJsonBuffer djbpo;
+    JsonObject& root = djbpo.parseObject(p->value());
+    if (!root.success())
+    {
+        SERVER_DATA_PRINTF("JSON parsing failed!");
+        return;
+    }
+
+    g_wifi_cfg = wifi_info_get();
+    
+    if(pass_type_is_ok(root["access_code"].as<String>(), (uint8_t)CONFIRM_COMMON))
+    {
+        if (root["old_pass"] == g_wifi_cfg->auth_user.pass)
+        {
+            request->send(200, "text/json", "Setting Password Succeed");
+
+            root["new_pass"].as<String>().toCharArray(g_wifi_cfg->auth_user.pass, Df_LengAuth + 1);        
+
+            wifi_info_write(g_wifi_cfg);
+
+            /* Reset to access new network */
+            esp_reset_enable(500);
+        }
+        else
+        {
+            request->send(200, "text/json", "Old pass Wrong");
+        }
+        
+    }
+    else
+    {
+        request->send(200, "text/json", "Password Setting Wrong");
+    }
+}
+
+void pass_common_post(AsyncWebServerRequest *request)
+{
+    wifi_file_json_t *g_wifi_cfg;   
+    AsyncWebParameter* p = request->getParam(0);
+
+    DynamicJsonBuffer djbpo;
+    JsonObject& root = djbpo.parseObject(p->value());
+    if (!root.success())
+    {
+        SERVER_DATA_PRINTF("JSON parsing failed!");
+        return;
+    }
+
+    g_wifi_cfg = wifi_info_get();
+
+    if (root["old_pass"].as<String>() == String(g_wifi_cfg->confirm[CONFIRM_COMMON]))
+    {
+        request->send(200, "text/json", "Setting Password Succeed");   
+        g_wifi_cfg->confirm[CONFIRM_COMMON] = root["new_pass"].as<String>().toInt();
+
+        wifi_info_write(g_wifi_cfg);
+    }
+    else
+    {
+        request->send(200, "text/json", "Old pass Wrong");
     }
 }
 

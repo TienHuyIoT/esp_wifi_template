@@ -1,4 +1,6 @@
+#include <time.h>
 #include "rtc_data_file.h"
+#include "app_config.h"
 
 #define RTC_PORT Serial
 #define RTC_PRINTF(f_, ...) RTC_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
@@ -6,27 +8,38 @@
 void rtc_setup(void)
 {
     struct tm tmstruct;
+    rtc_time_t rtc = RTC_TIME_DEFAULT;  
+    
     // Set timezone to vietnam Standard Time
     setenv("TZ", "CST-7", 1);
     tzset();
     if (!getLocalTime(&tmstruct, 1))
-    {
-        rtc_time_t rtc = RTC_TIME_DEFAULT;
+    {              
         if (rtc_info_read(&rtc))
         {
             rtc_info_remove();
+            // rtc.year = 2020;
+            // rtc.mon = 8;
+            // rtc.mday = 2;
+            // rtc.hour = 22;
+            // rtc.min = 51;
+            // rtc.sec = 0;
+            // rtc.wday = 0; // sunday(0), sun(0) ... sat(6)
+            RTC_PRINTF("\r\nInit RTC from file"); 
+            rtc_set(&rtc);
+            rtc_get(&rtc);            
         }
-        // rtc.year = 2020;
-        // rtc.mon = 8;
-        // rtc.mday = 2;
-        // rtc.hour = 22;
-        // rtc.min = 51;
-        // rtc.sec = 0;
-        // rtc.wday = 0; // sunday(0), sun(0) ... sat(6)
-        rtc_set(&rtc);
+        else
+        {
+            RTC_PRINTF("\r\nInit RTC from build"); 
+            rtc_parse_utility(build_time, RTC_NON_UPATE);            
+        }           
+    }
+    else
+    {
+        RTC_PRINTF("\r\nInit RTC from system"); 
         rtc_get(&rtc);
-        RTC_PRINTF("\r\nInit RTC default\r\n");        
-    }    
+    } 
 }
 
 uint8_t rtc_level_update_get(void)
@@ -119,7 +132,7 @@ uint8_t rtc_get(rtc_time_t *rtc)
         rtc->mon = tmstruct.tm_mon + 1;
         rtc->mday = tmstruct.tm_mday;
         rtc->wday = tmstruct.tm_wday;
-        RTC_PORT.println(&tmstruct, "\r\n%A, %B %d %Y %H:%M:%S");
+        // RTC_PORT.println(&tmstruct, "\r\nTime: %A, %B %d %Y %H:%M:%S");
         return true;
     }
     return false;

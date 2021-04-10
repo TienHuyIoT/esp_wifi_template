@@ -1,13 +1,15 @@
 #ifndef	_APP_CONFIG_
 #define _APP_CONFIG_
 
+const char * build_time = "Sat " __DATE__ " " __TIME__ " GMT";
+
 // <h> Hardware Version
 
 //==========================================================
 // <o> HW_VERSION_STRING
 
 #ifndef HW_VERSION_STRING
-#define HW_VERSION_STRING "WEB485_V2.2"
+#define HW_VERSION_STRING "ESP32_DEVKIT"
 #endif
 
 // </h>
@@ -30,7 +32,7 @@
 // <o> FW_VERSION_BUILD
  
 #ifndef FW_VERSION_BUILD
-#define FW_VERSION_BUILD 0
+#define FW_VERSION_BUILD 1
 #endif
 
 
@@ -59,6 +61,42 @@ https://github.com/boblemaire/asyncHTTPrequest
 1: Enable
 */
 #define DNS_SERVER_ENABLE  1
+
+/* DNS Server
+0: Disable
+1: Enable
+Update lib AsyncUDP line 676
+void AsyncUDP::_recv(udp_pcb *upcb, pbuf *pb, const ip_addr_t *addr, uint16_t port, struct netif * netif)
+{
+    while(pb != NULL) {
+        pbuf * this_pb = pb;
+        pb = pb->next;
+        this_pb->next = NULL;
+        if(_handler) {
+            AsyncUDPPacket packet(this, this_pb, addr, port, netif);
+            _handler(packet);
+        } else {
+            pbuf_free(this_pb);
+        }
+    }
+}
+to
+void AsyncUDP::_recv(udp_pcb *upcb, pbuf *pb, const ip_addr_t *addr, uint16_t port, struct netif * netif)
+{
+    while(pb != NULL) {
+        pbuf * this_pb = pb;
+        pb = pb->next;
+        this_pb->next = NULL;
+        if(_handler) {
+            AsyncUDPPacket packet(this, this_pb, addr, port, netif);
+            _handler(packet);
+        }
+        
+        pbuf_free(this_pb);
+    }
+}
+*/
+#define NBNS_SERVICE_ENABLE  1
 
 /* LAN network
 0: Disable
@@ -120,7 +158,6 @@ https://github.com/boblemaire/asyncHTTPrequest
 #endif
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)
-// #include <EasyDDNS.h>
 #include "AsyncEasyDDNS.h"
 #endif
 

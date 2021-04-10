@@ -2,10 +2,10 @@
 #define _ASYNC_WEB_SOCKET_H
 
 #include <ESPAsyncWebServer.h>
-#include <TimeOutEvent.h>
+#include <Ticker.h>
 
 #define NUM_WS_CONNECTION_MAX   (DEFAULT_MAX_WS_CLIENTS - 3)
-#define WS_INTERVAL_TIMEOUT_NUM  10000 /* MS */
+#define WS_INTERVAL_TIMEOUT_NUM  60 /* MS */
 
 typedef enum {
     ASYNC_WS_DISCONNECT,
@@ -20,11 +20,10 @@ typedef struct {
 
 ws_connection_info_t ws_connection[NUM_WS_CONNECTION_MAX] = {0};
 
-/* inteval timeout check temperature */
-TimeOutEvent ws_interval_broadcast(WS_INTERVAL_TIMEOUT_NUM);
-
 AsyncWebSocket ws("/ws");
 AsyncEventSource events("/events");
+
+Ticker ws_ticker;
 
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
 

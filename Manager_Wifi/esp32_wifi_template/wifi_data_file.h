@@ -22,8 +22,31 @@ Json arduino assistant: https://arduinojson.org/v5/assistant/
 #define DDNS_PASS_LENGTH_MAX    15
 #define CONFIRM_NUM_MAX         5
 
+#define PASS_COMMON_DEFAULT     1234
+#define PASS_PU3_DEFAULT        1234
+#define PASS_COST_DEFAULT       1234
+#define PASS_LOGFILE_DEFAULT    1234
+typedef enum {
+    CONFIRM_COMMON = 0,
+    CONFIRM_PU3,
+    CONFIRM_COST,
+    CONFIRM_LOGFILE,
+    CONFIRM_RESERVE
+} confirm_t;
 
 typedef struct {
+    struct{   
+        uint32_t t_start;
+        uint32_t t_stop;
+        uint32_t t_start1;
+        uint32_t t_stop1;
+        uint32_t t_start2;
+        uint32_t t_stop2;
+    }log_time; 
+    struct {
+        uint32_t 	addr;
+        uint16_t    sync_time;
+    }i2c_para;
     struct {
         uint16_t 	udp;
         uint16_t 	tcp;
@@ -33,7 +56,7 @@ typedef struct {
         char        name[Df_LengDevName + 1];
         char        addr[Df_LengAddr + 1];
         char        tell[df_LengTell + 1];
-    }addr;
+    }device;
     struct {
         char        user[Df_LengAuth + 1];
         char        pass[Df_LengAuth + 1];
@@ -85,8 +108,8 @@ const char wifi_data_json[] PROGMEM = R"=====(
         "ws" : 25124
     },
     "device":{
-        "name": "esp board",
-        "addr": "Hope Garden, 102 Phan Huy Ich",
+        "name": "Công Ty TNHH Điện Tử Tiến Huy",
+        "addr": "102 Phan Huy Ích, Phường 15, Quận Tân Bình, Tp HCM",
         "tell": "0983497310"
     },
     "auth":{
@@ -95,7 +118,7 @@ const char wifi_data_json[] PROGMEM = R"=====(
     },
     "auth_user":{
         "user": "admin",
-        "pass": "admin"
+        "pass": "12345"
     },
     "confirm":[
         1234,
@@ -109,8 +132,8 @@ const char wifi_data_json[] PROGMEM = R"=====(
         "gw":"192.168.1.1",
         "sn":"255.255.255.0",
         "dns":"192.168.1.1",
-        "ssid":"TienHuyIoT",
-        "psk":"12345679",
+        "ssid":"",
+        "psk":"",
         "hostname":"tienhuyiot",
         "dhcp":1,
         "disable":0,
@@ -119,7 +142,7 @@ const char wifi_data_json[] PROGMEM = R"=====(
     "ap":{        
         "ip":"192.168.4.1",
         "sn":"255.255.255.0",
-        "ssid":"MONTECH",
+        "ssid":"tienhuyiot",
         "psk":"88888888",
         "dns_name":"tienhuyiot.vn",        
         "disable":0,
@@ -128,7 +151,7 @@ const char wifi_data_json[] PROGMEM = R"=====(
     },
     "ddns":{
         "service": "noip",
-        "domain": "tienhuyiot.ddns.net",
+        "domain": "tienhuyiot.vn",
         "user": "admin",
         "pass": "admin",
         "sync_time": 30,
@@ -142,6 +165,9 @@ wifi_file_json_t wifi_file_cfg;
 void wifi_info_setup(void);
 wifi_file_json_t* wifi_info_get(void);
 void wifi_info_refactor(void);
+void wifi_info_pass_refactor(void);
+uint8_t pass_superadmin_is_ok(const String &pass);
+uint8_t pass_type_is_ok(const String &pass, uint8_t type);
 void wifi_info_read(wifi_file_json_t* r_wifi_info);
 void wifi_info_write(wifi_file_json_t* w_wifi_info);
 

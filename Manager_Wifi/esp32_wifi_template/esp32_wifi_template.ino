@@ -1,3 +1,120 @@
+/*
+Edit lib async:
+
+WebHandlerlmpl.h edit
+line 32 add: typedef std::function<bool(AsyncWebServerRequest *request)> ArRequestAuthenticateFunction;
+line 49 add: ArRequestAuthenticateFunction _onAuthenticate;
+line 62 add: AsyncStaticWebHandler& onAuthenticate(ArRequestAuthenticateFunction fn) {_onAuthenticate = fn; return *this;}
+
+WebHandlers.cpp edit
+Line 193
+if(_username != "" && _password != "")
+{
+  if(!request->authenticate(_username.c_str(), _password.c_str()))
+  {
+    return request->requestAuthentication();
+  } 
+}     
+else
+{
+  if(_onAuthenticate)
+  {
+    if(!_onAuthenticate(request))
+    {
+      return;
+    }
+  }
+}
+
+******Fix Memory heap not free when using NBNS ******
+
+AsyncUDP.cpp edit
+Line 676:
+void AsyncUDP::_recv(udp_pcb *upcb, pbuf *pb, const ip_addr_t *addr, uint16_t port, struct netif * netif)
+{
+  while(pb != NULL) {
+      pbuf * this_pb = pb;
+      pb = pb->next;
+      this_pb->next = NULL;
+      if(_handler) {
+          AsyncUDPPacket packet(this, this_pb, addr, port, netif);
+          _handler(packet);
+      } else {
+          pbuf_free(this_pb);
+      }
+  }
+}
+
+--> change to
+
+void AsyncUDP::_recv(udp_pcb *upcb, pbuf *pb, const ip_addr_t *addr, uint16_t port, struct netif * netif)
+{
+  while(pb != NULL) {
+      pbuf * this_pb = pb;
+      pb = pb->next;
+      this_pb->next = NULL;
+      if(_handler) {
+          AsyncUDPPacket packet(this, this_pb, addr, port, netif);
+          _handler(packet);
+      }
+      
+      pbuf_free(this_pb);
+  }
+}
+
+***************Enable change port***************
+
+1. WebServer.cpp at line  82
+Original
+void AsyncWebServer::begin(){
+  _server.setNoDelay(true);  
+  _server.begin();
+}
+
+Change to
+
+void AsyncWebServer::begin(uint16_t port){
+  if (port != NULL)
+  {
+    _server.port(port);
+  }
+  _server.setNoDelay(true);  
+  _server.begin();
+}
+
+2. ESPAsyncWebServer.h at line 408
+Original
+void begin();
+
+Change to
+
+void begin(uint16_t port = NULL);
+
+3. AsyncTCP.cpp at line 1264
+Original
+void AsyncServer::begin()
+{}
+
+Change to
+
+void AsyncServer::port(uint16_t port)
+{
+    _port = port;
+}
+
+void AsyncServer::begin()
+{}
+
+4. AsyncTCP.h at line 194
+Original
+void begin();
+
+Change to
+
+void port(uint16_t port);
+void begin();
+*/
+
 #if CONFIG_FREERTOS_UNICORE
 #define ARDUINO_RUNNING_CORE 0
 #else
@@ -27,6 +144,7 @@
 #include <TimeOutEvent.h>
 #include <IOInput.h>
 #include <IOBlink.h>
+#include <Ticker.h>
 #include "app_config.h"
 #include "Tools.h"
 #include "rtc_data_file.h"
@@ -39,6 +157,8 @@
 #include "async_webserver.h"
 #include "async_websocket.h"
 #include "app_async_websocket.h"
+
+Ticker led_ticker;
 
 #if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)
 DNSServer dnsServer;
@@ -89,15 +209,31 @@ uint8_t temprature_sens_read();
 // inteval timeout check temperature
 TimeOutEvent internal_temp_to(60000);
 
+void led_status_blink_update(int time_bl)
+{
+  static int time_bl_backup = 0;
+  if(time_bl_backup != time_bl)
+  {
+    time_bl_backup = time_bl;
+    led_ticker.attach_ms(time_bl, led_status_toggle);
+    led_status_on();
+  }  
+}
+
 void setup()
 {
   wifi_file_json_t *g_wifi_cfg;
 
-  COMMON_PORT.begin(115200);
+  COMMON_PORT.begin(115200, SERIAL_8N1, -1, 1);
+  COMMON_PRINTF("\r\nbuild_time: %s", build_time);
   COMMON_PRINTF("\r\n==== Firmware version %u.%u.%u ====\r\n", 
                 FW_VERSION_MAJOR,
                 FW_VERSION_MINOR,
-                FW_VERSION_BUILD);   
+                FW_VERSION_BUILD); 
+
+  led_status_init();
+
+  led_status_blink_update(1000);                  
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
 #if (defined ETH_GPIO_ENABLE) && (ETH_GPIO_ENABLE != -1)
@@ -145,7 +281,7 @@ void setup()
   wakeup_reason_log();
   
   /* Init wifi */    
-  wifi_events_setup();
+  wifi_events_setup(led_status_blink_update);
   wifi_info_setup();
   g_wifi_cfg = wifi_info_get();
 
@@ -218,12 +354,11 @@ void loop()
 
 #if (defined FACTORY_INPUT_PIN) && (FACTORY_INPUT_PIN != -1)
   /* factory reset input handle */
-  factory_reset_handle();
+  if(factory_reset_handle())
+  {
+    led_status_blink_update(3000);
+  }
 #endif
-
-  /* Ws handle */
-  ws.cleanupClients();
-  ws_interval_sync();
 
 #if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)  
   ArduinoOTA.handle();
@@ -231,9 +366,5 @@ void loop()
 
 #if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)  
   dnsServer.processNextRequest();
-#endif
-
-#if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
-  ddns_update();
 #endif
 }

@@ -1,0 +1,91 @@
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Format Thẻ Nhớ</title>
+    <link rel="stylesheet" href="/mystyle.css">
+    <script src="/myscripts.js"></script>
+    <style type="text/css" media="screen">
+        #fsMeter {
+            width: 100px;
+            height: 15px;
+        }
+    </style>
+
+    <script>
+        function myhttp_get(element) {
+            var pass = prompt("Please Enter Password");
+            if (pass.length < 4) {
+                alert('Password Input Fail');
+                return;
+            }
+            client.get('/get?' + 'param_wifi=' + element + "&pass=" + pass, function(response) {
+                alert(response);
+                refreshStatus();
+            });
+        }
+
+        function readableSize(bytes) {
+            if (bytes < 1024) return bytes + " B";
+            var units = [' KiB', ' MiB', ' GiB', ' TiB', 'PiB'];
+            var i = -1;
+            do {
+                bytes = bytes / 1024;
+                i++;
+            } while (bytes > 1024);
+            return bytes.toFixed(2) + units[i];
+        }
+
+        function refreshStatus() {
+            document.getElementById("status").innerHTML = "(refreshing...)";
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onload = function() {
+                if (xmlHttp.status != 200) showHttpError(xmlHttp);
+                else {
+                    fsInfo = JSON.parse(xmlHttp.responseText);
+                    if (fsInfo.isOk) {
+                        var percent = (1 + Math.round(99 * fsInfo.usedBytes / fsInfo.totalBytes)); // fake to see the "used" bar in any case
+                        var text = readableSize(fsInfo.totalBytes - fsInfo.usedBytes) + " free of " + readableSize(fsInfo.totalBytes);
+                        status = " (" + text + ") " +
+                            " <meter id='fsMeter' min='0' optimum='0'low='90' high='95' max='100' value='" + percent + "' title='" + text + "'>" + text + "</meter>"
+                        if (fsInfo.unsupportedFiles) {
+                            status += " <span id='warning'>WARNING<span class='tooltip'>" +
+                                "Filesystem&nbsp;contains&nbsp;unsupported&nbsp;filenames:<br/>" +
+                                fsInfo.unsupportedFiles +
+                                "</span></span>";
+                        }
+                    } else {
+                        status += "<span style='background-color:red;color:white;font-weight:bold'>INIT ERROR !</span>";
+                    }
+                    document.getElementById("status").innerHTML = status;
+                }
+            };
+            xmlHttp.open("GET", "/edit_sdfs?status=sd", true);
+            xmlHttp.send(null);
+        }
+
+        function onBodyLoad() {
+            refreshStatus();
+        }
+    </script>
+</head>
+
+<body onload="onBodyLoad()">
+    <div style="text-align:left;display:inline-block;min-width:260px;">
+        <br><br>
+        <h3 align="center">FORMAT THẺ NHỚ</h3>
+
+        <table width="100%">
+            <tr>
+                <td><span id="status">
+                </span></td>
+            </tr>
+            <tr>
+                <td><input type="button" onclick="myhttp_get('format_sd_card')" value="Format"></td>
+            </tr>
+        </table>
+    </div>
+</body>
+
+</html>

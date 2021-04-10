@@ -21,10 +21,12 @@
 
                     document.getElementById('ap_ssid').value = obj.ap_ssid;
                     document.getElementById('ap_ip_adress').value = obj.ap_ip_adress;
+                    document.getElementById('ap_dns_name').value = obj.ap_dns_name;
                     document.getElementById('sta_ssid').value = obj.sta_ssid;
                     document.getElementById('sta_ip_address').value = obj.sta_ip_address;
                     document.getElementById('sta_ip_dhcp').value = obj.sta_ip_dhcp;
                     document.getElementById('sta_status').value = obj.sta_status;
+                    document.getElementById('sta_hostname').value = obj.sta_hostname;
                 });
             }
             if (element == 'sta_network') {
@@ -76,6 +78,7 @@
                     document.getElementById('sta_gw').value = obj.sta_gw;
                     document.getElementById('sta_sm').value = obj.sta_sm;
                     document.getElementById('sta_dns').value = obj.sta_dns;
+                    document.getElementById("sta_hostname").value = obj.sta_hostname;
                     document.getElementById("sta_dhcp").checked = obj.sta_dhcp;
                     document.getElementById("sta_on").checked = obj.sta_on;
 
@@ -91,6 +94,7 @@
 
                     document.getElementById('ap_ssid').value = obj.ap_ssid;
                     document.getElementById('ap_pass').value = obj.ap_pass;
+                    document.getElementById('ap_dns_name').value = obj.ap_dns_name;
                     document.getElementById("ap_on").checked = obj.ap_on;
 
                     document.getElementById('ap_channel').value = obj.ap_channel;
@@ -151,6 +155,7 @@
                 obj.sta_gw = document.getElementById('sta_gw').value;
                 obj.sta_sm = document.getElementById('sta_sm').value;
                 obj.sta_dns = document.getElementById('sta_dns').value;
+                obj.sta_hostname = document.getElementById('sta_hostname').value;
                 obj.sta_dhcp = Number(document.getElementById("sta_dhcp").checked);
                 obj.sta_on = Number(document.getElementById("sta_on").checked);
 
@@ -178,6 +183,7 @@
 
                 obj.ap_ssid = document.getElementById('ap_ssid').value;
                 obj.ap_pass = document.getElementById('ap_pass').value;
+                obj.ap_dns_name = document.getElementById('ap_dns_name').value;
                 obj.ap_on = Number(document.getElementById("ap_on").checked);
 
                 obj.ap_channel = Number(document.getElementById('ap_channel').value);
@@ -289,6 +295,11 @@
                         </td>
                     </tr>
                     <tr>
+                        <td align="left"><b>DNS Name</b></td>
+                        <td align="center"><input type="text" id="ap_dns_name" size="32" value='tienhuyiot.vn' readonly>
+                        </td>
+                    </tr>
+                    <tr>
                         <td colspan='2' style="text-align: left;padding-left: 0;padding-top: 20; color: #ff5722; font-size: 11px;"><b>WIFI NETWORK</b></td>
                     </tr>
                     <tr>
@@ -311,12 +322,17 @@
                         <td align="center"><input type="text" id="sta_status" size="32" placeholder='Success' readonly>
                         </td>
                     </tr>
+                    <tr>
+                        <td align="left"><b>Host name</b></td>
+                        <td align="center"><input type="text" id="sta_hostname" size="32" readonly>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
         <p style="text-align: center;">
             <font size="0" face="arial" color="gray">
-                Copyright © 2020 - TienHuyIoT</font>
+                Copyright © 2021 - Bản quyền thuộc về Công ty TNHH Điện Tử Tiến Huy</font>
         </p>
     </div>
 </body>

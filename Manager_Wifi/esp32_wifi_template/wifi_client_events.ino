@@ -34,11 +34,22 @@
 #include "lan8720a_cfg.h"
 #endif
 #include <ESPmDNS.h>
+
+#if (defined NBNS_SERVICE_ENABLE) && (NBNS_SERVICE_ENABLE == 1)
 #include <NetBIOS.h>
+#endif
+
+#include "board.h"
 #include "wifi_data_file.h"
 
 #define WIFI_EVENT_PORT Serial
 #define WIFI_EVENT_PRINTF(f_, ...) WIFI_EVENT_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+
+#define LED_WIFI_CONNECT_TIMER    500
+#define LED_ETH_CONNECT_TIMER     100
+#define LED_DISCONNECT_TIMER      1000
+
+static led_callback_t _led_update = NULL;
 
 void WiFiEvent(WiFiEvent_t event)
 {
@@ -125,6 +136,10 @@ void WiFiEvent(WiFiEvent_t event)
             break;
         case SYSTEM_EVENT_ETH_DISCONNECTED:
             WIFI_EVENT_PORT.println("Ethernet disconnected");
+            if(_led_update)
+            {
+                _led_update(LED_DISCONNECT_TIMER);
+            }
             break;
         case SYSTEM_EVENT_ETH_GOT_IP:
             WIFI_EVENT_PORT.println("Obtained IP address");
@@ -136,6 +151,11 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 {
     wifi_file_json_t *g_wifi_cfg;
     g_wifi_cfg = wifi_info_get();
+
+    if(_led_update)
+    {
+        _led_update(LED_WIFI_CONNECT_TIMER);
+    }
         
     sntp_setup();   // sntp sync time setup
 
@@ -155,10 +175,12 @@ void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 
     MDNS.addService("http","tcp",80);
 
+#if (defined NBNS_SERVICE_ENABLE) && (NBNS_SERVICE_ENABLE == 1)
     NBNS.begin(g_wifi_cfg->sta.hostname);
+#endif
 
     WIFI_EVENT_PORT.println("WiFi connected");
-    WIFI_EVENT_PORT.println("IP address: ");
+    WIFI_EVENT_PORT.print("IP address: ");
     WIFI_EVENT_PORT.println(IPAddress(info.got_ip.ip_info.ip.addr));
     /* Smart config enable */
     if(g_wifi_cfg->sta.smart_cfg)
@@ -180,6 +202,11 @@ void ETHGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 {
     wifi_file_json_t *g_wifi_cfg;
     g_wifi_cfg = wifi_info_get();
+
+    if(_led_update)
+    {
+        _led_update(LED_ETH_CONNECT_TIMER);
+    }
         
     sntp_setup();   // sntp sync time setup
 
@@ -199,7 +226,9 @@ void ETHGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 
     MDNS.addService("http","tcp",80);
 
+#if (defined NBNS_SERVICE_ENABLE) && (NBNS_SERVICE_ENABLE == 1)
     NBNS.begin(g_wifi_cfg->sta.hostname);
+#endif
 
     WIFI_EVENT_PORT.print("ETH MAC: ");
     WIFI_EVENT_PORT.print(ETH.macAddress());
@@ -214,8 +243,9 @@ void ETHGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 }
 #endif
 
-void wifi_events_setup()
+void wifi_events_setup(led_callback_t cb)
 {
+    _led_update = cb;
     // Examples of different ways to register wifi events
     WiFi.onEvent(WiFiEvent);
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
@@ -230,15 +260,17 @@ void wifi_events_setup()
         WIFI_EVENT_PORT.print("WiFi lost connection. Reason: ");
         WIFI_EVENT_PORT.println(info.disconnected.reason);
         WiFi.reconnect();
+        if(_led_update)
+        {
+            _led_update(LED_DISCONNECT_TIMER);
+        }
     }, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
 }
 
 void wifi_setup(const char* name, const char* pass)
 {
     // We start by connecting to a WiFi network
-    WIFI_EVENT_PORT.println();
-    WIFI_EVENT_PORT.print("Connecting to ");
-    WIFI_EVENT_PORT.println(name); 
+    WIFI_EVENT_PRINTF("\r\nConnecting to %s\r\n", name);
     
     /* Set whether module will attempt to reconnect
      to an access point in case it is disconnected. 
@@ -253,7 +285,5 @@ void wifi_setup(const char* name, const char* pass)
         WiFi.begin(name);
     }
 
-    WIFI_EVENT_PORT.println();
-    WIFI_EVENT_PORT.println();
-    WIFI_EVENT_PORT.println("Wait for WiFi... ");
+    WIFI_EVENT_PRINTF("\r\nWait for WiFi...\r\n");
 }

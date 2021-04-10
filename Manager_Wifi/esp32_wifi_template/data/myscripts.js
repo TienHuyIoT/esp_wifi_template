@@ -20,6 +20,17 @@ var HttpClient = function() {
         anHttpRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
         anHttpRequest.send(aRgs);
     }
+    this.delect = function(aUrl, aRgs, aCallback) {
+        var anHttpRequest = new XMLHttpRequest();
+        anHttpRequest.onreadystatechange = function() {
+            if (anHttpRequest.readyState == 4 && anHttpRequest.status == 200)
+                aCallback(anHttpRequest.responseText);
+        }
+
+        anHttpRequest.open("DELETE", aUrl, true);
+        anHttpRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        anHttpRequest.send(aRgs);
+    }
 }
 var client = new HttpClient();
 

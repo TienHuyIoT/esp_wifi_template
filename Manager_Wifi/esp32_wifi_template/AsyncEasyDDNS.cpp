@@ -21,10 +21,13 @@
 #endif
 
 AsyncEasyDDNSClass::AsyncEasyDDNSClass()
-:previousMillis(0)
 {
   using namespace std::placeholders;  
   ddnsip.fromString("0.0.0.0");
+  ddns_choice = "";
+  ddns_d = "";
+  ddns_u = "";
+  ddns_p = "";
   request_get_ip.setDebug(false);  
   request_post_ip.setDebug(false); 
   request_get_ip.onReadyStateChange(std::bind(&AsyncEasyDDNSClass::request_get_ip_cb, this, _1, _2, _3));
@@ -59,13 +62,12 @@ void AsyncEasyDDNSClass::request_post_ip_cb(void* optParm, asyncHTTPrequest* req
   if (readyState == 4) 
   {
     ASYNC_EASYDDNS_DBG_PORT.println("\n**************************************");
-    ASYNC_EASYDDNS_DBG_PORT.println(request->responseText());
-    ASYNC_EASYDDNS_DBG_PORT.println("**************************************");    
+    ASYNC_EASYDDNS_DBG_PORT.print(request->responseText());      
     request->setDebug(false);
     ddnsip.fromString(new_ip);
     if (old_ip != new_ip)
     {
-      ASYNC_EASYDDNS_PRINTF("\r\nnew_ip");      
+      ASYNC_EASYDDNS_PRINTF("new_ip\r\n");      
       // Send a callback notification
       if(_ddnsUpdateFunc != nullptr){
         _ddnsUpdateFunc(old_ip.c_str(), new_ip.c_str());
@@ -75,8 +77,9 @@ void AsyncEasyDDNSClass::request_post_ip_cb(void* optParm, asyncHTTPrequest* req
     }
     else
     {
-      ASYNC_EASYDDNS_PRINTF("\r\nold_ip");
-    }    
+      ASYNC_EASYDDNS_PRINTF("old_ip\r\n");
+    } 
+    ASYNC_EASYDDNS_DBG_PORT.println("**************************************");     
   }
 }
 
@@ -168,17 +171,11 @@ void AsyncEasyDDNSClass::run_post_ip()
   }
 }
 
-void AsyncEasyDDNSClass::update(unsigned long ddns_update_interval) {
-
-  interval = ddns_update_interval;
-
-  unsigned long currentMillis = millis(); // Calculate Elapsed Time & Trigger
-  if (currentMillis - previousMillis >= interval) {
-    previousMillis = currentMillis;
-    ASYNC_EASYDDNS_PRINTF("\r\nUpdate IP");
-    // ######## GET PUBLIC IP ######## //
-    run_get_ip();
-  }
+void AsyncEasyDDNSClass::update() 
+{
+  ASYNC_EASYDDNS_PRINTF("\r\nUpdate IP");
+  // ######## GET PUBLIC IP ######## //
+  run_get_ip();
 }
 
 AsyncEasyDDNSClass AsyncEasyDDNS;
