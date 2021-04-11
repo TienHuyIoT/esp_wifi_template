@@ -1,4 +1,4 @@
-#include <hwcrypto/aes.h>
+#include <aes/esp_aes.h>
 
 #define CRYPTO_PORT Serial
 #define CRYPTO_PRINTF(f_, ...) CRYPTO_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)

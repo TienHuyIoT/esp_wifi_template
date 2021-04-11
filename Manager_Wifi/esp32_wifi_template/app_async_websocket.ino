@@ -34,7 +34,7 @@ void ws_receive_txt_callback(uint8_t ws_index, char * payload)
     {
       //"date":"Thu Jan 25 2018 19:39:48 GMT+0700 (SE Asia Standard Time)"
       const char *s = root["date"];
-      if(s != '\0'){
+      if(s != nullptr){
         rtc_parse_utility(s, RTC_WEB_UPATE);   
       }
     }

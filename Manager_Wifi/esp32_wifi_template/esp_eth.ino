@@ -17,7 +17,7 @@ uint8_t eth_init(void)
   ESP_ETH_PRINTF("\r\nETH Start\r\n");
   
   g_wifi_cfg = wifi_info_get();
-  ETH.begin(ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_TYPE, ETH_CLK_MODE);
+  ETH.begin(ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_TYPE);
   if (!g_wifi_cfg->sta.dhcp)
   {
     /* Config must be after begin function */

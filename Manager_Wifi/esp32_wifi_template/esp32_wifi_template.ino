@@ -74,7 +74,7 @@ void AsyncWebServer::begin(){
 Change to
 
 void AsyncWebServer::begin(uint16_t port){
-  if (port != NULL)
+  if (port != 0)
   {
     _server.port(port);
   }
@@ -88,7 +88,7 @@ void begin();
 
 Change to
 
-void begin(uint16_t port = NULL);
+void begin(uint16_t port = 0);
 
 3. AsyncTCP.cpp at line 1264
 Original
@@ -136,10 +136,10 @@ void begin();
 #include <esp_wifi.h>
 #include <esp_system.h>
 #include <driver/rtc_io.h>
-#include <hwcrypto/aes.h>
-#include <rom/rtc.h>
+#include <aes/esp_aes.h>
+#include <esp32/rom/rtc.h>
 #include <soc/rtc.h>
-#include <lwip/apps/sntp.h>
+#include <esp_sntp.h>
 #include <time.h>
 #include <TimeOutEvent.h>
 #include <IOInput.h>
