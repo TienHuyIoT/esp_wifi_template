@@ -17,7 +17,7 @@ uint8_t eth_init(void)
   ESP_ETH_PRINTF("\r\nETH Start\r\n");
   
   g_wifi_cfg = wifi_info_get();
-  ETH.begin(ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_TYPE);
+  ETH.begin(ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_TYPE, ETH_CLK_MODE);
   if (!g_wifi_cfg->sta.dhcp)
   {
     /* Config must be after begin function */
@@ -31,13 +31,13 @@ uint8_t eth_init(void)
   return true;
 }
 
-uint8_t eth_enable(void)
+void eth_enable(void)
 {
   ESP_ETH_PRINTF("\r\nETH Enable\r\n");
   eth_status = 1;
 }
 
-uint8_t eth_disable(void)
+void eth_disable(void)
 {
   ESP_ETH_PRINTF("\r\nETH Disable\r\n");
   eth_status = 0;

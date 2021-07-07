@@ -5,7 +5,7 @@
 #include <Ticker.h>
 
 #define NUM_WS_CONNECTION_MAX   (DEFAULT_MAX_WS_CLIENTS - 3)
-#define WS_INTERVAL_TIMEOUT_NUM  60 /* MS */
+#define WS_INTERVAL_TIMEOUT_NUM  60 /* S */
 
 typedef enum {
     ASYNC_WS_DISCONNECT,
@@ -36,7 +36,6 @@ uint8_t ws_connection_connected(void);
 uint8_t ws_connection_index_has_tl_max(void);
 void ws_send_txt(uint8_t ws_index, char *payload);
 void ws_send_broadcast_txt(char *payload);
-uint8_t ws_connection_connected(void);
 void ws_interval_sync(void);
 
 #endif

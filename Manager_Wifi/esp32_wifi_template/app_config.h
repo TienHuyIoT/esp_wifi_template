@@ -1,7 +1,7 @@
-#ifndef	_APP_CONFIG_
-#define _APP_CONFIG_
+#ifndef	__APP_CONFIG_H
+#define __APP_CONFIG_H
 
-const char * build_time = "Sat " __DATE__ " " __TIME__ " GMT";
+const char * build_time = "Thu " __DATE__ " " __TIME__ " GMT";
 
 // <h> Hardware Version
 
@@ -9,7 +9,7 @@ const char * build_time = "Sat " __DATE__ " " __TIME__ " GMT";
 // <o> HW_VERSION_STRING
 
 #ifndef HW_VERSION_STRING
-#define HW_VERSION_STRING "ESP32_DEVKIT"
+#define HW_VERSION_STRING "WEB485_V2.2"
 #endif
 
 // </h>
@@ -32,7 +32,7 @@ const char * build_time = "Sat " __DATE__ " " __TIME__ " GMT";
 // <o> FW_VERSION_BUILD
  
 #ifndef FW_VERSION_BUILD
-#define FW_VERSION_BUILD 1
+#define FW_VERSION_BUILD 0
 #endif
 
 
@@ -120,7 +120,7 @@ void AsyncUDP::_recv(udp_pcb *upcb, pbuf *pb, const ip_addr_t *addr, uint16_t po
 0: not use
 1: use
 */
-#define SD_POWER_ENABLE 0
+#define SD_POWER_ENABLE 1
 
 /* Nand memory file system
 0: SPIFFS
@@ -161,4 +161,4 @@ void AsyncUDP::_recv(udp_pcb *upcb, pbuf *pb, const ip_addr_t *addr, uint16_t po
 #include "AsyncEasyDDNS.h"
 #endif
 
-#endif
+#endif // __APP_CONFIG_H

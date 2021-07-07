@@ -1,4 +1,8 @@
+#include "Esp.h"
 #include "esp_reset.h"
+
+#define RESET_DBG_PORT Serial
+#define RESET_DBG_PRINTF(...) RESET_DBG_PORT.printf(__VA_ARGS__)
 
 // need non block function
 void esp_reset_enable(uint32_t timeout)
@@ -16,7 +20,7 @@ void esp_reboot_handle(void)
         rtc_get(&rtc);
         rtc_info_write(&rtc);
 
-        Serial.println("Rebooting...");
+        RESET_DBG_PRINTF("Rebooting...");
 
         delay(esp_reboot_timeout);
         ESP.restart();

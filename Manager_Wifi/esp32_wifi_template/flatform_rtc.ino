@@ -1,6 +1,6 @@
-#include <time.h>
 #include "rtc_data_file.h"
 #include "app_config.h"
+#include "flatform_rtc.h"
 
 #define RTC_PORT Serial
 #define RTC_PRINTF(f_, ...) RTC_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
@@ -89,10 +89,11 @@ void rtc_set(rtc_time_t *rtc)
     settimeofday(&now, NULL);
 }
 
-void rtc_localtime(rtc_time_t* rtc, uint32_t now)
+/* Convert t_now to rtc */
+void rtc_localtime(rtc_time_t* rtc, uint32_t t_now)
 {
     struct tm desired_tm;
-    localtime_r((time_t *)&now, &desired_tm);
+    localtime_r((time_t *)&t_now, &desired_tm);
     rtc->mon = desired_tm.tm_mon + 1;
     rtc->mday = desired_tm.tm_mday;
     rtc->year = desired_tm.tm_year + 1900;
@@ -102,6 +103,14 @@ void rtc_localtime(rtc_time_t* rtc, uint32_t now)
     rtc->wday = desired_tm.tm_wday;
 }
 
+void rtc_printtime_tnow(uint32_t t_now)
+{
+    struct tm desired_tm;
+    localtime_r((time_t *)&t_now, &desired_tm);
+    RTC_PORT.println(&desired_tm, "Time: %A, %B %d %Y %H:%M:%S");
+}
+
+/* Convert rtc to now */
 uint32_t rtc_mktime(rtc_time_t* rtc)
 {
     struct tm desired_tm;
@@ -120,6 +129,20 @@ uint32_t rtc_mktime(rtc_time_t* rtc)
     return (uint32_t)false_now;
 }
 
+/* Return time now number of rtc system */
+uint32_t rtc_get_t_now(void)
+{
+    rtc_time_t rtc;
+    uint32_t t_now = 0;
+
+    if(rtc_get(&rtc))
+    {
+        t_now = rtc_mktime(&rtc);
+    }
+
+    return t_now;
+}
+
 uint8_t rtc_get(rtc_time_t *rtc)
 {
     struct tm tmstruct;
@@ -136,4 +159,18 @@ uint8_t rtc_get(rtc_time_t *rtc)
         return true;
     }
     return false;
+}
+
+uint32_t time_hhmmss_format(rtc_time_t *rtc) 
+{
+    //hhmmss
+    uint32_t t = rtc->hour * 10000 + rtc->min * 100 + rtc->sec;
+    return t;
+}
+
+uint32_t date_ddmmyy_format(rtc_time_t *rtc) 
+{
+    //ddmmyy
+    uint32_t d = rtc->mday * 10000 + rtc->mon * 100 + rtc->year % 100;
+    return d;
 }

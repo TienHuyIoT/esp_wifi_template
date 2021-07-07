@@ -1,4 +1,8 @@
+#if defined(ESP32) && ESP_IDF_VERSION_MAJOR >= 4
 #include <aes/esp_aes.h>
+#else
+#include <hwcrypto/aes.h>
+#endif
 
 #define CRYPTO_PORT Serial
 #define CRYPTO_PRINTF(f_, ...) CRYPTO_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)

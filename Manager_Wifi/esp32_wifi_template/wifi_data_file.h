@@ -35,18 +35,6 @@ typedef enum {
 } confirm_t;
 
 typedef struct {
-    struct{   
-        uint32_t t_start;
-        uint32_t t_stop;
-        uint32_t t_start1;
-        uint32_t t_stop1;
-        uint32_t t_start2;
-        uint32_t t_stop2;
-    }log_time; 
-    struct {
-        uint32_t 	addr;
-        uint16_t    sync_time;
-    }i2c_para;
     struct {
         uint16_t 	udp;
         uint16_t 	tcp;
@@ -103,11 +91,11 @@ typedef struct {
 const char wifi_data_json[] PROGMEM = R"=====(
 {
     "port":{
-        "udp": 25123,
-        "tcp": 25123,
-        "ws" : 25124
+        "udp": 25130,
+        "tcp": 25130,
+        "ws" : 25131
     },
-    "device":{
+    "device": {
         "name": "Công Ty TNHH Điện Tử Tiến Huy",
         "addr": "102 Phan Huy Ích, Phường 15, Quận Tân Bình, Tp HCM",
         "tell": "0983497310"
@@ -128,32 +116,32 @@ const char wifi_data_json[] PROGMEM = R"=====(
         1234
     ],
     "sta":{        
-        "ip":"192.168.1.100",
+        "ip":"192.168.1.101",
         "gw":"192.168.1.1",
         "sn":"255.255.255.0",
         "dns":"192.168.1.1",
         "ssid":"",
         "psk":"",
-        "hostname":"tienhuyiot",
-        "dhcp":1,
-        "disable":0,
-        "smart_cfg":1
+        "hostname": "tienhuyiot",
+        "dhcp": 1,
+        "disable": 0,
+        "smart_cfg": 1
     },
-    "ap":{        
-        "ip":"192.168.4.1",
-        "sn":"255.255.255.0",
-        "ssid":"tienhuyiot",
-        "psk":"88888888",
-        "dns_name":"tienhuyiot.vn",        
-        "disable":0,
-        "channel":2,
-        "hidden":0
+    "ap": {
+        "ip": "192.168.4.1",
+        "sn": "255.255.255.0",
+        "ssid": "tienhuyiot",
+        "psk": "88888888",
+        "dns_name": "tienhuyiot.vn",
+        "disable": 0,
+        "hidden": 0,
+        "channel": 2
     },
     "ddns":{
         "service": "noip",
-        "domain": "tienhuyiot.vn",
-        "user": "admin",
-        "pass": "admin",
+        "domain": "tienhuyiot.ddns.net",
+        "user": "tienhuyiot",
+        "pass": "123456789",
         "sync_time": 30,
         "disable":1
     }

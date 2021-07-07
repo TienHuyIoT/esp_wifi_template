@@ -35,6 +35,8 @@ SD INTERFACE
 #define SD_MISO_PIN     		        SPI_MISO_PIN
 #define SD_MOSI_PIN     		        SPI_MOSI_PIN   
 
+bool sd_card_status_isOK(void);
+
 #endif
 
 #endif

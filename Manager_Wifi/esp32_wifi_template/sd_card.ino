@@ -20,7 +20,12 @@
 #define SD_FS_PRINTFLN(f_, ...) SD_FS_PORT.printf_P(PSTR(f_ "\r\n"), ##__VA_ARGS__)
 
 /* Private variables ---------------------------------------------------------*/
-static bool sd_card_status;
+static bool sd_card_status = false;
+
+bool sd_card_status_isOK(void)
+{
+  return (true == sd_card_status);
+}
 
 void sd_card_init(void)
 {

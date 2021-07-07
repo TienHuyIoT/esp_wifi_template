@@ -8,8 +8,9 @@
 #else
 #define FSEDITOR_DBG_PRINTF(f_, ...)
 #endif
-/* Convert htm to gzip. Select "Compress this file, output-gz"
+/** Convert htm to gzip. Select "Compress this file, output-gz"
  * https://online-converting.com/archives/convert-to-gzip/ 
+ * https://peazip.github.io/index.html app PeaZip
  * Convert file to array C
  * http://tomeko.net/online_tools/file_to_hex.php?lang=en
  */
@@ -963,8 +964,9 @@ FSEditor& FSEditor::onStatus(fs_status fn)
   return *this;
 }
 
-bool FSEditor::canHandle(AsyncWebServerRequest *request){  
+bool FSEditor::canHandle(AsyncWebServerRequest *request){ 
   if(request->url().equalsIgnoreCase(_uri)){
+    String path = "";
 #if (defined FS_EDITOR_DEBUG) && (FS_EDITOR_DEBUG == 1)
     FSEDITOR_DBG_PRINTF("canHandle");
     debug(request);
@@ -975,7 +977,14 @@ bool FSEditor::canHandle(AsyncWebServerRequest *request){
       if(request->hasParam("status"))
         return true;
       if(request->hasParam("edit")){
-        request->_tempFile = _fs.open(request->arg("edit"), "r");
+        path = request->arg("edit");
+#if defined(ESP32) && ESP_IDF_VERSION_MAJOR >= 4
+        if (!path.startsWith("/"))
+        {
+          path = "/" + path;
+        }
+#endif
+        request->_tempFile = _fs.open(path, "r");
         if(!request->_tempFile){
           return false;
         }
@@ -987,7 +996,14 @@ bool FSEditor::canHandle(AsyncWebServerRequest *request){
 #endif
       }
       if(request->hasParam("download")){
-        request->_tempFile = _fs.open(request->arg("download"), "r");
+        path = request->arg("download");
+#if defined(ESP32) && ESP_IDF_VERSION_MAJOR >= 4
+        if (!path.startsWith("/"))
+        {
+          path = "/" + path;
+        }
+#endif
+        request->_tempFile = _fs.open(path, "r");
         if(!request->_tempFile){
           return false;
         }
@@ -1018,6 +1034,7 @@ bool FSEditor::canHandle(AsyncWebServerRequest *request){
 
 
 void FSEditor::handleRequest(AsyncWebServerRequest *request){
+  String path = "";
   if(_username.length() && _password.length())
   {
     if(!request->authenticate(_username.c_str(), _password.c_str()))
@@ -1112,31 +1129,51 @@ void FSEditor::handleRequest(AsyncWebServerRequest *request){
     }
   } else if(request->method() == HTTP_DELETE){
     if(request->hasParam("path", true)){
-        _fs.remove(request->getParam("path", true)->value());
-      request->send(200, "", "DELETE: "+request->getParam("path", true)->value());
+      path = request->getParam("path", true)->value();
+#if defined(ESP32) && ESP_IDF_VERSION_MAJOR >= 4
+      if (!path.startsWith("/"))
+      {
+        path = "/" + path;
+      }
+#endif
+      _fs.remove(path);
+      request->send(200, "", "DELETE: " + request->getParam("path", true)->value());
     } else
       request->send(404);
   } else if(request->method() == HTTP_POST){
-    bool exist = _fs.exists(request->getParam("data", true, true)->value());
+      path = request->getParam("data", true, true)->value();
+#if defined(ESP32) && ESP_IDF_VERSION_MAJOR >= 4
+      if (!path.startsWith("/"))
+      {
+        path = "/" + path;
+      }
+#endif
+    bool exist = _fs.exists(path);
     FSEDITOR_DBG_PRINTF("Exist(%u)", exist);
     if(request->hasParam("data", true, true) && exist)
     {
       FSEDITOR_DBG_PRINTF("UPLOADED");
-      request->send(200, "", "UPLOADED: "+request->getParam("data", true, true)->value());
+      request->send(200, "", "UPLOADED: " + request->getParam("data", true, true)->value());
     }
     else
       request->send(500);
   } else if(request->method() == HTTP_PUT){
     if(request->hasParam("path", true)){
-      String filename = request->getParam("path", true)->value();
-      if(_fs.exists(filename)){
+      path = request->getParam("path", true)->value();
+#if defined(ESP32) && ESP_IDF_VERSION_MAJOR >= 4
+      if (!path.startsWith("/"))
+      {
+        path = "/" + path;
+      }
+#endif
+      if(_fs.exists(path)){
         request->send(200);
       } else {
-        fs::File f = _fs.open(filename, "w");
+        fs::File f = _fs.open(path, "w");
         if(f){
           f.write((uint8_t)0x00);
           f.close();
-          request->send(200, "", "CREATE: "+filename);
+          request->send(200, "", "CREATE: " + request->getParam("path", true)->value());
         } else {
           request->send(500);
         }
@@ -1149,11 +1186,18 @@ void FSEditor::handleRequest(AsyncWebServerRequest *request){
 void FSEditor::handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
   if(!index){
     if(!_username.length() || request->authenticate(_username.c_str(),_password.c_str())){
-      _authenticated = true;      
-      request->_tempFile = _fs.open(filename, "w");
+      _authenticated = true;    
+      String path = filename;
+#if defined(ESP32) && ESP_IDF_VERSION_MAJOR >= 4
+      if (!path.startsWith("/"))
+      {
+        path = "/" + path;
+      }
+#endif  
+      request->_tempFile = _fs.open(path, "w");
       _startTime = millis();
 #if (defined FS_EDITOR_DEBUG) && (FS_EDITOR_DEBUG == 1)
-      FSEDITOR_DBG_PRINTF("Start file upload (%u)", _startTime);
+      FSEDITOR_DBG_PRINTF("Start file upload (%u)ms", _startTime);
 #endif
     }
   }

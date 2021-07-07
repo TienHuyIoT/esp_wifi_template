@@ -21,6 +21,10 @@ void server_data_post_process(AsyncWebServerRequest *request);
 
 void print_handlerequest(AsyncWebServerRequest *request, String &message);
 
+/* event */
+void sta_wifi_network_scan_send_event(void);
+
+/* get */
 void sta_ap_info_get(AsyncWebServerRequest *request);
 void sta_network_get(AsyncWebServerRequest *request);
 void sta_setting_get(AsyncWebServerRequest *request);
@@ -35,6 +39,7 @@ void format_sd_card_get(AsyncWebServerRequest *request);
 void ddns_client_get(AsyncWebServerRequest *request);
 void pass_common_get(AsyncWebServerRequest *request);
 
+/* Post */
 void sta_ap_info_post(AsyncWebServerRequest *request);
 void sta_network_post(AsyncWebServerRequest *request);
 void sta_setting_post(AsyncWebServerRequest *request);

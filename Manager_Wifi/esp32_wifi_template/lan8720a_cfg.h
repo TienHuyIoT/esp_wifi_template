@@ -31,7 +31,7 @@
 #define ETH_MDIO_PIN    18
 
 /* GPIO to enable ethernet */
-#define ETH_GPIO_ENABLE 39
+#define ETH_GPIO_ENABLE 39  /* Button2 */
 #if (defined ETH_GPIO_ENABLE) && (ETH_GPIO_ENABLE != -1)
 #define ETH_GPIO_ENABLE_INIT()    pinMode(ETH_GPIO_ENABLE, INPUT_PULLUP)
 #define ETH_STATUS_IS_ON()        (digitalRead(ETH_GPIO_ENABLE) == 0)

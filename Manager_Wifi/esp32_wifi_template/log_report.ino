@@ -1,5 +1,8 @@
-#include <fs.h>
+#include <FS.h>
+#include "sd_card.h"
+#include "file_fs.h"
 #include "rtc_data_file.h"
+#include "app_config.h"
 
 void log_report(uint8_t log_id, char *p_log)
 {

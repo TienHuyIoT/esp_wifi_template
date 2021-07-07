@@ -23,10 +23,11 @@ void ws_interval_sync(void)
 {
     uint8_t ws_cnt;
 
-    ws_cnt = ws_connection_connected();
+    ws_cnt = ws_connection_connected();    
     if (ws_cnt)
-    {
-        ws.textAll("{\"page\":100,\"socket_num\":" + String(ws_cnt) + "}");
+    {        
+        // ws.textAll("{\"page\":100,\"socket_num\":" + String(ws_cnt) + "}");
+        WS_DBG_PRINT("ws_connection_connected: %u", ws_cnt);       
         WS_DBG_PRINT("Heap: %u", ESP.getFreeHeap()); 
     }
 
@@ -58,9 +59,6 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
 
         /* new connection establish */
         ws_connection_establish(client->id());
-        client->ping();
-
-        server->textAll("{\"page\":100,\"socket_num\":" + String(ws_connection_connected()) + "}");
     }
     else if (type == WS_EVT_DISCONNECT)
     {
@@ -93,7 +91,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                 /* Call callback */
                 if (ws_txt_callback)
                 {
-                    ws_txt_callback(client->id(), (char*)msg.c_str());
+                    ws_txt_callback(client->id(), (char *)msg.c_str());
                 }
             }
             else
@@ -105,7 +103,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                     msg += buff;
                 }
             }
-            WS_DBG_PRINT("%s\n", msg.c_str());            
+            WS_DBG_PRINT("%s\n", msg.c_str());
         }
         else
         {
@@ -148,7 +146,7 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventTyp
                         /* Call callback */
                         if (ws_txt_callback)
                         {
-                            ws_txt_callback(client->id(), (char*)msg.c_str());
+                            ws_txt_callback(client->id(), (char *)msg.c_str());
                         }
                     }
                 }

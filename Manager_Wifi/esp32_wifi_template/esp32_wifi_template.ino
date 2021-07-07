@@ -136,10 +136,16 @@ void begin();
 #include <esp_wifi.h>
 #include <esp_system.h>
 #include <driver/rtc_io.h>
+#if defined(ESP32) && ESP_IDF_VERSION_MAJOR >= 4
 #include <aes/esp_aes.h>
 #include <esp32/rom/rtc.h>
-#include <soc/rtc.h>
 #include <esp_sntp.h>
+#else
+#include <hwcrypto/aes.h>
+#include <rom/rtc.h>
+#include <lwip/apps/sntp.h>
+#endif
+#include <soc/rtc.h>
 #include <time.h>
 #include <TimeOutEvent.h>
 #include <IOInput.h>
@@ -168,11 +174,6 @@ DNSServer dnsServer;
 #define COMMON_PRINTF(f_, ...) COMMON_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
 
 hw_timer_t *timer = NULL;
-
-const char* ntpServer1 = "pool.ntp.org";
-const char* ntpServer2 = "time.nist.gov";
-const long  gmtOffset_sec = 3600 * 7;
-const int   daylightOffset_sec = 0;
 
 #if (defined FACTORY_INPUT_PIN) && (FACTORY_INPUT_PIN != -1)
 /* Object input factory reset */
@@ -299,22 +300,50 @@ void setup()
 #endif  
 
 #if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)
-  //Send OTA events to the browser
-  ArduinoOTA.onStart([]() { events.send("Update Start", "ota"); });
-  ArduinoOTA.onEnd([]() { events.send("Update End", "ota"); });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    char p[32];
-    sprintf(p, "Progress: %u%%\n", (progress/(total/100)));
-    events.send(p, "ota");
-  });
-  ArduinoOTA.onError([](ota_error_t error) {
-    if(error == OTA_AUTH_ERROR) events.send("Auth Failed", "ota");
-    else if(error == OTA_BEGIN_ERROR) events.send("Begin Failed", "ota");
-    else if(error == OTA_CONNECT_ERROR) events.send("Connect Failed", "ota");
-    else if(error == OTA_RECEIVE_ERROR) events.send("Recieve Failed", "ota");
-    else if(error == OTA_END_ERROR) events.send("End Failed", "ota");
-  });
-    
+  ArduinoOTA.onStart(
+      []()
+      {
+        String type;
+        if (ArduinoOTA.getCommand() == U_FLASH)
+        {
+          type = "sketch";
+        }
+        else // U_SPIFFS
+        {
+          type = "filesystem";
+          NAND_FS_SYSTEM.end();
+        }
+
+        /** NOTE: if updating SPIFFS this would be the place
+         *  to unmount SPIFFS using SPIFFS.end() */
+        COMMON_PRINTF("\r\nStart updating %s", type.c_str());
+      });
+
+  ArduinoOTA.onEnd([]()
+                   { COMMON_PRINTF("\r\nEnd"); });
+
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total)
+                        {
+                          // COMMON_PRINTF("\r\nProgress: %u%%", (progress / (total / 100)));
+                          /* Watch dog timer feed */
+                          hw_wdt_feed();
+                        });
+
+  ArduinoOTA.onError([](ota_error_t error)
+                     {
+                       COMMON_PRINTF("\r\nError[%u]: ", error);
+                       if (error == OTA_AUTH_ERROR)
+                         COMMON_PRINTF("Auth Failed");
+                       else if (error == OTA_BEGIN_ERROR)
+                         COMMON_PRINTF("Begin Failed");
+                       else if (error == OTA_CONNECT_ERROR)
+                         COMMON_PRINTF("Connect Failed");
+                       else if (error == OTA_RECEIVE_ERROR)
+                         COMMON_PRINTF("Receive Failed");
+                       else if (error == OTA_END_ERROR)
+                         COMMON_PRINTF("End Failed");
+                     });
+
   ArduinoOTA.setHostname(g_wifi_cfg->sta.hostname);
   ArduinoOTA.setPassword("1234");
   ArduinoOTA.begin();

@@ -1,4 +1,5 @@
 #include <ArduinoJson.h>
+#include "WifiType.h"
 #include <ESPAsyncWebServer.h>
 #include "app_config.h"
 #include "eeprom_data.h"
@@ -87,7 +88,7 @@ void sta_ap_info_get(AsyncWebServerRequest *request)
     JsonObject& root = djbco.createObject();
     root["ap_ssid"].set(g_wifi_cfg->ap.ssid);
     root["ap_ip_adress"].set(g_wifi_cfg->ap.ip.toString());
-    root["sta_ssid"].set(g_wifi_cfg->sta.ssid);
+    root["sta_ssid"].set(g_wifi_cfg->sta.ssid);   
     root["sta_hostname"].set(g_wifi_cfg->sta.hostname); 
     root["ap_dns_name"].set(g_wifi_cfg->ap.dns_name); 
 
@@ -153,16 +154,38 @@ void sta_ap_info_get(AsyncWebServerRequest *request)
 /* Get json sta_network */
 void sta_network_get(AsyncWebServerRequest *request)
 {
-    String json_network = "{\"status\":\"error\",\"mgs\":\"No network\"}";
+    String json_network = "{\"status\":\"ok\",\"mgs\":\"WiFi is scanning ...\"}";
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+    if(eth_is_enable())
+    {
+        json_network = "{\"status\":\"error\",\"mgs\":\"Ethernet Mode\"}";
+    }
+#endif        
+    request->send(200, "text/json", json_network);
+
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
     if(!eth_is_enable())
     {
-        esp_ssid_scan(json_network);
+        if(WiFi.scanComplete() == WIFI_SCAN_FAILED) {
+            /* run in async mode */
+            SERVER_DATA_PRINTF("\r\nscanNetworks async mode run");
+            WiFi.scanNetworks(true);
+        }
     }
 #else
+    if(WiFi.scanComplete() == WIFI_SCAN_FAILED) {
+        /* run in async mode */
+        SERVER_DATA_PRINTF("\r\nscanNetworks async mode run");
+        WiFi.scanNetworks(true);
+    }
+#endif 
+}
+
+void sta_wifi_network_scan_send_event(void)
+{
+    String json_network = "{\"status\":\"error\",\"mgs\":\"No network\"}";
     esp_ssid_scan(json_network);
-#endif        
-    request->send(200, "text/json", json_network);
+    events.send(json_network.c_str(), "wifiScan");
 }
 
 void sta_setting_get(AsyncWebServerRequest *request) 
@@ -330,7 +353,7 @@ void restart_device_get(AsyncWebServerRequest *request)
 {
     request->send(200, "text/json", "Reset OK");
     log_report(LOG_REPORT_RESET, (char *)"Web reset3");
-    esp_reset_enable(500);
+    esp_reset_enable(100);
 }
 
 /* /get?param_wifi=heap_temperature */
@@ -385,7 +408,7 @@ void format_sd_card_get(AsyncWebServerRequest *request)
     else
     {
         request->send(200, "text/json", "Password Setting Wrong");
-    }       
+    } 
 }
 
 void ddns_client_get(AsyncWebServerRequest *request)

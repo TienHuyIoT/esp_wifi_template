@@ -29,7 +29,7 @@ void eeprom_setup()
     EEPROM.get(0, eep_data_struct);
     EEPROM_DATA_PRINTF("\r\nEeprom Info:");
     EEPROM_DATA_PRINTF("\r\n- AutoConfig: %u", eep_data_struct.AutoConfig);
-    EEPROM_DATA_PRINTF("\r\n- Activated: %u\r\n", eep_data_struct.Activated);
+    EEPROM_DATA_PRINTF("\r\n- Activated: %u", eep_data_struct.Activated);
     EEPROM_DATA_PRINTF("\r\n- Chipid: %04X%08X", eep_data_struct.Block1_2[1], eep_data_struct.Block1_2[0]);
     if (128 != eep_data_struct.AutoConfig)
     {
