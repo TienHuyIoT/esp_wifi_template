@@ -178,7 +178,7 @@ void sta_network_get(AsyncWebServerRequest *request)
         SERVER_DATA_PRINTF("\r\nscanNetworks async mode run");
         WiFi.scanNetworks(true);
     }
-#endif 
+#endif
 }
 
 void sta_wifi_network_scan_send_event(void)

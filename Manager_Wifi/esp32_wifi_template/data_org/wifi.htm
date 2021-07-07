@@ -12,7 +12,11 @@
         var body_sta_setting = "";
         var body_ap_setting = "";
         var table_sta_network = "";
-        var wifi_scan_status = 0;
+
+        var WIFI_SCAN_STOP = 0;
+        var WIFI_SCANNING = 1;
+        var WIFI_SCAN_DONE = 2;
+        var wifi_scan_status = WIFI_SCAN_STOP;
 
         var STA_AP_INFO = 0;
         var STA_NETWORK = 1;
@@ -34,7 +38,7 @@
                 console.log("Event: " + e.data);
             };
             es.addEventListener('wifiScan', function(e) {
-                wifi_scan_status = 2; /* scan done */
+                wifi_scan_status = WIFI_SCAN_DONE; /* scan done */
                 sta_network_display(e.data);
             }, false);
         }
@@ -71,11 +75,13 @@
                 }
                 if (STA_NETWORK == wifi_tab_select) {
                     document.getElementById('table_sta_network').innerHTML = table_sta_network;
+                    wifi_scan_status = WIFI_SCAN_STOP;
                 }
             } else {
                 table_sta_network = "<tr><td style='text-align: left;''>" + obj.mgs + "</td><td></td></tr>";
                 if (STA_NETWORK == wifi_tab_select) {
                     document.getElementById('table_sta_network').innerHTML = table_sta_network;
+                    wifi_scan_status = WIFI_SCAN_STOP;
                 }
             }
         }
@@ -106,7 +112,9 @@
                 client.get('/get?' + 'param_wifi=' + element, function(response) {
                     var obj = JSON.parse(response);
                     if (obj.status == "ok") {
-                        wifi_scan_status = 1;
+                        wifi_scan_status = WIFI_SCANNING;
+                    } else {
+                        wifi_scan_status = WIFI_SCAN_STOP;
                     }
                     table_sta_network = "<tr><td style='text-align: left; color: navy;'><b>" + obj.mgs + "</b></td><td></td></tr>";
                     document.getElementById('table_sta_network').innerHTML = table_sta_network;
@@ -267,13 +275,13 @@
         function sta_network() {
             wifi_tab_select = STA_NETWORK;
             document.getElementById('Body').innerHTML = body_sta_network;
-            if (0 == wifi_scan_status) {
+            if (WIFI_SCAN_STOP == wifi_scan_status) {
                 myhttp_get('sta_network');
             } else {
                 document.getElementById('table_sta_network').innerHTML = table_sta_network;
                 /* scan done */
-                if (2 == wifi_scan_status) {
-                    wifi_scan_status = 0;
+                if (WIFI_SCAN_DONE == wifi_scan_status) {
+                    wifi_scan_status = WIFI_SCAN_STOP;
                 }
             }
         }
