@@ -1,8 +1,9 @@
 #include <ArduinoJson.h>
 #include "rtc_data_file.h"
+#include "console_dbg.h"
 
-#define RTC_FILE_PORT Serial
-#define RTC_FILE_PRINTF(f_, ...) RTC_FILE_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+#define RTC_FILE_PORT CONSOLE_PORT
+#define RTC_FILE_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 
 // rtc json string default
 const char rtc_file_default[] PROGMEM =
@@ -72,7 +73,7 @@ uint8_t rtc_info_read(rtc_time_t *r_rtc_info)
     return 1;
 }
 
-void rtc_info_remove()
+void rtc_info_remove(void)
 {
     if (NAND_FS_SYSTEM.remove(RTC_FILE_PATH))
     {

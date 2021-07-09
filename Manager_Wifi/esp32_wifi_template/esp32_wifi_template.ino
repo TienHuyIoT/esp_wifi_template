@@ -115,6 +115,7 @@ void port(uint16_t port);
 void begin();
 */
 
+/* Includes ------------------------------------------------------------------*/
 #if CONFIG_FREERTOS_UNICORE
 #define ARDUINO_RUNNING_CORE 0
 #else
@@ -136,15 +137,25 @@ void begin();
 #include <esp_wifi.h>
 #include <esp_system.h>
 #include <driver/rtc_io.h>
-#if defined(ESP32) && ESP_IDF_VERSION_MAJOR >= 4
+
+#if (ESP_IDF_VERSION_MAJOR >= 4) // IDF 4+
 #include <aes/esp_aes.h>
-#include <esp32/rom/rtc.h>
 #include <esp_sntp.h>
-#else
+#if CONFIG_IDF_TARGET_ESP32 // ESP32/PICO-D4
+#include <esp32/rom/rtc.h>
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include <esp32s2/rom/rtc.h>
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include <esp32c3/rom/rtc.h>
+#else 
+#error Target CONFIG_IDF_TARGET is not supported
+#endif
+#else // ESP32 Before IDF 4.0
 #include <hwcrypto/aes.h>
 #include <rom/rtc.h>
 #include <lwip/apps/sntp.h>
 #endif
+
 #include <soc/rtc.h>
 #include <time.h>
 #include <TimeOutEvent.h>
@@ -157,21 +168,34 @@ void begin();
 #include "wifi_data_file.h"
 #include "eeprom_data.h"
 #include "board.h"
+#include "log_report.h"
+#include "fs_handle.h"
 #include "sd_card.h"
 #include "fs_editor.h"
+#include "esp_reset.h"
 #include "server_data_process.h"
 #include "async_webserver.h"
 #include "async_websocket.h"
 #include "app_async_websocket.h"
+#include "flatform_rtc.h"
+#include "console_dbg.h"
 
+/* Private includes ----------------------------------------------------------*/
+
+/* Private typedef -----------------------------------------------------------*/
+
+/* Private define ------------------------------------------------------------*/
+
+/* Private macro -------------------------------------------------------------*/
+#define MAIN_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[MAIN]", __VA_ARGS__)
+#define MAIN_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
+
+/* Private variables ---------------------------------------------------------*/
 Ticker led_ticker;
 
 #if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)
 DNSServer dnsServer;
 #endif
-
-#define COMMON_PORT Serial
-#define COMMON_PRINTF(f_, ...) COMMON_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
 
 hw_timer_t *timer = NULL;
 
@@ -180,36 +204,56 @@ hw_timer_t *timer = NULL;
 IOInput input_factory_reset(FACTORY_INPUT_PIN,HIGH,10,10,10);
 #endif
 
-/* 
-*  https://circuits4you.com
-*  ESP32 Internal Temperature Sensor Example
-*/
+// inteval timeout check temperature
+TimeOutEvent internal_temp_to(60000);
 
+/* Private function prototypes -----------------------------------------------*/
 #ifdef __cplusplus
 extern "C" {
 #endif
  
-uint8_t temprature_sens_read();
+uint8_t temprature_sens_read(void);
  
 #ifdef __cplusplus
 }
 #endif
  
-uint8_t temprature_sens_read();
+uint8_t temprature_sens_read(void);
+void log_report(uint8_t log_id, char *p_log);
+void sntp_setup(void);
+void wifi_init(void);
+void wifi_off(void);
+int esp_ssid_scan(String &json);
+void hw_wdt_init(uint32_t t_milisec);
+void hw_wdt_feed(void);
+void IRAM_ATTR hw_resetModule(void);
+void print_reset_reason(RESET_REASON reason);
+void verbose_print_reset_reason(RESET_REASON reason);
+void reason_reset_log(void);
+void listDir(fs::FS &fs, const char *dirname, uint8_t levels);
+void wakeup_reason_log(void);
+void wifi_events_setup(led_callback_t cb);
+void wifi_setup(const char* name, const char* pass);
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+uint8_t eth_init(void);
+void eth_enable(void);
+void eth_disable(void);
+uint8_t eth_is_enable(void);
+void ETHGotIP(WiFiEvent_t event, WiFiEventInfo_t info);
+#endif
+void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info);
+void WiFiEvent(WiFiEvent_t event);
+#if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)
+void ddns_client_init(void);
+void ddns_update(void);
+#endif
+float esp32_internal_temp(void);
+void internal_temp_log_report(void);
+#if (defined FACTORY_INPUT_PIN) && (FACTORY_INPUT_PIN != -1)
+uint8_t factory_reset_handle(void);
+#endif
 
-#define LOG_REPORT_SIZE_BYTE      (1024 * 200)
-#define LOG_REPORT_INIT           0
-#define LOG_REPORT_SLEEP          1
-#define LOG_REPORT_RESET          2
-#define LOG_REPORT_WIFI           3
-#define LOG_REPORT_TEMP           4
-#define LOG_REPORT_OVER_TEMP      5
-#define LOG_REPORT_SD             6
-#define LOG_REPORT_PATH           "/log_report.csv"
-
-// inteval timeout check temperature
-TimeOutEvent internal_temp_to(60000);
-
+/* Private user code ---------------------------------------------------------*/
 void led_status_blink_update(int time_bl)
 {
   static int time_bl_backup = 0;
@@ -225,9 +269,9 @@ void setup()
 {
   wifi_file_json_t *g_wifi_cfg;
 
-  COMMON_PORT.begin(115200, SERIAL_8N1, -1, 1);
-  COMMON_PRINTF("\r\nbuild_time: %s", build_time);
-  COMMON_PRINTF("\r\n==== Firmware version %u.%u.%u ====\r\n", 
+  CONSOLE_PORT.begin(115200, SERIAL_8N1, -1, 1);
+  MAIN_TAG_CONSOLE("build_time: %s", build_time);
+  MAIN_TAG_CONSOLE("==== Firmware version %u.%u.%u ====\r\n", 
                 FW_VERSION_MAJOR,
                 FW_VERSION_MINOR,
                 FW_VERSION_BUILD); 
@@ -316,32 +360,42 @@ void setup()
 
         /** NOTE: if updating SPIFFS this would be the place
          *  to unmount SPIFFS using SPIFFS.end() */
-        COMMON_PRINTF("\r\nStart updating %s", type.c_str());
+        MAIN_TAG_CONSOLE("Start updating %s", type.c_str());
       });
 
   ArduinoOTA.onEnd([]()
-                   { COMMON_PRINTF("\r\nEnd"); });
+                   { MAIN_TAG_CONSOLE("End"); });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total)
                         {
-                          // COMMON_PRINTF("\r\nProgress: %u%%", (progress / (total / 100)));
+                          // MAIN_TAG_CONSOLE("Progress: %u%%", (progress / (total / 100)));
                           /* Watch dog timer feed */
                           hw_wdt_feed();
                         });
 
   ArduinoOTA.onError([](ota_error_t error)
                      {
-                       COMMON_PRINTF("\r\nError[%u]: ", error);
+                       MAIN_TAG_CONSOLE("Error[%u]: ", error);
                        if (error == OTA_AUTH_ERROR)
-                         COMMON_PRINTF("Auth Failed");
+                       {
+                         MAIN_CONSOLE("Auth Failed");
+                       }
                        else if (error == OTA_BEGIN_ERROR)
-                         COMMON_PRINTF("Begin Failed");
+                       {
+                         MAIN_CONSOLE("Begin Failed");
+                       }
                        else if (error == OTA_CONNECT_ERROR)
-                         COMMON_PRINTF("Connect Failed");
+                       {
+                         MAIN_CONSOLE("Connect Failed");
+                       }
                        else if (error == OTA_RECEIVE_ERROR)
-                         COMMON_PRINTF("Receive Failed");
+                       {
+                         MAIN_CONSOLE("Receive Failed");
+                       }
                        else if (error == OTA_END_ERROR)
-                         COMMON_PRINTF("End Failed");
+                       {
+                         MAIN_CONSOLE("End Failed");
+                       }
                      });
 
   ArduinoOTA.setHostname(g_wifi_cfg->sta.hostname);

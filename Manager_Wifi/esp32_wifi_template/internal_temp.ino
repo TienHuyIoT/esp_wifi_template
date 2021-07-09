@@ -1,11 +1,19 @@
-#define INTERNAL_TEMP_PORT Serial
-#define INTERNAL_TEMP_PRINTF(f_, ...) //INTERNAL_TEMP_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+#include "log_report.h"
+#include "console_dbg.h"
+
+#define INTERNAL_TEMP_PORT CONSOLE_PORT
+#define INTERNAL_TEMP_PRINTF(...) //CONSOLE_LOGI(__VA_ARGS__)
 
 #define TEMP_OVER_PROTECT   90.0f
 
 static float temp_last;
 static uint8_t temp_over_sample, team_log_sample;
-float esp32_internal_temp()
+
+extern uint8_t temprature_sens_read(void);
+extern void log_report(uint8_t log_id, char *p_log);
+extern void timer_wakeup_second_enable(uint32_t sec);
+
+float esp32_internal_temp(void)
 {
     float temp;
     temp = (temprature_sens_read() - 32) / 1.8;
@@ -13,7 +21,7 @@ float esp32_internal_temp()
     return temp;
 }
 
-void internal_temp_log_report()
+void internal_temp_log_report(void)
 {
     float temp;
 

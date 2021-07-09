@@ -1,24 +1,25 @@
 #include "eeprom_data.h"
+#include "console_dbg.h"
 
-#define EEPROM_DATA_PORT Serial
-#define EEPROM_DATA_PRINTF(f_, ...) EEPROM_DATA_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+#define EEPROM_DATA_PORT CONSOLE_PORT
+#define EEPROM_DATA_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 
-uint8_t eeprom_device_is_activated()
+uint8_t eeprom_device_is_activated(void)
 {
     return (Df_Mac_Activated == eep_data_struct.Activated);
 }
 
-void eeprom_device_active()
+void eeprom_device_active(void)
 {
     active_configure(Df_ConfigActiveUpdate);
 }
 
-void eeprom_device_inactive()
+void eeprom_device_inactive(void)
 {
     active_configure(Df_ConfigInActiveUpdate);
 }
 
-void eeprom_setup()
+void eeprom_setup(void)
 {
     uint64_t chipid;
     chipid = ESP.getEfuseMac();

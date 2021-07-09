@@ -1,8 +1,11 @@
 #include "Esp.h"
 #include "esp_reset.h"
+#include "rtc_data_file.h"
+#include "flatform_rtc.h"
+#include "console_dbg.h"
 
-#define RESET_DBG_PORT Serial
-#define RESET_DBG_PRINTF(...) RESET_DBG_PORT.printf(__VA_ARGS__)
+#define RESET_DBG_PORT CONSOLE_PORT
+#define RESET_DBG_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 
 // need non block function
 void esp_reset_enable(uint32_t timeout)
@@ -20,7 +23,7 @@ void esp_reboot_handle(void)
         rtc_get(&rtc);
         rtc_info_write(&rtc);
 
-        RESET_DBG_PRINTF("Rebooting...");
+        RESET_DBG_PRINTF("\r\n\tRebooting...");
 
         delay(esp_reboot_timeout);
         ESP.restart();

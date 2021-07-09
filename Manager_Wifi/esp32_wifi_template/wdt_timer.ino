@@ -1,4 +1,6 @@
-void IRAM_ATTR hw_resetModule()
+extern hw_timer_t *timer;
+
+void IRAM_ATTR hw_resetModule(void)
 {
     esp_restart();
 }
@@ -11,7 +13,7 @@ void hw_wdt_init(uint32_t t_milisec)
     timerAlarmEnable(timer);                          //enable interrupt
 }
 
-void hw_wdt_feed()
+void hw_wdt_feed(void)
 {
     timerWrite(timer, 0); //reset timer (feed watchdog)
 }

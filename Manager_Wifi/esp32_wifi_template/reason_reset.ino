@@ -1,5 +1,24 @@
-#define REASON_RESET_PORT Serial
-#define REASON_RESET_PRINTF(f_, ...) REASON_RESET_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+#if (ESP_IDF_VERSION_MAJOR >= 4) // IDF 4+
+#if CONFIG_IDF_TARGET_ESP32 // ESP32/PICO-D4
+#include <esp32/rom/rtc.h>
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include <esp32s2/rom/rtc.h>
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include <esp32c3/rom/rtc.h>
+#else 
+#error Target CONFIG_IDF_TARGET is not supported
+#endif
+#else // ESP32 Before IDF 4.0
+#include "rom/rtc.h"
+#endif
+
+#include "log_report.h"
+#include "console_dbg.h"
+
+#define REASON_RESET_PORT CONSOLE_PORT
+#define REASON_RESET_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
+
+extern void log_report(uint8_t log_id, char *p_log);
 
 void print_reset_reason(RESET_REASON reason)
 {
@@ -53,7 +72,7 @@ void verbose_print_reset_reason(RESET_REASON reason)
   REASON_RESET_PRINTF("\r\n%s\r\n", buff);
 }
 
-void reason_reset_log()
+void reason_reset_log(void)
 {
     REASON_RESET_PRINTF("\r\nCPU0 reset reason:");
     log_report(LOG_REPORT_INIT, (char*)"CPU0 reset reason:");

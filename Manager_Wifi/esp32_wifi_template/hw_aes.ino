@@ -3,9 +3,9 @@
 #else
 #include <hwcrypto/aes.h>
 #endif
-
-#define CRYPTO_PORT Serial
-#define CRYPTO_PRINTF(f_, ...) CRYPTO_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+#include "console_dbg.h"
+#define CRYPTO_PORT CONSOLE_PORT
+#define CRYPTO_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 
 void aes_encrypt_ecb(const unsigned char *key, const unsigned char *input, uint8_t *output)
 {

@@ -5,13 +5,16 @@
 extern "C"
 {
 #endif
+
 #include "stdint.h"
+
 #define LOWER_CASE 0
 #define UPPER_CASE 1
 
 #define CV_NUM2VOLUME 0
 #define CV_NUM2CASH 1
 
+int vspfunc(size_t (*write_cb)(uint8_t*, size_t), const char *format, ...);
 void hex2str(char *str, uint8_t *hex, uint8_t len, uint8_t type);
 char str2hex(const char *str, uint8_t *hex, uint8_t len);
 uint8_t StrncpyUntilChar(char *Dest, char *Scr, char Chr, uint16_t Leng);

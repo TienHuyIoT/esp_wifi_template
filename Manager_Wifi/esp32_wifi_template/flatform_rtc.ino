@@ -1,9 +1,10 @@
 #include "rtc_data_file.h"
 #include "app_config.h"
 #include "flatform_rtc.h"
+#include "console_dbg.h"
 
-#define RTC_PORT Serial
-#define RTC_PRINTF(f_, ...) RTC_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+#define RTC_PORT CONSOLE_PORT
+#define RTC_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 
 void rtc_setup(void)
 {

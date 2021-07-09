@@ -1,13 +1,20 @@
-#define TIMER_WAKEUP_PORT Serial
-#define TIMER_WAKEUP_PRINTF(f_, ...) TIMER_WAKEUP_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+#include "console_dbg.h"
+#include "log_report.h"
+#include "esp_sleep.h"
+
+#define TIMER_WAKEUP_PORT CONSOLE_PORT
+#define TIMER_WAKEUP_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 
 #define uS_TO_S_FACTOR 1000000ULL  /* Conversion factor for micro seconds to seconds */
+
+extern void log_report(uint8_t log_id, char *p_log);
 
 /*
 Method to print the reason by which ESP32
 has been awaken from sleep
 */
-void wakeup_reason_log(){
+void wakeup_reason_log(void)
+{
   esp_sleep_wakeup_cause_t wakeup_reason;
   char buff[60];
   wakeup_reason = esp_sleep_get_wakeup_cause();
@@ -45,7 +52,7 @@ void timer_wakeup_second_enable(uint32_t sec)
   The line below turns off all RTC peripherals in deep sleep.
   */
   //esp_deep_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
-  //Serial.println("Configured all RTC Peripherals to be powered down in sleep");
+  //TIMER_WAKEUP_PORT.println("Configured all RTC Peripherals to be powered down in sleep");
 
   /*
   Now that we have setup a wake cause and if needed setup the

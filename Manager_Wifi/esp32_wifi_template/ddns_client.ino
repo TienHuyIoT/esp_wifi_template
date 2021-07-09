@@ -4,9 +4,10 @@
 #include <Ticker.h>
 #include "AsyncEasyDDNS.h"
 #include "wifi_data_file.h"
+#include "console_dbg.h"
 
-#define DDNS_CLIENT_PORT Serial
-#define DDNS_CLIENT_PRINTF(f_, ...) DDNS_CLIENT_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+#define DDNS_CLIENT_PORT CONSOLE_PORT
+#define DDNS_CLIENT_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 
 Ticker ddns_ticker;
 

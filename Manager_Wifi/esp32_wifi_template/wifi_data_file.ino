@@ -1,8 +1,10 @@
 #include <ArduinoJson.h>
+#include "app_config.h"
 #include "wifi_data_file.h"
+#include "console_dbg.h"
 
-#define WIFI_FILE_PORT Serial
-#define WIFI_FILE_PRINTF(f_, ...) WIFI_FILE_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+#define WIFI_FILE_PORT CONSOLE_PORT
+#define WIFI_FILE_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 
 void wifi_info_setup()
 {

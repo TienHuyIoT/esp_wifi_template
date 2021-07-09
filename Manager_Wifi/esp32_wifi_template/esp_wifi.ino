@@ -1,8 +1,11 @@
+#include "WiFi.h"
+#include "esp_wifi.h"
 #include "WiFiType.h"
 #include "wifi_data_file.h"
+#include "console_dbg.h"
 
-#define ESP_WIFI_PORT Serial
-#define ESP_WIFI_PRINTF(f_, ...) ESP_WIFI_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+#define ESP_WIFI_PORT CONSOLE_PORT
+#define ESP_WIFI_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 
 void wifi_init(void)
 {
@@ -134,7 +137,7 @@ void wifi_init(void)
 //     WIFI_MODE_APSTA,     /**< WiFi station + soft-AP mode */
 //     WIFI_MODE_MAX
 // } wifi_mode_t;
-void wifi_off()
+void wifi_off(void)
 {
   if (WIFI_OFF != WiFi.getMode())
   {

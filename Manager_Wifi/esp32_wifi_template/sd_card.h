@@ -36,7 +36,8 @@ SD INTERFACE
 #define SD_MOSI_PIN     		        SPI_MOSI_PIN   
 
 bool sd_card_status_isOK(void);
+void sd_card_init(void);
 
-#endif
+#endif // (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 
-#endif
+#endif // _SD_CARD_

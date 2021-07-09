@@ -1,10 +1,14 @@
-#define FACTORY_PORT Serial
-#define RESET_FACTORY_PRINTF(fmt, ...) FACTORY_PORT.printf("\r\n>RESET FACTORY< " fmt, ##__VA_ARGS__)
-
-#include <IOInput.h>
 #include "board.h"
 
 #if (defined FACTORY_INPUT_PIN) && (FACTORY_INPUT_PIN != -1)
+#include <IOInput.h>
+#include "console_dbg.h"
+#include "wifi_data_file.h"
+
+#define FACTORY_PORT CONSOLE_PORT
+#define RESET_FACTORY_PRINTF(...) CONSOLE_TAG_LOGI("[RESET FACTORY]", __VA_ARGS__)
+
+extern IOInput input_factory_reset;
 uint8_t factory_reset_handle(void)
 {
     uint8_t result = 0;

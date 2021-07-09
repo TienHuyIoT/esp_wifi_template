@@ -1,10 +1,11 @@
 #include <Arduino.h>
 #include <FS.h>
 #include "fs_editor.h"
+#include "console_dbg.h"
 
-#define FSEDITOR_DBG_PORT Serial
+#define FSEDITOR_DBG_PORT CONSOLE_PORT
 #if (defined FS_EDITOR_DEBUG) && (FS_EDITOR_DEBUG == 1)
-#define FSEDITOR_DBG_PRINTF(f_, ...) FSEDITOR_DBG_PORT.printf_P(PSTR("\r\n[FS_EDITOR] " f_), ##__VA_ARGS__)
+#define FSEDITOR_DBG_PRINTF(...) CONSOLE_TAG_LOGI("[FS_EDITOR]", __VA_ARGS__)
 #else
 #define FSEDITOR_DBG_PRINTF(f_, ...)
 #endif

@@ -11,10 +11,11 @@
 
 #include "board.h"
 #include "wifi_data_file.h"
+#include "console_dbg.h"
 
-#define WIFI_EVENT_PORT Serial
-#define WIFI_EVENT_TAG_PRINTF(fmt, ...) WIFI_EVENT_PORT.printf_P(PSTR("\r\n[WIFI EV] " fmt), ##__VA_ARGS__)
-#define WIFI_EVENT_PRINTF(f_, ...) WIFI_EVENT_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+#define WIFI_EVENT_PORT CONSOLE_PORT
+#define WIFI_EVENT_TAG_PRINTF(...) CONSOLE_TAG_LOGI("[WIFI EV]", __VA_ARGS__)
+#define WIFI_EVENT_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 
 #define LED_WIFI_CONNECT_TIMER    500
 #define LED_ETH_CONNECT_TIMER     100
@@ -102,6 +103,10 @@ static led_callback_t _led_update = NULL;
 #define m_ESP32_EVENT_ETH_LOST_IP              SYSTEM_EVENT_ETH_LOST_IP              /*!< ESP32 ethernet lost IP and the IP is reset to 0 */
 #define m_ESP32_EVENT_MAX                      SYSTEM_EVENT_MAX                       /*!< Number of members in this enum */
 #endif
+
+extern void sntp_setup(void);
+extern void sta_wifi_network_scan_send_event(void);
+extern uint8_t eth_is_enable(void);
 
 void WiFiEvent(WiFiEvent_t event)
 {
@@ -301,7 +306,7 @@ void wifi_events_setup(led_callback_t cb)
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
     if(eth_is_enable())
     {
-        ESP_ETH_PRINTF("\r\nonEvent m_ESP32_EVENT_ETH_GOT_IP\r\n");
+        WIFI_EVENT_PRINTF("\r\nonEvent m_ESP32_EVENT_ETH_GOT_IP\r\n");
         WiFi.onEvent(ETHGotIP, WiFiEvent_t::m_ESP32_EVENT_ETH_GOT_IP);
     }    
 #endif

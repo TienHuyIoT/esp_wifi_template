@@ -7,9 +7,10 @@
 #include "wifi_data_file.h"
 #include "server_data_process.h"
 #include "AsyncEasyDDNS.h"
+#include "console_dbg.h"
 
-#define SERVER_DATA_PORT Serial
-#define SERVER_DATA_PRINTF(f_, ...) SERVER_DATA_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+#define SERVER_DATA_PORT CONSOLE_PORT
+#define SERVER_DATA_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 
 void server_data_get_process(AsyncWebServerRequest *request)
 {

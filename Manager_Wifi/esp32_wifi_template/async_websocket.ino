@@ -1,8 +1,9 @@
 #include "async_websocket.h"
 #include "wifi_data_file.h"
+#include "console_dbg.h"
 
-#define WS_DBG_PORT Serial
-#define WS_DBG_PRINT(fmt, ...) WS_DBG_PORT.printf_P(PSTR("\r\n[WS] " fmt), ##__VA_ARGS__)
+#define WS_DBG_PORT CONSOLE_PORT
+#define WS_DBG_PRINT(...) CONSOLE_TAG_LOGI("[WS]", __VA_ARGS__)
 
 /* Callback receive message from client */
 void (*ws_txt_callback)(uint8_t ws_index, char *payload);

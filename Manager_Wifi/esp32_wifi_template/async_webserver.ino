@@ -9,9 +9,10 @@
 #include "server_data_process.h"
 #include "esp_reset.h"
 #include "fs_editor.h"
+#include "console_dbg.h"
 
-#define WEB_SERVER_DBG_PORT Serial
-#define WEB_SERVER_DBG_PRINTF(...) WEB_SERVER_DBG_PORT.printf(__VA_ARGS__)
+#define WEB_SERVER_DBG_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
+#define WEB_SERVER_DBG_PORT CONSOLE_PORT
 
 class RedirectUrlHandler : public AsyncWebHandler {
 public:

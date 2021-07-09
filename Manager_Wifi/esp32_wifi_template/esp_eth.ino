@@ -4,9 +4,10 @@
 
 #include "wifi_data_file.h"
 #include "lan8720a_cfg.h"
+#include "console_dbg.h"
 
-#define ESP_ETH_PORT Serial
-#define ESP_ETH_PRINTF(f_, ...) ESP_ETH_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+#define ESP_ETH_PORT CONSOLE_PORT
+#define ESP_ETH_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 
 static uint8_t eth_status = 0;
 

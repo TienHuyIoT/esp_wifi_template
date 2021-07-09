@@ -1,5 +1,5 @@
-#ifndef	_EEPROM_DATA_
-#define _EEPROM_DATA_
+#ifndef	_EEPROM_DATA_H
+#define _EEPROM_DATA_H
 
 #define EEPROM_SIZE_MAX           512
 
@@ -33,4 +33,10 @@ typedef struct {
 uint8_t ActivateByMac = Df_Mac_InActivate;
 eeprom_data_t eep_data_struct;
 
-#endif
+uint8_t eeprom_device_is_activated(void);
+void eeprom_device_active(void);
+void eeprom_device_inactive(void);
+void eeprom_setup(void);
+void active_configure(uint8_t Cmd);
+
+#endif /* !_EEPROM_DATA_H */

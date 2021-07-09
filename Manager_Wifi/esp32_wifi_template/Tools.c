@@ -1,8 +1,29 @@
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include "Tools.h"
+
+#define V_BUFFER    256
+int vspfunc(size_t (*write_cb)(uint8_t*, size_t), const char *format, ...)
+{
+  va_list args;
+  char v_buff[V_BUFFER];
+  size_t lenght;
+
+  va_start(args, format);
+  lenght = vsnprintf(v_buff, V_BUFFER, format, args);
+  va_end(args);
+
+  if (lenght > 0)
+  {
+    write_cb((uint8_t*)v_buff, lenght);
+  }
+
+  return lenght;
+}
+
 /*
 - In chuoi Buff
 - str: chuoi sau khi chuyen
