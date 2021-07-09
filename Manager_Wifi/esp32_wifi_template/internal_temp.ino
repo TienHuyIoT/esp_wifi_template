@@ -1,3 +1,4 @@
+#include <TimeOutEvent.h>
 #include "log_report.h"
 #include "console_dbg.h"
 
@@ -9,6 +10,7 @@
 static float temp_last;
 static uint8_t temp_over_sample, team_log_sample;
 
+extern TimeOutEvent internal_temp_to;
 extern uint8_t temprature_sens_read(void);
 extern void log_report(uint8_t log_id, char *p_log);
 extern void timer_wakeup_second_enable(uint32_t sec);
