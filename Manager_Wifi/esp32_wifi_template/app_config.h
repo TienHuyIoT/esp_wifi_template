@@ -1,9 +1,15 @@
 #ifndef	__APP_CONFIG_H
 #define __APP_CONFIG_H
 
-const char * build_time = "Thu " __DATE__ " " __TIME__ " GMT";
-
 // <h> Hardware Version
+
+//==========================================================
+// <o> SERIAL_NUMBER_ADDR
+
+#ifndef SERIAL_NUMBER_ADDR
+#define SERIAL_NUMBER_ADDR          0x1FDE0
+#define SERIAL_NUMBER_LENGTH_MAX    32
+#endif
 
 //==========================================================
 // <o> HW_VERSION_STRING

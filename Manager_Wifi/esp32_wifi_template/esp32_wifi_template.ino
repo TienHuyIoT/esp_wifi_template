@@ -207,6 +207,8 @@ IOInput input_factory_reset(FACTORY_INPUT_PIN,HIGH,10,10,10);
 // inteval timeout check temperature
 TimeOutEvent internal_temp_to(60000);
 
+const char * build_time = "Thu " __DATE__ " " __TIME__ " GMT";
+
 /* Private function prototypes -----------------------------------------------*/
 #ifdef __cplusplus
 extern "C" {
