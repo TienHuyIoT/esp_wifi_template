@@ -276,6 +276,12 @@ void web_server_setup(void)
       {
         esp_reset_enable(500);
       }
+      else
+      {
+        wifi_file_json_t *g_wifi_cfg;
+        g_wifi_cfg = wifi_info_get();
+        wifi_info_write(g_wifi_cfg);
+      }
     }
     else
     {
