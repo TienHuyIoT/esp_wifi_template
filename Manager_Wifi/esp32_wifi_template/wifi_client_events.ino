@@ -171,7 +171,9 @@ void WiFiEvent(WiFiEvent_t event)
         case m_ESP32_EVENT_AP_PROBEREQRECVED:
             WIFI_EVENT_TAG_PRINTF("Received probe request");
             break;
+#if (ESP_IDF_VERSION_MAJOR >= 4) // IDF 4+
         case m_ESP32_EVENT_STA_GOT_IP6:
+#endif
         case m_ESP32_EVENT_AP_GOT_IP6:
             WIFI_EVENT_TAG_PRINTF("IPv6 is preferred");
             break;
