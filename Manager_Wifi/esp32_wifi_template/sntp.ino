@@ -18,6 +18,7 @@ void sntp_setup()
     CONSOLE_PORT.println("\r\nContacting Time Server");
     sntp_set_time_sync_notification_cb(sntp_sync_time_cb);
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer1, ntpServer2);
+    // Using callback event instead to check sntp status
     // while (sntp_get_sync_status() != SNTP_SYNC_STATUS_COMPLETED) {};
 }
 
