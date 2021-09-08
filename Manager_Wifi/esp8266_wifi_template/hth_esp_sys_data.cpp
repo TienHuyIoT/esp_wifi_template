@@ -281,6 +281,8 @@ void wifi_data_file::syncFromFileSystem()
         _file_prams.ddns.sync_time = ddns["sync_time"].as<int>();
         _file_prams.ddns.disable = ddns["disable"].as<int>();
     } 
+
+    WIFI_DATA_TAG_CONSOLE("sync data succed!");
 }
 
 wifi_data_file WFDataFile(NAND_FS_SYSTEM);

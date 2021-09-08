@@ -90,8 +90,8 @@ void flatform_rtc::begin(void)
 
 void flatform_rtc::setSourceUpdate(level_update_t level)
 {
-    RTC_TAG_CONSOLE("Update the level: %u", printSourceUpdate(level));
-    if (level > _rtcSource)
+    RTC_TAG_CONSOLE("Update the level: %s", printSourceUpdate(level));
+    if (level >= _rtcSource)
     {
         RTC_TAG_CONSOLE("Access \r\n");
         _rtcSource = level;

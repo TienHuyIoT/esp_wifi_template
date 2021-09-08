@@ -19,6 +19,7 @@
 #define ESP_WIFI_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WIFI]", __VA_ARGS__)
 
 hth_esp_wifi::hth_esp_wifi(/* args */)
+:_sntp(new hth_esp_sntp())
 {
 }
 
@@ -29,6 +30,9 @@ hth_esp_wifi::~hth_esp_wifi()
 void hth_esp_wifi::begin()
 {
   WiFiMode_t wf_mode = WIFI_OFF;
+
+  // sntp service ON
+  _sntp->begin();
 
   /* Once WiFi.persistent(false) is called, WiFi.begin, 
      WiFi.disconnect, WiFi.softAP, or WiFi.softAPdisconnect 
@@ -335,3 +339,5 @@ int hth_esp_wifi::getRSSIasQuality(int RSSI)
   }
   return quality;
 }
+
+hth_esp_wifi HTH_EspWifi;

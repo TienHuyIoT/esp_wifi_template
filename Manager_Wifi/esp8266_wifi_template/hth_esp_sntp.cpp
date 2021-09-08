@@ -54,7 +54,7 @@ hth_esp_sntp::~hth_esp_sntp()
 
 void hth_esp_sntp::begin()
 {
-    SNTP_TAG_CONSOLE("Contacting Time Server");
+    SNTP_TAG_CONSOLE("Configure Time Server");
 #ifdef ESP32
     sntp_set_time_sync_notification_cb(sntp_sync_time_cb);
     configTime(_gmtOffset_sec, _daylightOffset_sec, _ntpServer1, _ntpServer2);

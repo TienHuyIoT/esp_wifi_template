@@ -2,6 +2,8 @@
 #include "app_config.h"
 #include "hth_console_dbg.h"
 #include "hth_esp_sys_rtc.h"
+#include "hth_esp_wifi.hpp"
+#include "hth_esp_sys_data.h"
 
 /* Private macro -------------------------------------------------------------*/
 #define MAIN_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[MAIN]", __VA_ARGS__)
@@ -32,7 +34,11 @@ void setup()
     // Always initialize after NAND_FS_SYSTEM.begin();
     // Because some function of system will need params 
     // load from file system for initial.
+    WFDataFile.begin();
+    
     HTH_sysTime.begin();
+
+    HTH_EspWifi.begin();
 }
 
 void loop()
