@@ -3,6 +3,7 @@
 #include <esp_wifi.h>
 #include <WiFiType.h>
 #include <time.h>
+#include "esp_event_signal.h"
 #if ESP_IDF_VERSION_MAJOR >= 4
 #include <esp_sntp.h>
 #else
@@ -81,6 +82,9 @@ hth_esp_wifi::hth_esp_wifi(/* args */)
 #if (defined SNTP_SERVICE_ENABLE) && (SNTP_SERVICE_ENABLE == 1)  
     : _sntp(new hth_esp_sntp())
 #endif
+#if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1) 
+    ,_dnsServer(new DNSServer())
+#endif
 {
 }
 
@@ -102,10 +106,78 @@ hth_esp_wifi::~hth_esp_wifi()
 AsyncEasyDDNSClass* hth_esp_wifi::_ddnsClient = nullptr;
 #endif
 
-void hth_esp_wifi::eventSSetup()
+void hth_esp_wifi::registerEventHandler()
 {
+  ESP_WIFI_TAG_CONSOLE("registerEventHandler");
 #ifdef ESP32
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
+  {
+    ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi connected");
+    ESP_WIFI_TAG_CONSOLE("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
+    /* Smart config enable */
+    if(WFDataFile.smartCfgSTA())
+    {
+      if(WFDataFile.ssidSTA() != WiFi.SSID()
+      || WFDataFile.passSTA() != WiFi.psk())
+      {
+        WFDataFile.ssidSTASet(WiFi.SSID());
+        WFDataFile.passSTASet(WiFi.psk());
+        WFDataFile.commitToFS();
+      }
+    }
+  }
+  ,WiFiEvent_t::m_ESP32_EVENT_STA_GOT_IP);
+  WiFi.onEvent(
+      [](WiFiEvent_t event, WiFiEventInfo_t info)
+      {
+#if ESP_IDF_VERSION_MAJOR >= 4
+        ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi lost connection. Reason: %u", info.wifi_sta_disconnected.reason);
+#else
+        ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi lost connection. Reason: %u", info.disconnected.reason);
+#endif
+        /* Note: running setAutoReconnect(true) when module is already disconnected 
+        will not make it reconnect to the access point. Instead reconnect() 
+        should be used. */
+        WiFi.reconnect();
+      },
+      WiFiEvent_t::m_ESP32_EVENT_STA_DISCONNECTED);
 #elif defined(ESP8266)
+  // ??? To register evetn, must be declare accessPointGotIpHandler
+  accessPointGotIpHandler = WiFi.onStationModeGotIP(
+    [](const WiFiEventStationModeGotIP& evt) {
+      ESP_WIFI_TAG_CONSOLE("[EVENT] got IP address: %s", evt.ip.toString().c_str());
+      /* Smart config enable */
+      if(WFDataFile.smartCfgSTA())
+      {
+        if(WFDataFile.ssidSTA() != WiFi.SSID()
+        || WFDataFile.passSTA() != WiFi.psk())
+        {
+          WFDataFile.ssidSTASet(WiFi.SSID());
+          WFDataFile.passSTASet(WiFi.psk());
+          WFDataFile.commitToFS();
+        }
+      }
+    }
+  );
+
+  // ??? To register evetn, must be declare accessPointConnectedHandler
+  accessPointConnectedHandler = WiFi.onStationModeConnected(
+    [](const WiFiEventStationModeConnected& evt) {
+      ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi connected to %s", evt.ssid.c_str());
+    }
+  );
+
+  // ??? To register evetn, must be declare accessPointDisconnectedHandler
+  accessPointDisconnectedHandler = WiFi.onStationModeDisconnected(
+    [](const WiFiEventStationModeDisconnected& evt) {
+      ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi lost connection to %s. Reason: %u", 
+      evt.ssid.c_str(), evt.reason);
+      /* Note: running setAutoReconnect(true) when module is already disconnected 
+      will not make it reconnect to the access point. Instead reconnect() 
+      should be used. */
+      WiFi.reconnect();
+    }
+  );
 #endif
 }
 
@@ -200,18 +272,27 @@ void hth_esp_wifi::onMDNSService()
 }
 #endif
 
+#if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)
+void hth_esp_wifi::onDNSServer()
+{
+  constexpr uint16_t DNS_SERVER_PORT = 53;
+  _dnsServer->setErrorReplyCode(DNSReplyCode::ServerFailure);
+  _dnsServer->start(DNS_SERVER_PORT, WFDataFile.dnsNameAP(), WiFi.softAPIP());  
+}
+#endif
+
 /** Should be called on wifi event gotIP*/
+#if (defined NBNS_SERVICE_ENABLE) && (NBNS_SERVICE_ENABLE == 1)
 void hth_esp_wifi::onNBNSService()
 {
-#if (defined NBNS_SERVICE_ENABLE) && (NBNS_SERVICE_ENABLE == 1)
   NBNS.begin(WFDataFile.hostNameSTA().c_str());
-#endif
 }
+#endif
 
 /** Should be called after init wifi */
+#if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)
 void hth_esp_wifi::onArduinoOTA()
 {
-#if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)
   ArduinoOTA.onStart(
       []()
       {
@@ -269,8 +350,8 @@ void hth_esp_wifi::onArduinoOTA()
   ArduinoOTA.setHostname(WFDataFile.hostNameSTA().c_str());
   ArduinoOTA.setPassword("1234");
   ArduinoOTA.begin();
-#endif
 }
+#endif
 
 void hth_esp_wifi::loop()
 {
@@ -291,6 +372,9 @@ void hth_esp_wifi::begin()
   // sntp service ON
   _sntp->begin();
 #endif
+
+  // Register wifi event callback
+  // this->registerEventHandler();
 
   /* Once WiFi.persistent(false) is called, WiFi.begin, 
      WiFi.disconnect, WiFi.softAP, or WiFi.softAPdisconnect 
@@ -420,17 +504,40 @@ void hth_esp_wifi::begin()
     ESP_WIFI_TAG_CONSOLE("AP IP address: %s\r\n", WiFi.softAPIP().toString().c_str());
   }
 
-  /* should be called after the wifi init */
-  this->onArduinoOTA();
+  // Register wifi event callback
+  this->registerEventHandler();
 
-#if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
-  this->onDDNSclient();
+  /* should be called after the wifi init */
+#if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)  
+  this->onArduinoOTA();
 #endif
 
-  this->onNBNSService();
+#if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
+  if (!WFDataFile.isDisableSTA())
+  {
+    this->onDDNSclient();
+  }
+#endif
 
-#if (defined MDNS_SERVICE_ENABLE) && (MDNS_SERVICE_ENABLE == 1)  
-  this->onMDNSService();
+#if (defined NBNS_SERVICE_ENABLE) && (NBNS_SERVICE_ENABLE == 1)
+  if (!WFDataFile.isDisableSTA())
+  {
+    this->onNBNSService();
+  }
+#endif
+
+#if (defined MDNS_SERVICE_ENABLE) && (MDNS_SERVICE_ENABLE == 1)
+  if (!WFDataFile.isDisableSTA())
+  {
+    this->onMDNSService();
+  }
+#endif
+
+#if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)
+  if (!WFDataFile.isDisableAP())
+  {
+    this->onDNSServer();
+  }
 #endif
 }
 
@@ -459,8 +566,17 @@ void hth_esp_wifi::connect(const char *name, const char *pass)
   // We start by connecting to a WiFi network
   ESP_WIFI_TAG_CONSOLE("Connecting to %s", name);
 
-  /* Set whether module will attempt to reconnect
-     to an access point in case it is disconnected. 
+  /* - Set whether module will attempt to reconnect
+     to an access point in case it is disconnected.
+
+     WiFi.setAutoReconnect(autoReconnect)
+     - If parameter autoReconnect is set to true, then module will try to 
+     reestablish lost connection to the AP. 
+     - If set to false then module will stay disconnected.
+
+     Note: running setAutoReconnect(true) when module is already disconnected 
+     will not make it reconnect to the access point. Instead reconnect() 
+     should be used.
     */
   WiFi.setAutoReconnect(true);
   if (strlen(pass) >= 8)

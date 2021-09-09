@@ -103,6 +103,7 @@ public:
     ~wifi_data_file();
 
     void begin();
+    void commitToFS() { saveToFileSystem(); }
     void resetPassword();
     void resetDefault();
     bool passSupperAdminIsOK(const String &pass);
