@@ -3,6 +3,19 @@ EasyDDNS Library for ESP8266 or ESP32
 See the README file for more details.
 
 Written in 2017 by Ayush Sharma. Licensed under MIT.
+Upgrade AsyncEasyDDNS in 2021 by TienHuyIoT
+
+Original: https://github.com/ayushsharma82/EasyDDNS
+
+Some Library references:
+- asyncHTTPrequest:
+  https://github.com/boblemaire/asyncHTTPrequest
+
+- ESPAsyncTCP for ESP8266
+  https://github.com/me-no-dev/ESPAsyncTCP
+
+- AsyncTCP for ESP32
+  https://github.com/me-no-dev/AsyncTCP
 */
 
 #ifndef _ASYNC_EASY_DDNS_H
@@ -46,6 +59,5 @@ private:
   void request_get_ip_cb(void* optParm, asyncHTTPrequest* request, int readyState);
   void request_post_ip_cb(void* optParm, asyncHTTPrequest* request, int readyState);
 };
-extern AsyncEasyDDNSClass AsyncEasyDDNS;
 
 #endif // _ASYNC_EASY_DDNS_H

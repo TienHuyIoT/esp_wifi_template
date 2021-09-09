@@ -2,7 +2,7 @@
 #include "app_config.h"
 #include "hth_console_dbg.h"
 #include "hth_esp_sys_rtc.h"
-#include "hth_esp_wifi.hpp"
+#include "hth_esp_wifi.h"
 #include "hth_esp_sys_data.h"
 
 /* Private macro -------------------------------------------------------------*/
@@ -43,4 +43,5 @@ void setup()
 
 void loop()
 {
+    HTH_EspWifi.loop();
 }

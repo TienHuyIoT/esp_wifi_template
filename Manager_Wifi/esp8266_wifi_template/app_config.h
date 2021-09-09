@@ -56,11 +56,23 @@ https://github.com/boblemaire/asyncHTTPrequest
 */
 #define DDNS_CLIENT_ENABLE  1
 
+/* mDNS Server
+0: Disable
+1: Enable
+*/
+#define MDNS_SERVICE_ENABLE  1
+
 /* OTA Arduino
 0: Disable
 1: Enable
 */
 #define OTA_ARDUINO_ENABLE  1
+
+/* SNTP
+0: Disable
+1: Enable
+*/
+#define SNTP_SERVICE_ENABLE  1
 
 /* DNS Server
 0: Disable
@@ -142,11 +154,37 @@ https://github.com/boblemaire/asyncHTTPrequest
 #endif
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+#ifdef ESP32
 #include "lan8720a_cfg.h"
+#elif defined(ESP8266)
+#endif
 #endif
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)
 #include "AsyncEasyDDNS.h"
+#endif
+
+#if (defined MDNS_SERVICE_ENABLE) && (MDNS_SERVICE_ENABLE == 1)
+#ifdef ESP32
+#include <ESPmDNS.h>
+#elif defined(ESP8266)
+#include <ESP8266mDNS.h>
+#endif
+#endif
+
+#if (defined NBNS_SERVICE_ENABLE) && (NBNS_SERVICE_ENABLE == 1)
+#ifdef ESP32
+#include <NetBIOS.h>
+#elif defined(ESP8266)
+#include <ESP8266NetBIOS.h>
+#endif
+#endif
+
+#if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)
+#ifdef ESP8266
+#include <WiFiUdp.h>
+#endif
+#include <ArduinoOTA.h>
 #endif
 
 #endif // __APP_CONFIG_H

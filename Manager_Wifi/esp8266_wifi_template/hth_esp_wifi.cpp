@@ -2,37 +2,295 @@
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include <WiFiType.h>
-#include <ESPmDNS.h>
+#include <time.h>
+#if ESP_IDF_VERSION_MAJOR >= 4
+#include <esp_sntp.h>
+#else
+#include <lwip/apps/sntp.h>
+#endif
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <user_interface.h>
+#include <TZ.h>
+#include <time.h>      // time() ctime()
+#include <sys/time.h>  // struct timeval
+#include <coredecls.h> // settimeofday_cb()
+#include <sntp.h>      // sntp_servermode_dhcp()
+
+#define MYTZ TZ_Asia_Ho_Chi_Minh
 #endif
 
-#include "hth_esp_sys_data.h"
+#include "app_config.h"
 #include "hth_console_dbg.h"
-#include "hth_esp_wifi.hpp"
 #include "hth_esp_sys_data.h"
+#include "hth_esp_sys_rtc.h"
+#include "hth_esp_wifi.h"
+
+#define SNTP_CONSOLE_PORT CONSOLE_PORT
+#define SNTP_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
+#define SNTP_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[SNTP]", __VA_ARGS__)
 
 #define ESP_WIFI_PORT CONSOLE_PORT
 #define ESP_WIFI_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
 #define ESP_WIFI_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WIFI]", __VA_ARGS__)
 
+#ifdef ESP32
+static void sntp_sync_time_cb(struct timeval *tv) {
+    SNTP_TAG_CONSOLE("settimeofday(SNTP)");
+#elif defined(ESP8266)
+static void sntp_sync_time_cb(bool from_sntp /* <= this parameter is optional */) {
+    SNTP_TAG_CONSOLE("settimeofday(%s)", from_sntp ? "SNTP" : "USER");
+#endif 
+    time_t now = time(nullptr);
+    const tm* tm = localtime(&now);
+    char buf[64];
+    /** The same way using with esp32 
+     * RTC_CONSOLE_PORT.println(&tmStruct, "\r\nTime: %A, %B %d %Y %H:%M:%S");
+     * */
+    strftime(buf, 64, "%A, %B %d %Y %H:%M:%S", tm);
+    SNTP_TAG_CONSOLE("Time: %s", buf);
+
+    HTH_sysTime.setSourceUpdate(flatform_rtc::RTC_SNTP_UPDATE);
+}
+
+hth_esp_sntp::hth_esp_sntp() {}
+hth_esp_sntp::~hth_esp_sntp() {}
+
+void hth_esp_sntp::begin()
+{
+    SNTP_TAG_CONSOLE("Configure Time Server");
+#ifdef ESP32
+    sntp_set_time_sync_notification_cb(sntp_sync_time_cb);
+    configTime(_gmtOffset_sec, _daylightOffset_sec, _ntpServer1, _ntpServer2);
+    // Using callback event instead to check sntp status
+    // while (sntp_get_sync_status() != SNTP_SYNC_STATUS_COMPLETED) {};
+#elif defined(ESP8266)
+    // install callback - called when settimeofday is called (by SNTP or user)
+    // once enabled (by DHCP), SNTP is updated every hour by default
+    // ** optional boolean in callback function is true when triggered by SNTP **
+    settimeofday_cb(sntp_sync_time_cb);
+    configTime(_gmtOffset_sec, _daylightOffset_sec, _ntpServer1, _ntpServer2);
+#endif
+}
+
+/* hth_esp_wifi class --------------------------------------------------------
+ -----------------------------------------------------------------------------
+ ---------------------------------------------------------------------------*/
 hth_esp_wifi::hth_esp_wifi(/* args */)
-:_sntp(new hth_esp_sntp())
+#if (defined SNTP_SERVICE_ENABLE) && (SNTP_SERVICE_ENABLE == 1)  
+    : _sntp(new hth_esp_sntp())
+#endif
 {
 }
 
 hth_esp_wifi::~hth_esp_wifi()
 {
+#if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
+  if (_ddnsClient)
+  {
+    delete _ddnsClient;
+  }
+#endif
+
+#if (defined SNTP_SERVICE_ENABLE) && (SNTP_SERVICE_ENABLE == 1)  
+  delete _sntp;
+#endif
+}
+
+#if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
+AsyncEasyDDNSClass* hth_esp_wifi::_ddnsClient = nullptr;
+#endif
+
+void hth_esp_wifi::eventSSetup()
+{
+#ifdef ESP32
+#elif defined(ESP8266)
+#endif
+}
+
+#if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
+void hth_esp_wifi::onDDNSclient()
+{
+  if (WFDataFile.disableDDNS())
+  {
+      ESP_WIFI_TAG_CONSOLE("[DDNS] client disable");
+      return;
+  }
+
+  if (_ddnsClient)
+  {
+    return;
+  }
+  
+  _ddnsClient = new AsyncEasyDDNSClass();
+    /*
+    List of supported DDNS providers:
+    - "duckdns"
+    - "noip"
+    - "dyndns"
+    - "dynu"
+    - "enom"
+    - "all-inkl"
+    - "selfhost.de"
+    - "dyndns.it"
+    - "strato"
+    - "freemyip"
+    - "afraid.org"
+  */
+  _ddnsClient->service(WFDataFile.serviceDDNS());
+
+  /*
+    For DDNS Providers where you get a token:
+      Use this: _ddnsClient->client("domain", "token");
+    
+    For DDNS Providers where you get username and password: ( Leave the password field empty "" if not required )
+      Use this: _ddnsClient->client("domain", "username", "password");
+  */
+  _ddnsClient->client(WFDataFile.domainDDNS(), WFDataFile.userDDNS(), WFDataFile.passDDNS());
+
+  // Get Notified when your IP changes
+  _ddnsClient->onUpdate([&](const char* oldIP, const char* newIP){
+    ESP_WIFI_TAG_CONSOLE("[DDNS] AsyncEasyDDNS - IP Change Detected: %s", newIP);
+  });
+
+  constexpr uint8_t DDNS_SYNC_TIME_MIN = 10; // should not zero
+  constexpr uint8_t DDNS_SYNC_TIME_MAX = 60; // unlimited
+  if (WFDataFile.syncTimeDDNS() < DDNS_SYNC_TIME_MIN)
+  {
+    WFDataFile.syncTimeDDNSSet(DDNS_SYNC_TIME_MIN);
+  }
+
+  if (WFDataFile.syncTimeDDNS() > DDNS_SYNC_TIME_MAX)
+  {
+    WFDataFile.syncTimeDDNSSet(DDNS_SYNC_TIME_MAX);
+  }
+
+  _ddnsTicker.attach(WFDataFile.syncTimeDDNS(), [](){
+    if (!WFDataFile.disableDDNS())
+    {
+      _ddnsClient->update();
+    }  
+  }); 
+}
+#endif
+
+/* Should be called on wifi event gotIP */
+#if (defined MDNS_SERVICE_ENABLE) && (MDNS_SERVICE_ENABLE == 1)
+void hth_esp_wifi::onMDNSService()
+{
+  // Set up mDNS responder:
+  // - first argument is the domain name, in this example
+  //   the fully-qualified domain name is "esp32.local"
+  // - second argument is the IP address to advertise
+  //   we send our IP address on the WiFi network
+  if (!MDNS.begin(WFDataFile.hostNameSTA().c_str()))
+  {
+    ESP_WIFI_TAG_CONSOLE("Error setting up MDNS responder!");
+  }
+  else
+  {
+    ESP_WIFI_TAG_CONSOLE("mDNS responder started");
+  }
+
+  /** alway 80, because we have redirect port 80 to server port 
+   * This function must be run after MDNS.begin()
+  */
+  MDNS.addService("http", "tcp", 80);
+}
+#endif
+
+/** Should be called on wifi event gotIP*/
+void hth_esp_wifi::onNBNSService()
+{
+#if (defined NBNS_SERVICE_ENABLE) && (NBNS_SERVICE_ENABLE == 1)
+  NBNS.begin(WFDataFile.hostNameSTA().c_str());
+#endif
+}
+
+/** Should be called after init wifi */
+void hth_esp_wifi::onArduinoOTA()
+{
+#if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)
+  ArduinoOTA.onStart(
+      []()
+      {
+        String type;
+        if (ArduinoOTA.getCommand() == U_FLASH)
+        {
+          type = "sketch";
+        }
+        else // U_SPIFFS
+        {
+          type = "filesystem";
+          NAND_FS_SYSTEM.end();
+        }
+
+        /** NOTE: if updating SPIFFS this would be the place
+         *  to unmount SPIFFS using SPIFFS.end() */
+        ESP_WIFI_TAG_CONSOLE("[OTA] Start updating %s", type.c_str());
+      });
+
+  ArduinoOTA.onEnd([]()
+                   { ESP_WIFI_TAG_CONSOLE("[OTA] End"); });
+
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total)
+                        {
+                          ESP_WIFI_TAG_CONSOLE("[OTA] Progress: %u%%", (progress / (total / 100)));
+                          /* Watch dog timer feed */
+                          // hw_wdt_feed();
+                        });
+
+  ArduinoOTA.onError([](ota_error_t error)
+                     {
+                       ESP_WIFI_TAG_CONSOLE("[OTA] Error[%u]: ", error);
+                       if (error == OTA_AUTH_ERROR)
+                       {
+                         ESP_WIFI_CONSOLE("Auth Failed");
+                       }
+                       else if (error == OTA_BEGIN_ERROR)
+                       {
+                         ESP_WIFI_CONSOLE("Begin Failed");
+                       }
+                       else if (error == OTA_CONNECT_ERROR)
+                       {
+                         ESP_WIFI_CONSOLE("Connect Failed");
+                       }
+                       else if (error == OTA_RECEIVE_ERROR)
+                       {
+                         ESP_WIFI_CONSOLE("Receive Failed");
+                       }
+                       else if (error == OTA_END_ERROR)
+                       {
+                         ESP_WIFI_CONSOLE("End Failed");
+                       }
+                     });
+
+  ArduinoOTA.setHostname(WFDataFile.hostNameSTA().c_str());
+  ArduinoOTA.setPassword("1234");
+  ArduinoOTA.begin();
+#endif
+}
+
+void hth_esp_wifi::loop()
+{
+#if (defined MDNS_SERVICE_ENABLE) && (MDNS_SERVICE_ENABLE == 1) && (defined ESP8266)
+  MDNS.update();
+#endif
+
+#if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)  
+  ArduinoOTA.handle();
+#endif
 }
 
 void hth_esp_wifi::begin()
 {
   WiFiMode_t wf_mode = WIFI_OFF;
 
+#if (defined SNTP_SERVICE_ENABLE) && (SNTP_SERVICE_ENABLE == 1)  
   // sntp service ON
   _sntp->begin();
+#endif
 
   /* Once WiFi.persistent(false) is called, WiFi.begin, 
      WiFi.disconnect, WiFi.softAP, or WiFi.softAPdisconnect 
@@ -161,6 +419,19 @@ void hth_esp_wifi::begin()
 
     ESP_WIFI_TAG_CONSOLE("AP IP address: %s\r\n", WiFi.softAPIP().toString().c_str());
   }
+
+  /* should be called after the wifi init */
+  this->onArduinoOTA();
+
+#if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
+  this->onDDNSclient();
+#endif
+
+  this->onNBNSService();
+
+#if (defined MDNS_SERVICE_ENABLE) && (MDNS_SERVICE_ENABLE == 1)  
+  this->onMDNSService();
+#endif
 }
 
 void hth_esp_wifi::end(void)

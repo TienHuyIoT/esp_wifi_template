@@ -1,10 +1,23 @@
 /*
-* EasyDDNS Library for ESP8266 / ESP32
-* See the README file for more details.
-*
-* Written in 2017 by Ayush Sharma.
-* Update: huyht
+EasyDDNS Library for ESP8266 or ESP32
+See the README file for more details.
+
+Written in 2017 by Ayush Sharma. Licensed under MIT.
+Upgrade AsyncEasyDDNS in 2021 by TienHuyIoT
+
+Original: https://github.com/ayushsharma82/EasyDDNS
+
+Some Library references:
+- asyncHTTPrequest:
+  https://github.com/boblemaire/asyncHTTPrequest
+
+- ESPAsyncTCP for ESP8266
+  https://github.com/me-no-dev/ESPAsyncTCP
+
+- AsyncTCP for ESP32
+  https://github.com/me-no-dev/AsyncTCP
 */
+
 #include <Arduino.h>
 #include <base64.h>
 #include "AsyncEasyDDNS.h"
@@ -13,10 +26,12 @@
 #include "hth_console_dbg.h"
 #define ASYNC_EASYDDNS_DBG_PORT CONSOLE_PORT
 #define ASYNC_EASYDDNS_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
+#define ASYNC_EASYDDNS_TAG_PRINTF(...) CONSOLE_TAG_LOGI("[EASYDDNS]", __VA_ARGS__)
 #define ASYNC_EASYDDNS_GET_PRINTF(...) CONSOLE_TAG_LOGI("[EASYDDNS GET]", __VA_ARGS__)
 #define ASYNC_EASYDDNS_POST_PRINTF(...) CONSOLE_TAG_LOGI("[EASYDDNS POST]", __VA_ARGS__)
 #else
 #define ASYNC_EASYDDNS_PRINTF(f_, ...)
+#define ASYNC_EASYDDNS_TAG_PRINTF(...)
 #define ASYNC_EASYDDNS_GET_PRINTF(f_, ...)
 #define ASYNC_EASYDDNS_POST_PRINTF(f_, ...)
 #endif
@@ -50,9 +65,9 @@ void AsyncEasyDDNSClass::request_get_ip_cb(void* optParm, asyncHTTPrequest* requ
   if (readyState == 4) 
   {
     new_ip = request->responseText();
-    ASYNC_EASYDDNS_DBG_PORT.println("\n**************************************");
-    ASYNC_EASYDDNS_DBG_PORT.println(new_ip);
-    ASYNC_EASYDDNS_DBG_PORT.println("**************************************");    
+    ASYNC_EASYDDNS_TAG_PRINTF("**************************************");
+    ASYNC_EASYDDNS_TAG_PRINTF("new_ip: %s", new_ip.c_str());
+    ASYNC_EASYDDNS_TAG_PRINTF("**************************************");    
     request->setDebug(false);
     run_post_ip();    
   }
@@ -62,7 +77,7 @@ void AsyncEasyDDNSClass::request_post_ip_cb(void* optParm, asyncHTTPrequest* req
 {
   if (readyState == 4) 
   {
-    ASYNC_EASYDDNS_DBG_PORT.println("\n**************************************");
+    ASYNC_EASYDDNS_TAG_PRINTF("**************************************");
     ASYNC_EASYDDNS_DBG_PORT.print(request->responseText());      
     request->setDebug(false);
     ddnsip.fromString(new_ip);
@@ -80,7 +95,7 @@ void AsyncEasyDDNSClass::request_post_ip_cb(void* optParm, asyncHTTPrequest* req
     {
       ASYNC_EASYDDNS_PRINTF("old_ip\r\n");
     } 
-    ASYNC_EASYDDNS_DBG_PORT.println("**************************************");     
+    ASYNC_EASYDDNS_TAG_PRINTF("**************************************");     
   }
 }
 
@@ -174,9 +189,7 @@ void AsyncEasyDDNSClass::run_post_ip()
 
 void AsyncEasyDDNSClass::update() 
 {
-  ASYNC_EASYDDNS_PRINTF("\r\nUpdate IP");
+  ASYNC_EASYDDNS_TAG_PRINTF("Update IP");
   // ######## GET PUBLIC IP ######## //
   run_get_ip();
 }
-
-AsyncEasyDDNSClass AsyncEasyDDNS;
