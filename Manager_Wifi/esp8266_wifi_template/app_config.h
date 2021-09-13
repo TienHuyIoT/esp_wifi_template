@@ -102,7 +102,7 @@ https://github.com/boblemaire/asyncHTTPrequest
 0: SD_MMC
 1: SD interface over SPI
 */
-#define SD_CARD_SYSTEM  1
+#define SD_CARD_SYSTEM  0
 
 /* Enable control power sd card 
 0: not use

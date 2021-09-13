@@ -9,7 +9,7 @@
     "addr": "102 Phan Huy Ích, Phường 15, Quận Tân Bình, Tp HCM",
     "tell": "0983497310"
   },
-  "auth": {
+  "auth_admin": {
     "user": "admin",
     "pass": "admin"
   },

@@ -727,4 +727,4 @@ int hth_esp_wifi::getRSSIasQuality(int RSSI)
   return quality;
 }
 
-hth_esp_wifi HTH_EspWifi;
+hth_esp_wifi HTH_espWifi;

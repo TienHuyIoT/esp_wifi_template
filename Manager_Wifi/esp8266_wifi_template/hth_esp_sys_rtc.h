@@ -4,7 +4,6 @@
 #include <Arduino.h>
 #include <FS.h>
 
-
 typedef struct rtc_time
 {
   int year; /** yyyy */

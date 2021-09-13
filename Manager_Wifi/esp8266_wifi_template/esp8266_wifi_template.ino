@@ -4,6 +4,7 @@
 #include "hth_esp_sys_rtc.h"
 #include "hth_esp_wifi.h"
 #include "hth_esp_sys_data.h"
+#include "async_webserver.h"
 
 /* Private macro -------------------------------------------------------------*/
 #define MAIN_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[MAIN]", __VA_ARGS__)
@@ -11,6 +12,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 const char *build_time = __DATE__ " " __TIME__ " GMT";
+async_webserver HTH_asyncServer;
 
 void setup()
 {
@@ -38,10 +40,12 @@ void setup()
     
     HTH_sysTime.begin();
 
-    HTH_EspWifi.begin();
+    HTH_espWifi.begin();
+
+    HTH_asyncServer.begin();
 }
 
 void loop()
 {
-    HTH_EspWifi.loop();
+    HTH_espWifi.loop();
 }

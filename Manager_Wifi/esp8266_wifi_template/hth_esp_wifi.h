@@ -54,9 +54,12 @@ private:
     void onDDNSclient();  // DDNS client service
 #endif
 
+#ifdef ESP8266
     WiFiEventHandler accessPointConnectedHandler;
     WiFiEventHandler accessPointDisconnectedHandler;
     WiFiEventHandler accessPointGotIpHandler;
+#endif
+
     int getRSSIasQuality(int RSSI);
     void registerEventHandler();   // wifi event
 public:
@@ -69,6 +72,6 @@ public:
     void loop();
 };
 
-extern hth_esp_wifi HTH_EspWifi;
+extern hth_esp_wifi HTH_espWifi;
 
 #endif // _HTH_ESP_WIFI_H
