@@ -74,6 +74,8 @@ public:
 
   void begin();
 
+  void saveToFS();
+
   level_update_t getSourceUpdate() { return _rtcSource; }
 
   void setSourceUpdate(level_update_t level);

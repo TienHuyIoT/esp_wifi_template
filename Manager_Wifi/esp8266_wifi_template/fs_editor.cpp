@@ -9,12 +9,6 @@
 #else
 #define FSEDITOR_DBG_PRINTF(f_, ...)
 #endif
-/** Convert htm to gzip. Select "Compress this file, output-gz"
- * https://online-converting.com/archives/convert-to-gzip/ 
- * https://peazip.github.io/index.html app PeaZip
- * Convert file to array C
- * http://tomeko.net/online_tools/file_to_hex.php?lang=en
- */
 
 /* File: edit.htm.gz, Size: 4151 */
 #define edit_htm_gz_len sizeof(edit_htm_gz)

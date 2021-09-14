@@ -10,6 +10,7 @@
 #include "app_config.h"
 #include "hth_console_dbg.h"
 #include "hth_esp_sys_data.h"
+#include "hth_esp_soft_reset.h"
 #include "async_webserver.h"
 
 #define WEB_SERVER_DBG_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
@@ -48,19 +49,22 @@ async_webserver::~async_webserver()
   this->end();
 }
 
-AsyncWebServer* async_webserver::server = new AsyncWebServer(25123);
-AsyncWebServer* async_webserver::server80 = new AsyncWebServer(80);
-FSEditor* async_webserver::spiffs_editor = new FSEditor(NAND_FS_SYSTEM, "/edit");
+AsyncWebServer* async_webserver::_server = new AsyncWebServer(25123);
+AsyncWebServer* async_webserver::_server80 = new AsyncWebServer(80);
+asyncHttpHandler async_webserver::_httpGetAuthHandler = nullptr;
+asyncHttpHandler async_webserver::_httpGetHandler = nullptr;
+asyncHttpHandler async_webserver::_httpPostAuthHandler = nullptr;
+FSEditor* async_webserver::_spiffsEditor = new FSEditor(NAND_FS_SYSTEM, "/edit");
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-FSEditor* async_webserver::sd_editor = new FSEditor(SD_FS_SYSTEM, "/edit_sdfs");
+FSEditor* async_webserver::_sdCardEditor = new FSEditor(SD_FS_SYSTEM, "/edit_sdfs");
 #endif
-String async_webserver::http_username = String();
-String async_webserver::http_password = String();
-String async_webserver::http_username1 = String();
-String async_webserver::http_password1 = String();
-int async_webserver::update_cmd = 0;
-uint32_t async_webserver::spiffsPercent = 0;
-uint32_t async_webserver::updatePercent = 0;
+String async_webserver::_adminAuthUser = String();
+String async_webserver::_adminAuthPass = String();
+String async_webserver::_userAuthUser = String();
+String async_webserver::_userAuthPass = String();
+int async_webserver::_flashUpdateType = 0;
+uint32_t async_webserver::_spiffsUploadPercent = 0;
+uint32_t async_webserver::_flashUpdatePercent = 0;
 
 void async_webserver::fs_editor_status(AsyncWebServerRequest *request)
 {
@@ -127,11 +131,11 @@ uint8_t async_webserver::authentication_level(AsyncWebServerRequest *request)
   {
     level = HTTP_AUTH_LV0;
   }
-  else if(request->authenticate(http_username.c_str(), http_password.c_str()))
+  else if(request->authenticate(_adminAuthUser.c_str(), _adminAuthPass.c_str()))
   {
     level = HTTP_AUTH_LV0;
   }
-  else if(request->authenticate(http_username1.c_str(), http_password1.c_str()))
+  else if(request->authenticate(_userAuthUser.c_str(), _userAuthPass.c_str()))
   {
     level = HTTP_AUTH_LV1;
   }
@@ -147,27 +151,27 @@ uint8_t async_webserver::authentication_level(AsyncWebServerRequest *request)
 void async_webserver::update_printProgress(size_t prg, size_t sz)
 {
   uint32_t per = prg * 100 / sz;
-  if (updatePercent != per)
+  if (_flashUpdatePercent != per)
   {
     char p[5];
-    updatePercent = per;
-    WEB_SERVER_DBG_PRINTF("Progress: %u%%\r\n", updatePercent);
-    sprintf(p, "%u", updatePercent);
+    _flashUpdatePercent = per;
+    WEB_SERVER_DBG_PRINTF("Progress: %u%%\r\n", _flashUpdatePercent);
+    sprintf(p, "%u", _flashUpdatePercent);
     // events.send(p, "dfu");
   }
 }
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-uint32_t async_webserver::sdFsPersent = 0;
+uint32_t async_webserver::_sdUploadPercent = 0;
 void async_webserver::sdfs_printProgress(size_t prg, size_t sz)
 {
   uint32_t per = prg * 100 / sz;
-  if (sdFsPersent != per)
+  if (_sdUploadPercent != per)
   {
     char p[5];
-    sdFsPersent = per;
-    WEB_SERVER_DBG_PRINTF("Progress: %u%%\r\n", sdFsPersent);
-    sprintf(p, "%u", sdFsPersent);
+    _sdUploadPercent = per;
+    WEB_SERVER_DBG_PRINTF("Progress: %u%%\r\n", _sdUploadPercent);
+    sprintf(p, "%u", _sdUploadPercent);
     // events.send(p, "sdfs");
   }
 }
@@ -176,120 +180,103 @@ void async_webserver::sdfs_printProgress(size_t prg, size_t sz)
 void async_webserver::spiffs_printProgress(size_t prg, size_t sz)
 {
   uint32_t per = prg * 100 / sz;
-  if (spiffsPercent != per)
+  if (_spiffsUploadPercent != per)
   {
     char p[5];
-    spiffsPercent = per;
-    WEB_SERVER_DBG_PRINTF("Progress: %u%%\r\n", spiffsPercent);
-    sprintf(p, "%u", spiffsPercent);
+    _spiffsUploadPercent = per;
+    WEB_SERVER_DBG_PRINTF("Progress: %u%%\r\n", _spiffsUploadPercent);
+    sprintf(p, "%u", _spiffsUploadPercent);
     // events.send(p, "spiffs");
   }
 }
 
 void async_webserver::begin(void)
 {
-  http_username = WFDataFile.authAdminUser();
-  http_password = WFDataFile.authAdminPass();
-  http_username1 = WFDataFile.authUserUser();
-  http_password1 = WFDataFile.authUserPass();
+  _adminAuthUser = WFDataFile.authAdminUser();
+  _adminAuthPass = WFDataFile.authAdminPass();
+  _userAuthUser = WFDataFile.authUserUser();
+  _userAuthPass = WFDataFile.authUserPass();
 
   /* redirect port 80 to tcp port */
   if (WFDataFile.tcpPort() != 80)
   {
-    server80->addHandler(new RedirectUrlHandler());
+    _server80->addHandler(new RedirectUrlHandler());
   }
 
   // ws.onEvent(onWsEvent);
-  // server->addHandler(&ws);
+  // _server->addHandler(&ws);
 
   // events.onConnect([](AsyncEventSourceClient *client){
   //   client->send("hello!",NULL,millis(),1000);
   //   WEB_SERVER_DBG_PRINTF("\r\nevents connect: %u", client->lastId());
   // });
-  // server->addHandler(&events);
+  // _server->addHandler(&events);
 
-  spiffs_editor->onAuthenticate([](AsyncWebServerRequest *request)
+  _spiffsEditor->onAuthenticate([](AsyncWebServerRequest *request)
                                 { return (authentication_level(request) != HTTP_AUTH_FAIL); });
-  spiffs_editor->onProgress(spiffs_printProgress);
-  spiffs_editor->onStatus(fs_editor_status);
-  server->addHandler(spiffs_editor);
+  _spiffsEditor->onProgress(spiffs_printProgress);
+  _spiffsEditor->onStatus(fs_editor_status);
+  _server->addHandler(_spiffsEditor);
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-  sd_editor->onAuthenticate([](AsyncWebServerRequest *request)
+  _sdCardEditor->onAuthenticate([](AsyncWebServerRequest *request)
                             { return (authentication_level(request) != HTTP_AUTH_FAIL); });
-  sd_editor->onProgress(sdfs_printProgress);
-  sd_editor->onStatus(fs_editor_status);
-  server->addHandler(sd_editor);
+  _sdCardEditor->onProgress(sdfs_printProgress);
+  _sdCardEditor->onStatus(fs_editor_status);
+  _server->addHandler(_sdCardEditor);
 #endif
 
-  server->on("/get", HTTP_GET, [](AsyncWebServerRequest *request)
-             {
-               if (authentication_level(request) != HTTP_AUTH_FAIL)
-               {
-                 // server_data_get_process(request);
-               }
-             });
+  if (_httpGetAuthHandler)
+  {
+    _server->on(_uriHttpGetAuth.c_str(), HTTP_GET, [](AsyncWebServerRequest *request)
+              {
+                if (authentication_level(request) != HTTP_AUTH_FAIL)
+                {
+                  _httpGetAuthHandler(request);
+                }
+              });
+  }
 
-  server->on("/get_open", HTTP_GET,
-             [](AsyncWebServerRequest *request)
-             {
-               // server_data_get_process(request);
-             });
+  if (_httpGetHandler)
+  {
+    _server->on(_uriHttpGet.c_str(), HTTP_GET,
+              [](AsyncWebServerRequest *request)
+              {
+                _httpGetHandler(request);
+              });
+  }
 
-  server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
-             {
-               if (authentication_level(request) != HTTP_AUTH_FAIL)
-               {
-                 // server_data_post_process(request);
-               }
-             });
+  if (_httpPostAuthHandler)
+  {
+    _server->on(_uriHttpPostAuth.c_str(), HTTP_POST, [](AsyncWebServerRequest *request)
+              {
+                if (authentication_level(request) != HTTP_AUTH_FAIL)
+                {
+                  _httpPostAuthHandler(request);
+                }
+              });
+  }
 
   /* Serving files in directory. Serving static files with authentication */
-  // server->serveStatic("/", NAND_FS_SYSTEM, "/").setAuthentication(http_username, http_password);
-  /*
-  WebHandlerlmpl.h edit
-  line 32 add: typedef std::function<bool(AsyncWebServerRequest *request)> ArRequestAuthenticateFunction;
-  line 49 add: ArRequestAuthenticateFunction _onAuthenticate;
-  line 62 add: AsyncStaticWebHandler& onAuthenticate(ArRequestAuthenticateFunction fn) {_onAuthenticate = fn; return *this;}
-
-  WebHandlers.cpp edit
-  Line 193
-  if(_username != "" && _password != "")
-    {
-      if(!request->authenticate(_username.c_str(), _password.c_str()))
-      {
-        return request->requestAuthentication();
-      } 
-    }     
-    else
-    {
-      if(_onAuthenticate)
-      {
-        if(!_onAuthenticate(request))
-        {
-          return;
-        }
-      }
-    }
-  */
-  server->serveStatic("/", NAND_FS_SYSTEM, "/").setDefaultFile("index.htm").onAuthenticate([](AsyncWebServerRequest *request)
+  // _server->serveStatic("/", NAND_FS_SYSTEM, "/").setAuthentication(_adminAuthUser, _adminAuthPass);
+  _server->serveStatic("/", NAND_FS_SYSTEM, "/").setDefaultFile("index.htm").onAuthenticate([](AsyncWebServerRequest *request)
                                                                                            { return (authentication_level(request) != HTTP_AUTH_FAIL); });
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-  server->serveStatic("/onsd", SD_FS_SYSTEM, "/").onAuthenticate([](AsyncWebServerRequest *request)
+  _server->serveStatic("/onsd", SD_FS_SYSTEM, "/").onAuthenticate([](AsyncWebServerRequest *request)
                                                                  { return (authentication_level(request) != HTTP_AUTH_FAIL); });
 #endif
 
   Update.onProgress(update_printProgress);
   // Simple Firmware Update Form
-  server->on("/update", HTTP_GET, [](AsyncWebServerRequest *request)
+  _server->on("/update", HTTP_GET, [](AsyncWebServerRequest *request)
              {
                if (authentication_level(request) == HTTP_AUTH_LV0)
                {
                  request->send(200, "text/html", "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>");
                }
              });
-  server->on(
+  _server->on(
       "/update", HTTP_POST, [](AsyncWebServerRequest *request)
       {
         AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", !Update.hasError() ? "Update OK" : "Update FAIL");
@@ -298,9 +285,9 @@ void async_webserver::begin(void)
         if (!Update.hasError())
         {
           update_printProgress(100, 100); // 100%
-          if (U_FLASH == update_cmd)
+          if (U_FLASH == _flashUpdateType)
           {
-            // esp_reset_enable(500);
+            HTH_softReset.enable(500);
           }
           else
           {
@@ -322,29 +309,29 @@ void async_webserver::begin(void)
           // if filename includes spiffs, update the spiffs partition
           if ((filename.indexOf("spiffs") > -1) || (filename.indexOf("littlefs") > -1))
           {
-            update_cmd = U_FS;
+            _flashUpdateType = U_FS;
             length = ((size_t) &_FS_end - (size_t) &_FS_start);
           }
           else
           {
-            update_cmd = U_FLASH;
+            _flashUpdateType = U_FLASH;
             length = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
           }
           Update.runAsync(true);
-          if (!Update.begin(length, update_cmd))
+          if (!Update.begin(length, _flashUpdateType))
 #else
           // if filename includes spiffs, update the spiffs partition
           if ((filename.indexOf("spiffs") > -1) || (filename.indexOf("littlefs") > -1))
           {
-            update_cmd = U_SPIFFS;
+            _flashUpdateType = U_SPIFFS;
             length = UPDATE_SIZE_UNKNOWN;
           }
           else
           {
-            update_cmd = U_FLASH;
+            _flashUpdateType = U_FLASH;
           }
 
-          if (!Update.begin(length, update_cmd))
+          if (!Update.begin(length, _flashUpdateType))
 #endif
           {
             Update.printError(WEB_SERVER_DBG_PORT);
@@ -370,7 +357,7 @@ void async_webserver::begin(void)
         }
       });
 
-  server->onNotFound(
+  _server->onNotFound(
       [](AsyncWebServerRequest *request)
       {
         WEB_SERVER_DBG_PORT.printf("NOT_FOUND: ");
@@ -427,7 +414,7 @@ void async_webserver::begin(void)
         request->send(404);
       });
 
-  server->onFileUpload(
+  _server->onFileUpload(
       [](AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data, size_t len, bool final)
       {
         if (!index)
@@ -441,7 +428,7 @@ void async_webserver::begin(void)
         }
       });
 
-  server->onRequestBody(
+  _server->onRequestBody(
       [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
       {
         if (!index)
@@ -462,10 +449,10 @@ void async_webserver::begin(void)
 
   WEB_SERVER_DBG_PRINTF("\r\nInit Web Server Port: %u\r\n", WFDataFile.tcpPort());
 
-  server->begin(WFDataFile.tcpPort());
+  _server->begin(WFDataFile.tcpPort());
   if (WFDataFile.tcpPort() != 80)
   {
-    server80->begin();
+    _server80->begin();
   }
 }
 

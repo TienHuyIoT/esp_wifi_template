@@ -89,3 +89,93 @@ ESP32 and ESP8266 wifi template Project
 ### Update latest BLE Client Library to allow change MTU size (Option)
 - [BLEClient.cpp](https://github.com/espressif/arduino-esp32/blob/master/libraries/BLE/src/BLEClient.cpp) - C++
 - [BLEClient.h](https://github.com/espressif/arduino-esp32/blob/master/libraries/BLE/src/BLEClient.h) - C++
+
+### Tools using convert gzip
+- [Online Convert gzip](https://online-converting.com/archives/convert-to-gzip/)
+```
+Convert htm to gzip. Select "Compress this file, output-gz
+```
+- [App PeaZip](https://peazip.github.io/index.html)
+- [Online Convert file to array C](http://tomeko.net/online_tools/file_to_hex.php?lang=en)
+
+### Tools usage json
+- [Check json online](http://json.parser.online.fr/)
+- [Json arduino assistant](https://arduinojson.org/v5/assistant/)
+
+### Some edit AsyncWebserver library
+```C++
+  WebHandlerlmpl.h edit
+  line 32 add: typedef std::function<bool(AsyncWebServerRequest *request)> ArRequestAuthenticateFunction;
+  line 49 add: ArRequestAuthenticateFunction _onAuthenticate;
+  line 62 add: AsyncStaticWebHandler& onAuthenticate(ArRequestAuthenticateFunction fn) {_onAuthenticate = fn; return *this;}
+
+  WebHandlers.cpp edit
+  Line 193
+  if(_username != "" && _password != "")
+    {
+      if(!request->authenticate(_username.c_str(), _password.c_str()))
+      {
+        return request->requestAuthentication();
+      } 
+    }     
+    else
+    {
+      if(_onAuthenticate)
+      {
+        if(!_onAuthenticate(request))
+        {
+          return;
+        }
+      }
+    }
+
+  1. WebServer.cpp at line  82
+Original
+void AsyncWebServer::begin(){
+  _server.setNoDelay(true);  
+  _server.begin();
+}
+
+Change to
+
+void AsyncWebServer::begin(uint16_t port){
+  if (port != 0)
+  {
+    _server.port(port);
+  }
+  _server.setNoDelay(true);  
+  _server.begin();
+}
+
+2. ESPAsyncWebServer.h at line 408
+Original
+void begin();
+
+Change to
+
+void begin(uint16_t port = 0);
+
+3. AsyncTCP.cpp at line 1264
+Original
+void AsyncServer::begin()
+{}
+
+Change to
+
+void AsyncServer::port(uint16_t port)
+{
+    _port = port;
+}
+
+void AsyncServer::begin()
+{}
+
+4. AsyncTCP.h at line 194
+Original
+void begin();
+
+Change to
+
+void port(uint16_t port);
+void begin();
+```

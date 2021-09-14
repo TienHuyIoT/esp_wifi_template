@@ -88,6 +88,17 @@ void flatform_rtc::begin(void)
     }
 }
 
+void flatform_rtc::saveToFS()
+{
+    rtc_time_t rtc;
+    if (_rtcSource > level_update_t::RTC_NON_UPDATE)
+    {
+        RTC_TAG_CONSOLE("Save Time to File system");
+        getTimeDate(&rtc);
+        _rtcFile->save(&rtc);
+    }
+}
+
 void flatform_rtc::setSourceUpdate(level_update_t level)
 {
     RTC_TAG_CONSOLE("Update the level: %s", printSourceUpdate(level));

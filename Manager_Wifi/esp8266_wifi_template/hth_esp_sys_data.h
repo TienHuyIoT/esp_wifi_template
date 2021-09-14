@@ -1,8 +1,3 @@
-/*
-Check json online: http://json.parser.online.fr/
-Json arduino assistant: https://arduinojson.org/v5/assistant/
-*/
-
 #ifndef	_WIFI_DATA_FILE_
 #define _WIFI_DATA_FILE_
 
@@ -109,7 +104,7 @@ public:
     bool passSupperAdminIsOK(const String &pass);
     bool passConfirmIsOK(const String &pass, wifi_pass_confirm_t type);
     /* Port API */
-    uint16_t udpPort() { return _file_prams.port.udp; }
+    uint16_t udpPort() const { return _file_prams.port.udp; }
     uint16_t tcpPort() { return _file_prams.port.tcp; }
     uint16_t wsPort() { return _file_prams.port.ws; }
     void udpPortSet(uint16_t port) { _file_prams.port.udp = port; }
