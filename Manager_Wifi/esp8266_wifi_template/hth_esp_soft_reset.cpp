@@ -13,7 +13,7 @@ void hth_esp_soft_reset::enable(uint32_t timeout)
     _reset.once_ms(timeout, [](){
         HTH_sysTime.saveToFS();
         RESET_TAG_CONSOLE("\tRebooting...");
-        delay(10);
+        CONSOLE_FLUSH();
         ESP.restart();
     });
 }

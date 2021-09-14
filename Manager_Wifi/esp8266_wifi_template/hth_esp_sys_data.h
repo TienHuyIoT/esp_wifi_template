@@ -1,5 +1,5 @@
-#ifndef	_WIFI_DATA_FILE_
-#define _WIFI_DATA_FILE_
+#ifndef	__HTH_ESP_SYS_DATA_H
+#define __HTH_ESP_SYS_DATA_H
 
 #include <Arduino.h>
 #include <FS.h>
@@ -221,4 +221,4 @@ public:
 
 extern wifi_data_file WFDataFile;
 
-#endif
+#endif // __HTH_ESP_SYS_DATA_H

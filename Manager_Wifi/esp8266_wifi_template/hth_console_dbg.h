@@ -22,6 +22,7 @@ void log(const std::string_view message,
 #endif
 #define CONSOLE_PORT Serial
 #define CONSOLE_BAUDRATE 921600
+#define CONSOLE_FLUSH() (CONSOLE_PORT.flush())
 #define DBG_PRINTF(f_, ...)           CONSOLE_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
 
 #define g_debugLevel 4
