@@ -151,17 +151,6 @@ void hth_esp_wifi::registerEventHandler()
         });
       },
       WiFiEvent_t::m_ESP32_EVENT_STA_DISCONNECTED);
-  
-  WiFi.onEvent(
-      [](WiFiEvent_t event, WiFiEventInfo_t info)
-      {
-        ESP_WIFI_TAG_CONSOLE("[EVENT] Completed scan for access points");
-        String json_network = "{\"status\":\"error\",\"mgs\":\"No network\"}";
-        this->ssidScan(json_network);
-        ESP_WIFI_TAG_CONSOLE("json_network: %s", json_network.c_str());
-        // events.send(json_network.c_str(), "wifiScan");
-      },
-      WiFiEvent_t::m_ESP32_EVENT_SCAN_DONE);
 #elif defined(ESP8266)
   // ??? To register evetn, must be declare accessPointGotIpHandler
   accessPointGotIpHandler = WiFi.onStationModeGotIP(
