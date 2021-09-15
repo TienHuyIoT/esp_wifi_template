@@ -23,12 +23,6 @@ public:
 class hth_esp_wifi
 {
 private:
-#if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
-    // static using for lambda function
-    static AsyncEasyDDNSClass* _ddnsClient;
-    Ticker _ddnsTicker;
-#endif
-
 #if (defined SNTP_SERVICE_ENABLE) && (SNTP_SERVICE_ENABLE == 1)  
     hth_esp_sntp* _sntp;
 #endif
@@ -51,6 +45,7 @@ private:
 #endif
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
+    Ticker _ddnsTicker;
     void onDDNSclient();  // DDNS client service
 #endif
 
@@ -60,16 +55,22 @@ private:
     WiFiEventHandler accessPointGotIpHandler;
 #endif
 
-    int getRSSIasQuality(int RSSI);
+    static int getRSSIasQuality(int RSSI);
     void registerEventHandler();   // wifi event
+
 public:
     hth_esp_wifi(/* args */);
     ~hth_esp_wifi();
+
+#if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
+    static AsyncEasyDDNSClass* ddnsClient;
+#endif
+
     void begin();
     void end();
     void connect(const char* name, const char* pass);
-    int ssidScan(String &json);
     void loop();
+    int ssidScan(String &json);
 };
 
 extern hth_esp_wifi HTH_espWifi;

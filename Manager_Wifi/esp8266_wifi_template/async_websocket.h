@@ -25,34 +25,48 @@ typedef struct {
 */
 typedef std::function<void(AsyncWebSocketClient*, char*)> dataSocketHandler;
 
+class wsCallbacks {
+public:
+	virtual ~wsCallbacks();
+    /**
+    * Handler called after once received data.
+    */
+    virtual void onDataReceived(AsyncWebSocketClient* client, char* data);
+};
+
 class async_websocket
 {
 private:
     static Ticker* _ws_ticker;
-    static AsyncWebSocket* _ws;
-    static AsyncEventSource* _events;
     static dataSocketHandler _dataHandler;
+    static wsCallbacks* _pCallbacks;
     static ws_connection_info_t _ws_connection[NUM_WS_CONNECTION_MAX];
     static void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
-    static void ws_disconnect(uint8_t ws_index);
-    static void ws_connection_establish(uint8_t ws_num);
-    static void ws_connection_remove(uint8_t ws_num);
-    static uint8_t ws_connection_available(void);
-    static uint8_t ws_connection_connected(void);
-    static uint8_t ws_connection_index_has_tl_max(void);
-    static void ws_interval_sync(void);
+    static void disconnect(uint8_t ws_index);
+    static void connectionEstablish(uint8_t ws_num);
+    static void connectionRemove(uint8_t ws_num);
+    static uint8_t connectionAvailable(void);
+    static uint8_t connectedNumber(void);
+    static uint8_t connectionHasTimeLiveMax(void);
+    static void intervalCleanUpClients(void);
 
     String _wsUrl;
     String _eventUrl;
 public:
     async_websocket(const String& ws, const String& event);
     ~async_websocket();
-    
+    static AsyncWebSocket* _ws;
+    static AsyncEventSource* _events;
     void begin();
     void end();
     void onDataHandler(dataSocketHandler handler);
-    void ws_send_txt(uint8_t ws_index, char *payload);
-    void ws_send_broadcast_txt(char *payload);
+    void sendTxt(uint8_t ws_index, char *payload);
+    void sendBroadcastTxt(char *payload);
+    void setHandleCallbacks(wsCallbacks* pCallbacks);
+    void eventsSend(const char *message, const char *event)
+    {
+        _events->send(message, event);
+    }
 };
 
 #endif

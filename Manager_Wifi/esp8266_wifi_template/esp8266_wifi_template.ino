@@ -5,6 +5,8 @@
 #include "hth_esp_wifi.h"
 #include "hth_esp_sys_data.h"
 #include "async_webserver.h"
+#include "server_data_process.h"
+#include "eeprom_data.h"
 
 /* Private macro -------------------------------------------------------------*/
 #define MAIN_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[MAIN]", __VA_ARGS__)
@@ -27,12 +29,17 @@ void setup()
                      FW_VERSION_MINOR,
                      FW_VERSION_BUILD);
 
+    HTH_espEEPROM.begin();
+
 #ifdef ESP32
     /* Init nand memory file system */
     NAND_FS_SYSTEM.begin(true);
 #elif defined(ESP8266)
     NAND_FS_SYSTEM.begin();
 #endif
+    /* List file in nand memory file system */
+    listDir(NAND_FS_SYSTEM, "/", 0);
+
     // Always initialize after NAND_FS_SYSTEM.begin();
     // Because some function of system will need params 
     // load from file system for initial.
@@ -42,6 +49,7 @@ void setup()
 
     HTH_espWifi.begin();
 
+    HTH_asyncServer.setHandleCallbacks(new requestHandler());
     HTH_asyncServer.begin();
 }
 

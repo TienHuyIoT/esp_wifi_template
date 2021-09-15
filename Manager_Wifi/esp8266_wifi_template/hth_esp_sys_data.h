@@ -22,15 +22,7 @@
 #define PASS_PU3_DEFAULT        1234
 #define PASS_COST_DEFAULT       1234
 #define PASS_LOGFILE_DEFAULT    1234
-
-typedef enum : uint8_t {
-    CONFIRM_COMMON = 0,
-    CONFIRM_PU3,
-    CONFIRM_COST,
-    CONFIRM_LOGFILE,
-    CONFIRM_RESERVE,
-    CONFIRM_NUM_MAX
-} wifi_pass_confirm_t;
+#define CONFIRM_NUM_MAX         5
 
 typedef struct {
     struct {
@@ -88,6 +80,15 @@ typedef struct {
 
 class wifi_data_file
 {
+public:
+    typedef enum : uint8_t {
+        CONFIRM_COMMON = 0,
+        CONFIRM_PU3,
+        CONFIRM_COST,
+        CONFIRM_LOGFILE,
+        CONFIRM_RESERVE
+    } wifi_pass_confirm_t;
+
 private:
     fs::FS *_fs;
     wifi_file_json_t _file_prams;
@@ -102,7 +103,6 @@ public:
     void resetPassword();
     void resetDefault();
     bool passSupperAdminIsOK(const String &pass);
-    bool passConfirmIsOK(const String &pass, wifi_pass_confirm_t type);
     /* Port API */
     uint16_t udpPort() const { return _file_prams.port.udp; }
     uint16_t tcpPort() { return _file_prams.port.tcp; }
@@ -128,9 +128,6 @@ public:
     String authAdminPass() { return _file_prams.auth_admin.pass; }
     String authUserUser() { return _file_prams.auth_user.user; }
     String authUserPass() { return _file_prams.auth_user.pass; }
-    uint16_t passConfirm(wifi_pass_confirm_t passType) { 
-        return _file_prams.confirm[passType]; 
-    }
     void authAdminUserSet(const String &user) { 
         user.toCharArray(_file_prams.auth_admin.user, AUTH_LENGHT_MAX + 1);
     }
@@ -142,6 +139,11 @@ public:
     }
     void authUserPassSet(const String &pass) { 
         pass.toCharArray(_file_prams.auth_user.pass, AUTH_LENGHT_MAX + 1);
+    }
+    /* Confirm pass */
+    bool passConfirmIsOK(const String &pass, wifi_pass_confirm_t type);
+    uint16_t passConfirm(wifi_pass_confirm_t passType) { 
+        return _file_prams.confirm[passType]; 
     }
     void passConfirmSet(wifi_pass_confirm_t passType, uint16_t pass) { 
         _file_prams.confirm[passType] = pass;
@@ -158,9 +160,13 @@ public:
     bool isDisableSTA() { return _file_prams.sta.disable; }
     bool smartCfgSTA() { return _file_prams.sta.smart_cfg; }
     void ipSTASet(IPAddress ip) { _file_prams.sta.ip = ip; }
+    void ipSTASet(const String &address) { _file_prams.sta.ip.fromString(address); }
     void gwSTASet(IPAddress gw) { _file_prams.sta.gw = gw; }
+    void gwSTASet(const String &address) { _file_prams.sta.gw.fromString(address); }
     void snSTASet(IPAddress sn) { _file_prams.sta.sn = sn; }
+    void snSTASet(const String &address) { _file_prams.sta.sn.fromString(address); }
     void dnsSTASet(IPAddress dns) { _file_prams.sta.dns = dns; }
+    void dnsSTASet(const String &address) { _file_prams.sta.dns.fromString(address); }
     void ssidSTASet(const String &ssid) { 
         ssid.toCharArray(_file_prams.sta.ssid, SSID_LENGHT_MAX + 1);
     }
@@ -183,7 +189,9 @@ public:
     bool isHiddenAP() { return _file_prams.ap.hidden; }
     bool isDisableAP() { return _file_prams.ap.disable; }
     void ipAPSet(IPAddress ip) { _file_prams.ap.ip = ip; }
+    void ipAPSet(const String &address) { _file_prams.ap.ip.fromString(address); }
     void snAPSet(IPAddress sn) { _file_prams.ap.sn = sn; }
+    void snAPSet(const String &address) { _file_prams.ap.sn.fromString(address); }
     void ssidAPSet(const String &ssid) { 
         ssid.toCharArray(_file_prams.ap.ssid, SSID_LENGHT_MAX + 1);
     }

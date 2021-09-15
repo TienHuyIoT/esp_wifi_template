@@ -2,19 +2,27 @@
 #include <ESPAsyncWebServer.h>
 #include <FS.h>
 #ifdef ESP32
+#include <WiFi.h>
+#include <WiFiType.h>
 #include <Update.h>
+#include "esp_event_signal.h"
 #elif defined(ESP8266)
+#include <ESP8266WiFi.h>
 #include <Updater.h>
 #include "flash_hal.h"
 #endif
 #include "app_config.h"
+#include "hth_esp_wifi.h"
 #include "hth_console_dbg.h"
 #include "hth_esp_sys_data.h"
 #include "hth_esp_soft_reset.h"
 #include "async_webserver.h"
 
-#define WEB_SERVER_DBG_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 #define WEB_SERVER_DBG_PORT CONSOLE_PORT
+#define WEB_SERVER_DBG_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
+#define WEB_SERVER_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WEB SERVER]", __VA_ARGS__)
+
+static serverCallbacks defaultCallbacks;
 
 class RedirectUrlHandler : public AsyncWebHandler
 {
@@ -51,6 +59,8 @@ async_webserver::~async_webserver()
 
 AsyncWebServer* async_webserver::_server = new AsyncWebServer(25123);
 AsyncWebServer* async_webserver::_server80 = new AsyncWebServer(80);
+async_websocket* async_webserver::_wsHandler = new async_websocket("/ws", "/events");
+serverCallbacks* async_webserver::_pCallbacks = &defaultCallbacks;
 asyncHttpHandler async_webserver::_httpGetAuthHandler = nullptr;
 asyncHttpHandler async_webserver::_httpGetHandler = nullptr;
 asyncHttpHandler async_webserver::_httpPostAuthHandler = nullptr;
@@ -65,6 +75,14 @@ String async_webserver::_userAuthPass = String();
 int async_webserver::_flashUpdateType = 0;
 uint32_t async_webserver::_spiffsUploadPercent = 0;
 uint32_t async_webserver::_flashUpdatePercent = 0;
+
+void async_webserver::setHandleCallbacks(serverCallbacks* pCallbacks)
+{
+  if (pCallbacks != nullptr)
+  {
+    _pCallbacks = pCallbacks;
+  }
+}
 
 void async_webserver::fs_editor_status(AsyncWebServerRequest *request)
 {
@@ -157,7 +175,7 @@ void async_webserver::update_printProgress(size_t prg, size_t sz)
     _flashUpdatePercent = per;
     WEB_SERVER_DBG_PRINTF("Progress: %u%%\r\n", _flashUpdatePercent);
     sprintf(p, "%u", _flashUpdatePercent);
-    // events.send(p, "dfu");
+    _wsHandler->eventsSend(p, "dfu");
   }
 }
 
@@ -172,7 +190,7 @@ void async_webserver::sdfs_printProgress(size_t prg, size_t sz)
     _sdUploadPercent = per;
     WEB_SERVER_DBG_PRINTF("Progress: %u%%\r\n", _sdUploadPercent);
     sprintf(p, "%u", _sdUploadPercent);
-    // events.send(p, "sdfs");
+    _wsHandler->eventsSend(p, "sdfs");
   }
 }
 #endif
@@ -186,7 +204,7 @@ void async_webserver::spiffs_printProgress(size_t prg, size_t sz)
     _spiffsUploadPercent = per;
     WEB_SERVER_DBG_PRINTF("Progress: %u%%\r\n", _spiffsUploadPercent);
     sprintf(p, "%u", _spiffsUploadPercent);
-    // events.send(p, "spiffs");
+    _wsHandler->eventsSend(p, "spiffs");
   }
 }
 
@@ -196,21 +214,38 @@ void async_webserver::begin(void)
   _adminAuthPass = WFDataFile.authAdminPass();
   _userAuthUser = WFDataFile.authUserUser();
   _userAuthPass = WFDataFile.authUserPass();
-
+#ifdef ESP32
+  WiFi.onEvent(
+      [](WiFiEvent_t event, WiFiEventInfo_t info)
+      {
+        WEB_SERVER_TAG_CONSOLE("[EVENT] Completed scan for access points");
+        String json_network = "{\"status\":\"error\",\"mgs\":\"No network\"}";
+        HTH_espWifi.ssidScan(json_network);
+        WEB_SERVER_TAG_CONSOLE("json_network: %s", json_network.c_str());
+        _wsHandler->eventsSend(json_network.c_str(), "wifiScan");
+      },
+      WiFiEvent_t::m_ESP32_EVENT_SCAN_DONE);
+#elif defined(ESP8266)
+  // WiFi.scanNetworksAsync(
+  //   [](int scanCount) {
+  //     WEB_SERVER_TAG_CONSOLE("[EVENT] Completed scan for access points, found %u", scanCount);
+  //     String json_network = "{\"status\":\"error\",\"mgs\":\"No network\"}";
+  //     HTH_espWifi.ssidScan(json_network);
+  //     WEB_SERVER_TAG_CONSOLE("json_network: %s", json_network.c_str());
+  //     _wsHandler->eventsSend(json_network.c_str(), "wifiScan");
+  //   }
+  // );
+#endif
   /* redirect port 80 to tcp port */
   if (WFDataFile.tcpPort() != 80)
   {
     _server80->addHandler(new RedirectUrlHandler());
   }
 
-  // ws.onEvent(onWsEvent);
-  // _server->addHandler(&ws);
-
-  // events.onConnect([](AsyncEventSourceClient *client){
-  //   client->send("hello!",NULL,millis(),1000);
-  //   WEB_SERVER_DBG_PRINTF("\r\nevents connect: %u", client->lastId());
-  // });
-  // _server->addHandler(&events);
+  _wsHandler->setHandleCallbacks(new wsDataHandler());
+  _wsHandler->begin();
+  _server->addHandler(_wsHandler->_ws);
+  _server->addHandler(_wsHandler->_events);
 
   _spiffsEditor->onAuthenticate([](AsyncWebServerRequest *request)
                                 { return (authentication_level(request) != HTTP_AUTH_FAIL); });
@@ -226,36 +261,44 @@ void async_webserver::begin(void)
   _server->addHandler(_sdCardEditor);
 #endif
 
-  if (_httpGetAuthHandler)
-  {
-    _server->on(_uriHttpGetAuth.c_str(), HTTP_GET, [](AsyncWebServerRequest *request)
-              {
-                if (authentication_level(request) != HTTP_AUTH_FAIL)
-                {
-                  _httpGetAuthHandler(request);
-                }
-              });
-  }
 
-  if (_httpGetHandler)
-  {
-    _server->on(_uriHttpGet.c_str(), HTTP_GET,
-              [](AsyncWebServerRequest *request)
+_server->on("/get", HTTP_GET, [](AsyncWebServerRequest *request)
+          {
+            if (authentication_level(request) != HTTP_AUTH_FAIL)
+            {
+              if (_httpGetAuthHandler)
               {
-                _httpGetHandler(request);
-              });
-  }
+                _httpGetAuthHandler(request);
+              }
+              _pCallbacks->onHttpGetAuth(request);
+            }
+          });
 
-  if (_httpPostAuthHandler)
-  {
-    _server->on(_uriHttpPostAuth.c_str(), HTTP_POST, [](AsyncWebServerRequest *request)
+
+
+_server->on("/get_open", HTTP_GET,
+          [](AsyncWebServerRequest *request)
+          {
+            if (_httpGetHandler)
+            {
+              _httpGetHandler(request);
+            }
+            _pCallbacks->onHttpGet(request);
+          });
+
+
+
+_server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
+          {
+            if (authentication_level(request) != HTTP_AUTH_FAIL)
+            {
+              if (_httpPostAuthHandler)
               {
-                if (authentication_level(request) != HTTP_AUTH_FAIL)
-                {
-                  _httpPostAuthHandler(request);
-                }
-              });
-  }
+                _httpPostAuthHandler(request);
+              }
+              _pCallbacks->onHttpPostAuth(request);
+            }
+          });
 
   /* Serving files in directory. Serving static files with authentication */
   // _server->serveStatic("/", NAND_FS_SYSTEM, "/").setAuthentication(_adminAuthUser, _adminAuthPass);
@@ -459,4 +502,28 @@ void async_webserver::begin(void)
 void async_webserver::loop()
 {
 
+}
+
+serverCallbacks::~serverCallbacks() {}
+/**
+ * 
+ * Handler called after once request with method GET and authenticated.
+ */
+void serverCallbacks::onHttpGetAuth(AsyncWebServerRequest *request)
+{
+  WEB_SERVER_TAG_CONSOLE("[serverCallbacks] >> onHttpGetAuth: default <<");
+}
+/**
+ * Handler called after once request with method GET.
+ */
+void serverCallbacks::onHttpGet(AsyncWebServerRequest *request)
+{
+  WEB_SERVER_TAG_CONSOLE("[serverCallbacks] >> onHttpGet: default <<");
+}
+/**
+ * Handler called after once request with method POST and authenticated.
+ */
+void serverCallbacks::onHttpPostAuth(AsyncWebServerRequest *request)
+{
+  WEB_SERVER_TAG_CONSOLE("[serverCallbacks] >> onHttpPostAuth: default <<");
 }

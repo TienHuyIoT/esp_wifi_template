@@ -6,6 +6,8 @@
 #include "app_config.h"
 #include "fs_editor.h"
 #include "fs_handle.h"
+#include "async_websocket.h"
+#include "async_websocket_data_handler.h"
 
 typedef enum {
   HTTP_AUTH_LV0 = 0,
@@ -16,12 +18,31 @@ typedef enum {
 
 typedef std::function<void(AsyncWebServerRequest *)> asyncHttpHandler;
 
+class serverCallbacks {
+public:
+	virtual ~serverCallbacks();
+  /**
+  * Handler called after once request with method GET and authenticated.
+  */
+  virtual void onHttpGetAuth(AsyncWebServerRequest* request);
+  /**
+    * Handler called after once request with method GET.
+    */
+  virtual void onHttpGet(AsyncWebServerRequest* request);
+  /**
+    * Handler called after once request with method POST and authenticated.
+    */
+  virtual void onHttpPostAuth(AsyncWebServerRequest* request);
+};
+
 class async_webserver
 {
 private:
   static AsyncWebServer* _server;
   static AsyncWebServer* _server80;
   static FSEditor* _spiffsEditor;
+  static async_websocket* _wsHandler;
+  static serverCallbacks* _pCallbacks;
   static asyncHttpHandler _httpGetAuthHandler;
   static asyncHttpHandler _httpGetHandler;
   static asyncHttpHandler _httpPostAuthHandler;
@@ -73,10 +94,17 @@ public:
     _uriHttpPostAuth = uri;
   }
 
+  void setHandleCallbacks(serverCallbacks* pCallbacks);
+
   void end() {
     delete _server;
     delete _server80;
     delete _spiffsEditor;
+    delete _wsHandler;
+    delete _pCallbacks;
+#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
+    delete _sdCardEditor;
+#endif
   }
 };
 

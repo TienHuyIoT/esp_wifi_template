@@ -91,9 +91,9 @@ hth_esp_wifi::hth_esp_wifi(/* args */)
 hth_esp_wifi::~hth_esp_wifi()
 {
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
-  if (_ddnsClient)
+  if (ddnsClient)
   {
-    delete _ddnsClient;
+    delete ddnsClient;
   }
 #endif
 
@@ -103,7 +103,7 @@ hth_esp_wifi::~hth_esp_wifi()
 }
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
-AsyncEasyDDNSClass* hth_esp_wifi::_ddnsClient = nullptr;
+AsyncEasyDDNSClass* hth_esp_wifi::ddnsClient = nullptr;
 #endif
 
 void hth_esp_wifi::registerEventHandler()
@@ -127,6 +127,7 @@ void hth_esp_wifi::registerEventHandler()
     }
   }
   ,WiFiEvent_t::m_ESP32_EVENT_STA_GOT_IP);
+
   WiFi.onEvent(
       [](WiFiEvent_t event, WiFiEventInfo_t info)
       {
@@ -141,6 +142,17 @@ void hth_esp_wifi::registerEventHandler()
         WiFi.reconnect();
       },
       WiFiEvent_t::m_ESP32_EVENT_STA_DISCONNECTED);
+  
+  WiFi.onEvent(
+      [](WiFiEvent_t event, WiFiEventInfo_t info)
+      {
+        ESP_WIFI_TAG_CONSOLE("[EVENT] Completed scan for access points");
+        String json_network = "{\"status\":\"error\",\"mgs\":\"No network\"}";
+        this->ssidScan(json_network);
+        ESP_WIFI_TAG_CONSOLE("json_network: %s", json_network.c_str());
+        // events.send(json_network.c_str(), "wifiScan");
+      },
+      WiFiEvent_t::m_ESP32_EVENT_SCAN_DONE);
 #elif defined(ESP8266)
   // ??? To register evetn, must be declare accessPointGotIpHandler
   accessPointGotIpHandler = WiFi.onStationModeGotIP(
@@ -190,12 +202,12 @@ void hth_esp_wifi::onDDNSclient()
       return;
   }
 
-  if (_ddnsClient)
+  if (ddnsClient)
   {
     return;
   }
   
-  _ddnsClient = new AsyncEasyDDNSClass();
+  ddnsClient = new AsyncEasyDDNSClass();
     /*
     List of supported DDNS providers:
     - "duckdns"
@@ -210,19 +222,19 @@ void hth_esp_wifi::onDDNSclient()
     - "freemyip"
     - "afraid.org"
   */
-  _ddnsClient->service(WFDataFile.serviceDDNS());
+  ddnsClient->service(WFDataFile.serviceDDNS());
 
   /*
     For DDNS Providers where you get a token:
-      Use this: _ddnsClient->client("domain", "token");
+      Use this: ddnsClient->client("domain", "token");
     
     For DDNS Providers where you get username and password: ( Leave the password field empty "" if not required )
-      Use this: _ddnsClient->client("domain", "username", "password");
+      Use this: ddnsClient->client("domain", "username", "password");
   */
-  _ddnsClient->client(WFDataFile.domainDDNS(), WFDataFile.userDDNS(), WFDataFile.passDDNS());
+  ddnsClient->client(WFDataFile.domainDDNS(), WFDataFile.userDDNS(), WFDataFile.passDDNS());
 
   // Get Notified when your IP changes
-  _ddnsClient->onUpdate([&](const char* oldIP, const char* newIP){
+  ddnsClient->onUpdate([&](const char* oldIP, const char* newIP){
     ESP_WIFI_TAG_CONSOLE("[DDNS] AsyncEasyDDNS - IP Change Detected: %s", newIP);
   });
 
@@ -241,7 +253,7 @@ void hth_esp_wifi::onDDNSclient()
   _ddnsTicker.attach(WFDataFile.syncTimeDDNS(), [](){
     if (!WFDataFile.disableDDNS())
     {
-      _ddnsClient->update();
+      ddnsClient->update();
     }  
   }); 
 }
@@ -348,7 +360,7 @@ void hth_esp_wifi::onArduinoOTA()
                      });
 
   ArduinoOTA.setHostname(WFDataFile.hostNameSTA().c_str());
-  ArduinoOTA.setPassword("1234");
+  // ArduinoOTA.setPassword("1234");
   ArduinoOTA.begin();
 }
 #endif
@@ -374,7 +386,7 @@ void hth_esp_wifi::begin()
 #endif
 
   // Register wifi event callback
-  // this->registerEventHandler();
+  this->registerEventHandler();
 
   /* Once WiFi.persistent(false) is called, WiFi.begin, 
      WiFi.disconnect, WiFi.softAP, or WiFi.softAPdisconnect 
@@ -503,9 +515,6 @@ void hth_esp_wifi::begin()
 
     ESP_WIFI_TAG_CONSOLE("AP IP address: %s\r\n", WiFi.softAPIP().toString().c_str());
   }
-
-  // Register wifi event callback
-  this->registerEventHandler();
 
   /* should be called after the wifi init */
 #if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)  
