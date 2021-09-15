@@ -117,12 +117,6 @@ https://github.com/boblemaire/asyncHTTPrequest
 */
 #define USE_NAND_FS_SYSTEM 1
 
-#ifdef ESP8266
-#define FILE_READ       "r"
-#define FILE_WRITE      "w"
-#define FILE_APPEND     "a"
-#endif
-
 /* Include header fife system */
 #if (defined USE_NAND_FS_SYSTEM) && (USE_NAND_FS_SYSTEM == 2)
   #define NAND_FS_SYSTEM FFat

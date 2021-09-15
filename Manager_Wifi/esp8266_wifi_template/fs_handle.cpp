@@ -160,7 +160,7 @@ void writeFile(fs::FS &fs, const char *path, const char *message)
 {
   FS_HANDLE_PRINTF("Writing file: %s\n", path);
 
-  File file = fs.open(path, FILE_WRITE);
+  File file = fs.open(path, "w");
   if (!file)
   {
     FS_HANDLE_PRINTFLN("Failed to open file for writing");
@@ -180,7 +180,7 @@ void appendFile(fs::FS &fs, const char *path, const char *message)
 {
   FS_HANDLE_PRINTF("Appending to file: %s\n", path);
 
-  File file = fs.open(path, FILE_APPEND);
+  File file = fs.open(path, "a");
   if (!file)
   {
     FS_HANDLE_PRINTFLN("Failed to open file for appending");
@@ -240,7 +240,7 @@ void testFileIO(fs::FS &fs, const char *path)
     FS_HANDLE_PRINTFLN("Failed to open file for reading");
   }
 
-  file = fs.open(path, FILE_WRITE);
+  file = fs.open(path, "w");
   if (!file)
   {
     FS_HANDLE_PRINTFLN("Failed to open file for writing");

@@ -2,6 +2,7 @@
 #define _FS_EDITOR_H_
 
 #include <FS.h>
+#include <SD.h>
 #include <ESPAsyncWebServer.h>
 
 #define FS_EDITOR_DEBUG    0

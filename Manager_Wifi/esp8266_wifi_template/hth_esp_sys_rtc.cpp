@@ -314,7 +314,7 @@ void rtc_data_file::save(rtc_time_t *rtc)
     RTC_DATA_TAG_CONSOLE("Json created: ");
     root.prettyPrintTo(RTC_DATA_CONSOLE_PORT);
 
-    fs_handle = _fs->open(RTC_FILE_PATH, FILE_WRITE);
+    fs_handle = _fs->open(RTC_FILE_PATH, "w");
     root.prettyPrintTo(fs_handle);
     fs_handle.close();
     RTC_DATA_TAG_CONSOLE("save succeed!");
@@ -332,7 +332,7 @@ bool rtc_data_file::sync(rtc_time_t *rtc)
         return false;
     }
 
-    fs_handle = _fs->open(RTC_FILE_PATH, FILE_READ);
+    fs_handle = _fs->open(RTC_FILE_PATH, "r");
 
     DynamicJsonBuffer djBuffer;
     JsonObject &root = djBuffer.parseObject(fs_handle);

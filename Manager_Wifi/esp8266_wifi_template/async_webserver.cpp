@@ -16,7 +16,9 @@
 #include "hth_console_dbg.h"
 #include "hth_esp_sys_data.h"
 #include "hth_esp_soft_reset.h"
+#include "hth_esp_sdcard.h"
 #include "async_webserver.h"
+
 
 #define WEB_SERVER_DBG_PORT CONSOLE_PORT
 #define WEB_SERVER_DBG_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
@@ -96,26 +98,35 @@ void async_webserver::fs_editor_status(AsyncWebServerRequest *request)
   if (status == "spiffs")
   {
 #ifdef ESP8266
-    FSInfo fs_info;
-    NAND_FS_SYSTEM.info(fs_info);
+    FSInfo64 fs_info;
+    NAND_FS_SYSTEM.info64(fs_info);
     sprintf(buf_ttb, "%lu", fs_info.totalBytes);
     sprintf(buf_udb, "%lu", fs_info.usedBytes);
-    WEB_SERVER_DBG_PORT.printf("\nNandflash Total space: %lu\r\n", fs_info.totalBytes);
-    WEB_SERVER_DBG_PORT.printf("Nandflash Used space: %lu\r\n", fs_info.usedBytes);
+    WEB_SERVER_TAG_CONSOLE("Nandflash Total space: %lu", fs_info.totalBytes);
+    WEB_SERVER_TAG_CONSOLE("Nandflash Used space: %lu", fs_info.usedBytes);
 #elif defined(ESP32)
     sprintf(buf_ttb, "%lu", NAND_FS_SYSTEM.totalBytes());
     sprintf(buf_udb, "%lu", NAND_FS_SYSTEM.usedBytes());
-    WEB_SERVER_DBG_PORT.printf("\nNandflash Total space: %lu\r\n", NAND_FS_SYSTEM.totalBytes());
-    WEB_SERVER_DBG_PORT.printf("Nandflash Used space: %lu\r\n", NAND_FS_SYSTEM.usedBytes());
+    WEB_SERVER_TAG_CONSOLE("Nandflash Total space: %lu", NAND_FS_SYSTEM.totalBytes());
+    WEB_SERVER_TAG_CONSOLE("Nandflash Used space: %lu", NAND_FS_SYSTEM.usedBytes());
 #endif
   }
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
   else
   {
+#ifdef ESP8266
+    FSInfo fs_info;
+    SD_FS_SYSTEM.info(fs_info);
+    sprintf(buf_ttb, "%lu", fs_info.totalBytes);
+    sprintf(buf_udb, "%lu", fs_info.usedBytes);
+    WEB_SERVER_TAG_CONSOLE("Nandflash Total space: %lu", fs_info.totalBytes);
+    WEB_SERVER_TAG_CONSOLE("Nandflash Used space: %lu", fs_info.usedBytes);
+#elif defined(ESP32)
     sprintf(buf_ttb, "%llu", SD_FS_SYSTEM.totalBytes());
     sprintf(buf_udb, "%llu", SD_FS_SYSTEM.usedBytes());
-    WEB_SERVER_DBG_PORT.printf("\nSD Total space: %lu\r\n", SD_FS_SYSTEM.totalBytes());
-    WEB_SERVER_DBG_PORT.printf("SD Used space: %lu\r\n", SD_FS_SYSTEM.usedBytes());
+    WEB_SERVER_TAG_CONSOLE("SD Total space: %lu", SD_FS_SYSTEM.totalBytes());
+    WEB_SERVER_TAG_CONSOLE("SD Used space: %lu", SD_FS_SYSTEM.usedBytes());
+#endif
   }
 #endif
 

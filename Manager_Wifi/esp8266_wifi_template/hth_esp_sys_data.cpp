@@ -174,7 +174,7 @@ void wifi_data_file::saveToFileSystem()
 
     WIFI_DATA_TAG_CONSOLE("Json created:");
     // root.prettyPrintTo(WIFI_FILE_PORT);
-    fs_handle = _fs->open(WIFI_FILE_PATH, FILE_WRITE);
+    fs_handle = _fs->open(WIFI_FILE_PATH, "w");
     root.prettyPrintTo(fs_handle);
     fs_handle.close();    
     WIFI_DATA_TAG_CONSOLE("wifi json info updated"); 
@@ -186,12 +186,12 @@ void wifi_data_file::syncFromFileSystem()
 
     if (!_fs->exists(WIFI_FILE_PATH))
     {
-        fs_handle = _fs->open(WIFI_FILE_PATH, FILE_WRITE);
+        fs_handle = _fs->open(WIFI_FILE_PATH, "w");
         fs_handle.printf_P(wifi_data_default_json);
         fs_handle.close();
     }
 
-    fs_handle = _fs->open(WIFI_FILE_PATH, FILE_READ);    
+    fs_handle = _fs->open(WIFI_FILE_PATH, "r");    
     
     DynamicJsonBuffer djbpo;
     JsonObject &root = djbpo.parseObject(fs_handle);

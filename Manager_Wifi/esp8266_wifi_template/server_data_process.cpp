@@ -6,6 +6,7 @@
 #include "hth_esp_sys_rtc.h"
 #include "hth_esp_sys_data.h"
 #include "eeprom_data.h"
+#include "hth_esp_sdcard.h"
 #include "hth_console_dbg.h"
 #include "server_data_process.h"
 
