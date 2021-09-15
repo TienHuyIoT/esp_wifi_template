@@ -23,7 +23,7 @@ void setup()
 #elif defined(ESP8266)
     CONSOLE_PORT.begin(CONSOLE_BAUDRATE, SERIAL_8N1);
 #endif
-    MAIN_TAG_CONSOLE("build_time: %s", build_time);
+    MAIN_TAG_CONSOLE("\r\n\r\nbuild_time: %s", build_time);
     MAIN_TAG_CONSOLE("==== Firmware version %u.%u.%u ====\r\n",
                      FW_VERSION_MAJOR,
                      FW_VERSION_MINOR,

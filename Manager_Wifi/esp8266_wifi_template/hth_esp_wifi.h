@@ -49,6 +49,7 @@ private:
     void onDDNSclient();  // DDNS client service
 #endif
 
+    static Ticker _reconnetTicker;
 #ifdef ESP8266
     WiFiEventHandler accessPointConnectedHandler;
     WiFiEventHandler accessPointDisconnectedHandler;

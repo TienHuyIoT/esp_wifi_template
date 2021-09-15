@@ -73,6 +73,9 @@ String async_webserver::_adminAuthPass = String();
 String async_webserver::_userAuthUser = String();
 String async_webserver::_userAuthPass = String();
 int async_webserver::_flashUpdateType = 0;
+#ifdef ESP8266
+size_t async_webserver::_updateProgress = 0;
+#endif
 uint32_t async_webserver::_spiffsUploadPercent = 0;
 uint32_t async_webserver::_flashUpdatePercent = 0;
 
@@ -166,7 +169,7 @@ uint8_t async_webserver::authentication_level(AsyncWebServerRequest *request)
   return level;
 }
 
-void async_webserver::update_printProgress(size_t prg, size_t sz)
+void async_webserver::updatePrintProgress(size_t prg, size_t sz)
 {
   uint32_t per = prg * 100 / sz;
   if (_flashUpdatePercent != per)
@@ -181,7 +184,7 @@ void async_webserver::update_printProgress(size_t prg, size_t sz)
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 uint32_t async_webserver::_sdUploadPercent = 0;
-void async_webserver::sdfs_printProgress(size_t prg, size_t sz)
+void async_webserver::sdfsPrintProgress(size_t prg, size_t sz)
 {
   uint32_t per = prg * 100 / sz;
   if (_sdUploadPercent != per)
@@ -195,7 +198,7 @@ void async_webserver::sdfs_printProgress(size_t prg, size_t sz)
 }
 #endif
 
-void async_webserver::spiffs_printProgress(size_t prg, size_t sz)
+void async_webserver::spiffsPrintProgress(size_t prg, size_t sz)
 {
   uint32_t per = prg * 100 / sz;
   if (_spiffsUploadPercent != per)
@@ -205,6 +208,29 @@ void async_webserver::spiffs_printProgress(size_t prg, size_t sz)
     WEB_SERVER_DBG_PRINTF("Progress: %u%%\r\n", _spiffsUploadPercent);
     sprintf(p, "%u", _spiffsUploadPercent);
     _wsHandler->eventsSend(p, "spiffs");
+  }
+}
+
+void async_webserver::syncSsidNetworkToEvents()
+{
+if(WiFi.scanComplete() == WIFI_SCAN_FAILED) {
+#ifdef ESP8266
+  /* run in async mode */
+  WEB_SERVER_TAG_CONSOLE("scanNetworks async mode run");
+  WiFi.scanNetworksAsync(
+    [](int scanCount) {
+      WEB_SERVER_TAG_CONSOLE("[EVENT] Completed scan for access points, found %u", scanCount);
+      String json_network = "{\"status\":\"error\",\"mgs\":\"No network\"}";
+      HTH_espWifi.ssidScan(json_network);
+      WEB_SERVER_TAG_CONSOLE("json_network: %s", json_network.c_str());
+      _wsHandler->eventsSend(json_network.c_str(), "wifiScan");
+    }
+  );
+#elif defined(ESP32)
+  /* run in async mode */
+  WEB_SERVER_TAG_CONSOLE("scanNetworks async mode run");
+  WiFi.scanNetworks(true);
+#endif
   }
 }
 
@@ -226,15 +252,7 @@ void async_webserver::begin(void)
       },
       WiFiEvent_t::m_ESP32_EVENT_SCAN_DONE);
 #elif defined(ESP8266)
-  // WiFi.scanNetworksAsync(
-  //   [](int scanCount) {
-  //     WEB_SERVER_TAG_CONSOLE("[EVENT] Completed scan for access points, found %u", scanCount);
-  //     String json_network = "{\"status\":\"error\",\"mgs\":\"No network\"}";
-  //     HTH_espWifi.ssidScan(json_network);
-  //     WEB_SERVER_TAG_CONSOLE("json_network: %s", json_network.c_str());
-  //     _wsHandler->eventsSend(json_network.c_str(), "wifiScan");
-  //   }
-  // );
+  _pCallbacks->onScanNetwork(std::bind(&async_webserver::syncSsidNetworkToEvents, this));
 #endif
   /* redirect port 80 to tcp port */
   if (WFDataFile.tcpPort() != 80)
@@ -249,14 +267,14 @@ void async_webserver::begin(void)
 
   _spiffsEditor->onAuthenticate([](AsyncWebServerRequest *request)
                                 { return (authentication_level(request) != HTTP_AUTH_FAIL); });
-  _spiffsEditor->onProgress(spiffs_printProgress);
+  _spiffsEditor->onProgress(spiffsPrintProgress);
   _spiffsEditor->onStatus(fs_editor_status);
   _server->addHandler(_spiffsEditor);
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
   _sdCardEditor->onAuthenticate([](AsyncWebServerRequest *request)
                             { return (authentication_level(request) != HTTP_AUTH_FAIL); });
-  _sdCardEditor->onProgress(sdfs_printProgress);
+  _sdCardEditor->onProgress(sdfsPrintProgress);
   _sdCardEditor->onStatus(fs_editor_status);
   _server->addHandler(_sdCardEditor);
 #endif
@@ -310,7 +328,11 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
                                                                  { return (authentication_level(request) != HTTP_AUTH_FAIL); });
 #endif
 
-  Update.onProgress(update_printProgress);
+#ifdef ESP32
+  Update.onProgress(updatePrintProgress);
+#elif defined(ESP8266)
+  // useless
+#endif
   // Simple Firmware Update Form
   _server->on("/update", HTTP_GET, [](AsyncWebServerRequest *request)
              {
@@ -327,7 +349,7 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
         request->send(response);
         if (!Update.hasError())
         {
-          update_printProgress(100, 100); // 100%
+          updatePrintProgress(100, 100); // 100% --> Done
           if (U_FLASH == _flashUpdateType)
           {
             HTH_softReset.enable(500);
@@ -339,16 +361,18 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
         }
         else
         {
-          update_printProgress(101, 100); // 101%
+          updatePrintProgress(101, 100); // 101% --> Fail
         }
       },
       [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
       {
+        size_t length = request->contentLength();
+
         if (!index)
         {
-          size_t length = request->contentLength();
           WEB_SERVER_DBG_PORT.printf("Update Start: %s, size=%u\r\n", filename.c_str(), length);
 #ifdef ESP8266
+          _updateProgress = 0;
           // if filename includes spiffs, update the spiffs partition
           if ((filename.indexOf("spiffs") > -1) || (filename.indexOf("littlefs") > -1))
           {
@@ -386,6 +410,10 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
           {
             Update.printError(WEB_SERVER_DBG_PORT);
           }
+#ifdef ESP8266
+          _updateProgress += len;
+          updatePrintProgress(_updateProgress, length);
+#endif
         }
         if (final)
         {
@@ -504,6 +532,10 @@ void async_webserver::loop()
 
 }
 
+serverCallbacks::serverCallbacks() 
+: _pScanNetworkCb(nullptr)
+{
+}
 serverCallbacks::~serverCallbacks() {}
 /**
  * 

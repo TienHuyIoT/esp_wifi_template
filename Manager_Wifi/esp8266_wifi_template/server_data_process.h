@@ -25,12 +25,12 @@ public:
 
 typedef struct {
     char *path_arg;
-    void (*cb)(AsyncWebServerRequest *request);
+    void (*cb)(AsyncWebServerRequest *request, requestHandler* client);
 } server_post_handle_t;
 
 typedef struct {
     char *path_arg;
-    void (*cb)(AsyncWebServerRequest *request);
+    void (*cb)(AsyncWebServerRequest *request, requestHandler* client);
 } server_get_handle_t;
 
 #endif

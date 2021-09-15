@@ -37,31 +37,31 @@ float esp_internal_temp(void)
 void print_handlerequest(AsyncWebServerRequest *request, String &message);
 
 /* get */
-void sta_ap_info_get(AsyncWebServerRequest *request);
-void sta_network_get(AsyncWebServerRequest *request);
-void sta_setting_get(AsyncWebServerRequest *request);
-void ap_setting_get(AsyncWebServerRequest *request);
-void device_info_get(AsyncWebServerRequest *request);
-void time_setting_get(AsyncWebServerRequest *request);
-void fw_version_get(AsyncWebServerRequest *request);
-void restart_device_get(AsyncWebServerRequest *request);
-void heap_temperature_get(AsyncWebServerRequest *request);
-void activated_get(AsyncWebServerRequest *request);
-void format_sd_card_get(AsyncWebServerRequest *request);
-void ddns_client_get(AsyncWebServerRequest *request);
-void pass_common_get(AsyncWebServerRequest *request);
+void sta_ap_info_get(AsyncWebServerRequest *request, requestHandler* client);
+void sta_network_get(AsyncWebServerRequest *request, requestHandler* client);
+void sta_setting_get(AsyncWebServerRequest *request, requestHandler* client);
+void ap_setting_get(AsyncWebServerRequest *request, requestHandler* client);
+void device_info_get(AsyncWebServerRequest *request, requestHandler* client);
+void time_setting_get(AsyncWebServerRequest *request, requestHandler* client);
+void fw_version_get(AsyncWebServerRequest *request, requestHandler* client);
+void restart_device_get(AsyncWebServerRequest *request, requestHandler* client);
+void heap_temperature_get(AsyncWebServerRequest *request, requestHandler* client);
+void activated_get(AsyncWebServerRequest *request, requestHandler* client);
+void format_sd_card_get(AsyncWebServerRequest *request, requestHandler* client);
+void ddns_client_get(AsyncWebServerRequest *request, requestHandler* client);
+void pass_common_get(AsyncWebServerRequest *request, requestHandler* client);
 
 /* Post */
-void sta_ap_info_post(AsyncWebServerRequest *request);
-void sta_network_post(AsyncWebServerRequest *request);
-void sta_setting_post(AsyncWebServerRequest *request);
-void ap_setting_post(AsyncWebServerRequest *request);
-void device_info_post(AsyncWebServerRequest *request);
-void auth_access_post(AsyncWebServerRequest *request);
-void time_setting_post(AsyncWebServerRequest *request);
-void ddns_client_post(AsyncWebServerRequest *request);
-void auth_user_access_post(AsyncWebServerRequest *request);
-void pass_common_post(AsyncWebServerRequest *request);
+void sta_ap_info_post(AsyncWebServerRequest *request, requestHandler* client);
+void sta_network_post(AsyncWebServerRequest *request, requestHandler* client);
+void sta_setting_post(AsyncWebServerRequest *request, requestHandler* client);
+void ap_setting_post(AsyncWebServerRequest *request, requestHandler* client);
+void device_info_post(AsyncWebServerRequest *request, requestHandler* client);
+void auth_access_post(AsyncWebServerRequest *request, requestHandler* client);
+void time_setting_post(AsyncWebServerRequest *request, requestHandler* client);
+void ddns_client_post(AsyncWebServerRequest *request, requestHandler* client);
+void auth_user_access_post(AsyncWebServerRequest *request, requestHandler* client);
+void pass_common_post(AsyncWebServerRequest *request, requestHandler* client);
 
 /* /get?param_wifi=[param] */
 server_get_handle_t client_get_handle[DATA_GET_HANDLE_NUM] = {
@@ -123,7 +123,7 @@ void requestHandler::onHttpGetAuth(AsyncWebServerRequest* request)
             if (p->value() == client_get_handle[i].path_arg)
             {
                 SERVER_DATA_PRINTF("\r\nProcess get callback [%u]", i);
-                client_get_handle[i].cb(request);
+                client_get_handle[i].cb(request, this);
                 cb = 1;
                 break;
             }
@@ -157,7 +157,7 @@ void requestHandler::onHttpPostAuth(AsyncWebServerRequest* request)
         if (p->name() == client_post_handle[i].path_arg)
         {
             SERVER_DATA_PRINTF("\r\nProcess post callback [%u]", i);
-            client_post_handle[i].cb(request);
+            client_post_handle[i].cb(request, this);
             cb = 1;
             break;
         }
@@ -175,7 +175,7 @@ void requestHandler::onHttpPostAuth(AsyncWebServerRequest* request)
 /*---------------------------------------------------------------------*
  *----------------------------data get process-------------------------*
  *---------------------------------------------------------------------*/
-void sta_ap_info_get(AsyncWebServerRequest *request)
+void sta_ap_info_get(AsyncWebServerRequest *request, requestHandler* client)
 {
     IPAddress local_ip(0,0,0,0);
     String json_network;
@@ -249,7 +249,7 @@ void sta_ap_info_get(AsyncWebServerRequest *request)
 }
 
 /* Get json sta_network */
-void sta_network_get(AsyncWebServerRequest *request)
+void sta_network_get(AsyncWebServerRequest *request, requestHandler* client)
 {
     String json_network = "{\"status\":\"ok\",\"mgs\":\"WiFi is scanning ...\"}";
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
@@ -270,15 +270,11 @@ void sta_network_get(AsyncWebServerRequest *request)
         }
     }
 #else
-    if(WiFi.scanComplete() == WIFI_SCAN_FAILED) {
-        /* run in async mode */
-        SERVER_DATA_PRINTF("\r\nscanNetworks async mode run");
-        WiFi.scanNetworks(true);
-    }
+    client->asyncScanNetwork();
 #endif
 }
 
-void sta_setting_get(AsyncWebServerRequest *request) 
+void sta_setting_get(AsyncWebServerRequest *request, requestHandler* client) 
 {
     IPAddress local_ip(0,0,0,0);
     IPAddress gateway_ip(0,0,0,0);
@@ -354,7 +350,7 @@ void sta_setting_get(AsyncWebServerRequest *request)
     }
     
     root["sta_dhcp"].set(WFDataFile.dhcpSTA());
-    root["sta_on"].set(!WFDataFile.isDisableSTA());  
+    root["sta_on"].set((WFDataFile.isDisableSTA() == 0) ? 1 : 0);  
     root["udp_port"].set(WFDataFile.udpPort());
     root["tcp_port"].set(WFDataFile.tcpPort());
     root["ws_port"].set(WFDataFile.wsPort());
@@ -363,7 +359,7 @@ void sta_setting_get(AsyncWebServerRequest *request)
     request->send(200, "text/json", json_network);
 }
 
-void ap_setting_get(AsyncWebServerRequest *request) 
+void ap_setting_get(AsyncWebServerRequest *request, requestHandler* client) 
 {
     String json_network;
     
@@ -372,7 +368,7 @@ void ap_setting_get(AsyncWebServerRequest *request)
     root["ap_ssid"].set(WFDataFile.ssidAP());
     root["ap_pass"].set(WFDataFile.passAP());
     root["ap_dns_name"].set(WFDataFile.dnsNameAP()); 
-    root["ap_on"].set(!WFDataFile.isDisableAP());  
+    root["ap_on"].set((WFDataFile.isDisableAP() == 0) ? 1 : 0);  
     root["ap_channel"].set(WFDataFile.channelAP());
     root["ap_hidden"].set(WFDataFile.isHiddenAP());
 
@@ -380,7 +376,7 @@ void ap_setting_get(AsyncWebServerRequest *request)
     request->send(200, "text/json", json_network);
 }
 
-void device_info_get(AsyncWebServerRequest *request)
+void device_info_get(AsyncWebServerRequest *request, requestHandler* client)
 {
     String json_network;
     DynamicJsonBuffer djbco;
@@ -392,7 +388,7 @@ void device_info_get(AsyncWebServerRequest *request)
     request->send(200, "text/json", json_network);
 }
 
-void time_setting_get(AsyncWebServerRequest *request)
+void time_setting_get(AsyncWebServerRequest *request, requestHandler* client)
 {    
     String json_network;
     rtc_time_t rtc;
@@ -422,7 +418,7 @@ void time_setting_get(AsyncWebServerRequest *request)
 }
 
 /* /get?param_wifi=fw_version */
-void fw_version_get(AsyncWebServerRequest *request)
+void fw_version_get(AsyncWebServerRequest *request, requestHandler* client)
 {
     char buf[100];
     const char * fwBuild = __DATE__ " " __TIME__ " GMT";
@@ -432,14 +428,14 @@ void fw_version_get(AsyncWebServerRequest *request)
 }
 
 /* /get?param_wifi=restart */
-void restart_device_get(AsyncWebServerRequest *request)
+void restart_device_get(AsyncWebServerRequest *request, requestHandler* client)
 {
     request->send(200, "text/json", "Reset OK");
     HTH_softReset.enable(100);
 }
 
 /* /get?param_wifi=heap_temperature */
-void heap_temperature_get(AsyncWebServerRequest *request)
+void heap_temperature_get(AsyncWebServerRequest *request, requestHandler* client)
 {
     String json = "{";
     json += "\"heap\":" + String(ESP.getFreeHeap());
@@ -455,7 +451,7 @@ void heap_temperature_get(AsyncWebServerRequest *request)
  * [X] = 1: Active
  * [X] > 1: Read status
  */
-void activated_get(AsyncWebServerRequest *request)
+void activated_get(AsyncWebServerRequest *request, requestHandler* client)
 {    
     if (request->argName(1) == "cmd")
     {
@@ -476,7 +472,7 @@ void activated_get(AsyncWebServerRequest *request)
     }    
 }
 
-void format_sd_card_get(AsyncWebServerRequest *request)
+void format_sd_card_get(AsyncWebServerRequest *request, requestHandler* client)
 {
     if (request->argName(1) == "pass" && WFDataFile.passConfirmIsOK(request->arg(1), wifi_data_file::CONFIRM_COMMON))
     {
@@ -493,7 +489,7 @@ void format_sd_card_get(AsyncWebServerRequest *request)
     } 
 }
 
-void ddns_client_get(AsyncWebServerRequest *request)
+void ddns_client_get(AsyncWebServerRequest *request, requestHandler* client)
 {
     String json_resp;
     
@@ -515,7 +511,7 @@ void ddns_client_get(AsyncWebServerRequest *request)
     request->send(200, "text/json", json_resp);
 }
 
-void pass_common_get(AsyncWebServerRequest *request)
+void pass_common_get(AsyncWebServerRequest *request, requestHandler* client)
 {
     if (request->argName(1) != "Pass" 
     || !WFDataFile.passConfirmIsOK(request->arg(1), wifi_data_file::CONFIRM_COMMON))
@@ -531,7 +527,7 @@ void pass_common_get(AsyncWebServerRequest *request)
 /*---------------------------------------------------------------------*
  *----------------------------data post process------------------------*
  *---------------------------------------------------------------------*/
-void sta_ap_info_post(AsyncWebServerRequest *request)
+void sta_ap_info_post(AsyncWebServerRequest *request, requestHandler* client)
 {
 }
 
@@ -542,7 +538,7 @@ void sta_ap_info_post(AsyncWebServerRequest *request)
 "access_code": "1234"
 }
 */
-void sta_network_post(AsyncWebServerRequest *request) 
+void sta_network_post(AsyncWebServerRequest *request, requestHandler* client) 
 {
     AsyncWebParameter* p = request->getParam(0);
 
@@ -574,7 +570,7 @@ void sta_network_post(AsyncWebServerRequest *request)
     }
 }
 
-void sta_setting_post(AsyncWebServerRequest *request)
+void sta_setting_post(AsyncWebServerRequest *request, requestHandler* client)
 {
     AsyncWebParameter* p = request->getParam(0);  
 
@@ -614,7 +610,7 @@ void sta_setting_post(AsyncWebServerRequest *request)
     }
 }
 
-void ap_setting_post(AsyncWebServerRequest *request) 
+void ap_setting_post(AsyncWebServerRequest *request, requestHandler* client) 
 {
     AsyncWebParameter* p = request->getParam(0);
 
@@ -648,7 +644,7 @@ void ap_setting_post(AsyncWebServerRequest *request)
     }
 }
 
-void device_info_post(AsyncWebServerRequest *request)
+void device_info_post(AsyncWebServerRequest *request, requestHandler* client)
 {
     AsyncWebParameter* p = request->getParam(0);
 
@@ -677,7 +673,7 @@ void device_info_post(AsyncWebServerRequest *request)
     }
 }
 
-void auth_access_post(AsyncWebServerRequest *request)
+void auth_access_post(AsyncWebServerRequest *request, requestHandler* client)
 {
     AsyncWebParameter* p = request->getParam(0);
 
@@ -714,7 +710,7 @@ void auth_access_post(AsyncWebServerRequest *request)
     }
 }
 
-void time_setting_post(AsyncWebServerRequest *request)
+void time_setting_post(AsyncWebServerRequest *request, requestHandler* client)
 {    
     AsyncWebParameter* p = request->getParam(0);
     const char *rtc_str = p->value().c_str();
@@ -728,7 +724,7 @@ void time_setting_post(AsyncWebServerRequest *request)
     }   
 }
 
-void ddns_client_post(AsyncWebServerRequest *request) 
+void ddns_client_post(AsyncWebServerRequest *request, requestHandler* client) 
 {
     AsyncWebParameter* p = request->getParam(0);
 
@@ -762,7 +758,7 @@ void ddns_client_post(AsyncWebServerRequest *request)
     }
 }
 
-void auth_user_access_post(AsyncWebServerRequest *request)
+void auth_user_access_post(AsyncWebServerRequest *request, requestHandler* client)
 { 
     AsyncWebParameter* p = request->getParam(0);
 
@@ -799,7 +795,7 @@ void auth_user_access_post(AsyncWebServerRequest *request)
     }
 }
 
-void pass_common_post(AsyncWebServerRequest *request)
+void pass_common_post(AsyncWebServerRequest *request, requestHandler* client)
 {
     AsyncWebParameter* p = request->getParam(0);
 

@@ -156,9 +156,9 @@ public:
     String ssidSTA() { return _file_prams.sta.ssid; }
     String passSTA() { return _file_prams.sta.pass; }
     String hostNameSTA() { return _file_prams.sta.hostname; }
-    bool dhcpSTA() { return _file_prams.sta.dhcp; }
-    bool isDisableSTA() { return _file_prams.sta.disable; }
-    bool smartCfgSTA() { return _file_prams.sta.smart_cfg; }
+    uint8_t dhcpSTA() { return _file_prams.sta.dhcp; }
+    uint8_t isDisableSTA() { return _file_prams.sta.disable; }
+    uint8_t smartCfgSTA() { return _file_prams.sta.smart_cfg; }
     void ipSTASet(IPAddress ip) { _file_prams.sta.ip = ip; }
     void ipSTASet(const String &address) { _file_prams.sta.ip.fromString(address); }
     void gwSTASet(IPAddress gw) { _file_prams.sta.gw = gw; }
@@ -176,18 +176,18 @@ public:
     void hostNameSTASet(const String &hostName) { 
         hostName.toCharArray(_file_prams.sta.hostname, HOSTNAME_LENGHT_MAX + 1);
     }
-    void dhcpSTASet(bool dhcp) { _file_prams.sta.dhcp = dhcp; }
-    void disableSTASet(bool disable) { _file_prams.sta.disable = disable; }
-    void smartCfgSTASet(bool smart_cfg) { _file_prams.sta.smart_cfg = smart_cfg; }
+    void dhcpSTASet(uint8_t dhcp) { _file_prams.sta.dhcp = dhcp; }
+    void disableSTASet(uint8_t disable) { _file_prams.sta.disable = disable; }
+    void smartCfgSTASet(uint8_t smart_cfg) { _file_prams.sta.smart_cfg = smart_cfg; }
     /* AP API */
     IPAddress ipAP() { return _file_prams.ap.ip; }
     IPAddress snAP() { return _file_prams.ap.sn; }
     String ssidAP() { return _file_prams.ap.ssid; }
     String passAP() { return _file_prams.ap.pass; }
     String dnsNameAP() { return _file_prams.ap.dns_name; }
-    bool channelAP() { return _file_prams.ap.channel; }
-    bool isHiddenAP() { return _file_prams.ap.hidden; }
-    bool isDisableAP() { return _file_prams.ap.disable; }
+    uint8_t channelAP() { return _file_prams.ap.channel; }
+    uint8_t isHiddenAP() { return _file_prams.ap.hidden; }
+    uint8_t isDisableAP() { return _file_prams.ap.disable; }
     void ipAPSet(IPAddress ip) { _file_prams.ap.ip = ip; }
     void ipAPSet(const String &address) { _file_prams.ap.ip.fromString(address); }
     void snAPSet(IPAddress sn) { _file_prams.ap.sn = sn; }
@@ -201,16 +201,16 @@ public:
     void dnsNameAPSet(const String &dnsName) { 
         dnsName.toCharArray(_file_prams.ap.dns_name, HOSTNAME_LENGHT_MAX + 1);
     }
-    void channelAPSet(bool channel) { _file_prams.ap.channel = channel; }
-    void hiddenAPSet(bool hidden) { _file_prams.ap.hidden = hidden; }
-    void disableAPSet(bool disable) { _file_prams.ap.disable = disable; }
+    void channelAPSet(uint8_t channel) { _file_prams.ap.channel = channel; }
+    void hiddenAPSet(uint8_t hidden) { _file_prams.ap.hidden = hidden; }
+    void disableAPSet(uint8_t disable) { _file_prams.ap.disable = disable; }
     /* DDNS API */
     String serviceDDNS() { return _file_prams.ddns.service; }
     String domainDDNS() { return _file_prams.ddns.domain; }
     String userDDNS() { return _file_prams.ddns.user; }
     String passDDNS() { return _file_prams.ddns.pass; }
     uint8_t syncTimeDDNS() { return _file_prams.ddns.sync_time; }
-    bool disableDDNS() { return _file_prams.ddns.disable; }
+    uint8_t disableDDNS() { return _file_prams.ddns.disable; }
     void serviceDDNSSet(const String &service) { 
         service.toCharArray(_file_prams.ddns.service, DDNS_SERVICE_LENGTH_MAX + 1);
     }
@@ -224,7 +224,7 @@ public:
         pass.toCharArray(_file_prams.ddns.pass, DDNS_PASS_LENGTH_MAX + 1);
     }
     void syncTimeDDNSSet(uint8_t sync_time) { _file_prams.ddns.sync_time = sync_time; }
-    void disableDDNSSet(bool disable) { _file_prams.ddns.disable = disable; }
+    void disableDDNSSet(uint8_t disable) { _file_prams.ddns.disable = disable; }
 };
 
 extern wifi_data_file WFDataFile;

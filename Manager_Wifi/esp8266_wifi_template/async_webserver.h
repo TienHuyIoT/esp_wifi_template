@@ -18,8 +18,13 @@ typedef enum {
 
 typedef std::function<void(AsyncWebServerRequest *)> asyncHttpHandler;
 
+typedef std::function<void(void)> scanNetworkHandler;
+
 class serverCallbacks {
+private:
+  scanNetworkHandler _pScanNetworkCb;
 public:
+  serverCallbacks();
 	virtual ~serverCallbacks();
   /**
   * Handler called after once request with method GET and authenticated.
@@ -33,6 +38,26 @@ public:
     * Handler called after once request with method POST and authenticated.
     */
   virtual void onHttpPostAuth(AsyncWebServerRequest* request);
+
+  /**
+   * A class derived will call this function to active async scan network
+   * 
+  */
+  virtual void asyncScanNetwork()
+  {
+    if (_pScanNetworkCb)
+    {
+      _pScanNetworkCb();
+    }
+  }
+
+  /**
+   * Register an async scan network function
+  */
+  void onScanNetwork(scanNetworkHandler cb)
+  {
+    _pScanNetworkCb = cb;
+  }
 };
 
 class async_webserver
@@ -57,15 +82,18 @@ private:
   static int _flashUpdateType;
   static uint32_t _spiffsUploadPercent;
   static uint32_t _flashUpdatePercent;
+#ifdef ESP8266
+  static size_t _updateProgress;
+#endif
   String _uriHttpGetAuth;
   String _uriHttpGet;
   String _uriHttpPostAuth;
 
   static uint8_t authentication_level(AsyncWebServerRequest *request);
-  static void update_printProgress(size_t prg, size_t sz);
-  static void spiffs_printProgress(size_t prg, size_t sz);
+  static void updatePrintProgress(size_t prg, size_t sz);
+  static void spiffsPrintProgress(size_t prg, size_t sz);
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-  static void sdfs_printProgress(size_t prg, size_t sz);
+  static void sdfsPrintProgress(size_t prg, size_t sz);
 #endif
   static void fs_editor_status(AsyncWebServerRequest *request);
 
@@ -95,6 +123,8 @@ public:
   }
 
   void setHandleCallbacks(serverCallbacks* pCallbacks);
+
+  void syncSsidNetworkToEvents();
 
   void end() {
     delete _server;

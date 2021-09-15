@@ -105,6 +105,7 @@ hth_esp_wifi::~hth_esp_wifi()
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
 AsyncEasyDDNSClass* hth_esp_wifi::ddnsClient = nullptr;
 #endif
+Ticker hth_esp_wifi::_reconnetTicker;
 
 void hth_esp_wifi::registerEventHandler()
 {
@@ -138,8 +139,16 @@ void hth_esp_wifi::registerEventHandler()
 #endif
         /* Note: running setAutoReconnect(true) when module is already disconnected 
         will not make it reconnect to the access point. Instead reconnect() 
-        should be used. */
-        WiFi.reconnect();
+        should be used. 
+          We don't need call WiFi.reconnect() once loss connection, it is self reconnect after loss connection.
+        Reconnecting will be destroy, if executing scan network.
+        */
+        constexpr uint32_t RECONNECT_SECOND_TIMEOUT = 15;
+        // manual reconnect after an expired timeout
+        _reconnetTicker.once(RECONNECT_SECOND_TIMEOUT, [](){
+          ESP_WIFI_TAG_CONSOLE("Reconnecting");
+          WiFi.reconnect();
+        });
       },
       WiFiEvent_t::m_ESP32_EVENT_STA_DISCONNECTED);
   
@@ -186,8 +195,16 @@ void hth_esp_wifi::registerEventHandler()
       evt.ssid.c_str(), evt.reason);
       /* Note: running setAutoReconnect(true) when module is already disconnected 
       will not make it reconnect to the access point. Instead reconnect() 
-      should be used. */
-      WiFi.reconnect();
+      should be used. 
+        We don't need call WiFi.reconnect() once loss connection, it is self reconnect after loss connection.
+      Reconnecting will be destroy, if executing scan network.
+      */
+      constexpr uint32_t RECONNECT_SECOND_TIMEOUT = 15;
+      // manual reconnect after an expired timeout
+      _reconnetTicker.once(RECONNECT_SECOND_TIMEOUT, [](){
+        ESP_WIFI_TAG_CONSOLE("Reconnecting");
+        WiFi.reconnect();
+      });
     }
   );
 #endif
@@ -318,6 +335,8 @@ void hth_esp_wifi::onArduinoOTA()
           type = "filesystem";
           NAND_FS_SYSTEM.end();
         }
+
+        _reconnetTicker.detach(); // disable wifi reconnect access point
 
         /** NOTE: if updating SPIFFS this would be the place
          *  to unmount SPIFFS using SPIFFS.end() */
@@ -587,7 +606,7 @@ void hth_esp_wifi::connect(const char *name, const char *pass)
      will not make it reconnect to the access point. Instead reconnect() 
      should be used.
     */
-  WiFi.setAutoReconnect(true);
+  WiFi.setAutoReconnect(false);
   if (strlen(pass) >= 8)
   {
     WiFi.begin(name, pass);
@@ -615,23 +634,32 @@ int hth_esp_wifi::ssidScan(String &json)
   boolean removeDuplicateAPs = true;
   int minimumQuality = -1;
 
-  int n = WiFi.scanComplete();
-  ESP_WIFI_TAG_CONSOLE("WiFi scanComplete result = %d", n);
-  if (n >= 1)
+  int scanCount = WiFi.scanComplete();
+  ESP_WIFI_TAG_CONSOLE("WiFi scanComplete result = %d", scanCount);
+  if (scanCount >= 1)
   {
     ESP_WIFI_TAG_CONSOLE("scanNetworks make json");
+    std::unique_ptr<int[]> buf(new(std::nothrow) int[scanCount]);
+
+    if (!buf)
+    {
+      // clean up ram
+      WiFi.scanDelete();
+      return -2; // catch as WIFI_SCAN_FAILED
+    }
+
+    int* indices = buf.get();
     //sort networks
-    int indices[n];
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < scanCount; i++)
     {
       indices[i] = i;
     }
 
     // RSSI SORT
     // old sort
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < scanCount; i++)
     {
-      for (int j = i + 1; j < n; j++)
+      for (int j = i + 1; j < scanCount; j++)
       {
         if (WiFi.RSSI(indices[j]) > WiFi.RSSI(indices[i]))
         {
@@ -644,12 +672,12 @@ int hth_esp_wifi::ssidScan(String &json)
     if (removeDuplicateAPs)
     {
       String cssid;
-      for (int i = 0; i < n; i++)
+      for (int i = 0; i < scanCount; i++)
       {
         if (indices[i] != -1)
         {
           cssid = WiFi.SSID(indices[i]);
-          for (int j = i + 1; j < n; j++)
+          for (int j = i + 1; j < scanCount; j++)
           {
             if (cssid == WiFi.SSID(indices[j]))
             {
@@ -672,7 +700,7 @@ int hth_esp_wifi::ssidScan(String &json)
     */
     json = "{\"status\":\"ok\",\"mgs\":\"Network OK\",\"sta_network\":[";
     //display networks in page
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < scanCount; i++)
     {
       if (indices[i] != -1)
       {
@@ -685,6 +713,7 @@ int hth_esp_wifi::ssidScan(String &json)
           json += "\"ssid\":\"" + String(WiFi.SSID(indices[i])) + "\"";
           json += ",\"rssi\":" + String(quality);
 
+          // ESP32
           // typedef enum {
           //     WIFI_AUTH_OPEN = 0,         /**< authenticate mode : open */
           //     WIFI_AUTH_WEP,              /**< authenticate mode : WEP */
@@ -694,6 +723,16 @@ int hth_esp_wifi::ssidScan(String &json)
           //     WIFI_AUTH_WPA2_ENTERPRISE,  /**< authenticate mode : WPA2_ENTERPRISE */
           //     WIFI_AUTH_MAX
           // } wifi_auth_mode_t;
+
+          // ESP8266
+          // enum wl_enc_type {  /* Values map to 802.11 encryption suites... */
+          //         ENC_TYPE_WEP  = 5,
+          //         ENC_TYPE_TKIP = 2,
+          //         ENC_TYPE_CCMP = 4,
+          //         /* ... except these two, 7 and 8 are reserved in 802.11-2007 */
+          //         ENC_TYPE_NONE = 7,
+          //         ENC_TYPE_AUTO = 8
+          // };
           json += ",\"secure\":" + String(WiFi.encryptionType(indices[i]));
           json += "}";
         }
@@ -702,19 +741,19 @@ int hth_esp_wifi::ssidScan(String &json)
           ESP_WIFI_TAG_CONSOLE("Skipping due to quality");
         }
       } // if (indices[i] != -1)
-    }   // for (int i = 0; i < n; i++)
+    }   // for (int i = 0; i < scanCount; i++)
 
     json += "]}";
 
     // clean up ram
     WiFi.scanDelete();
-  } // if (n >= 0)
+  } // if (scanCount >= 0)
   else
   {
     json = "{\"status\":\"error\",\"mgs\":\"Not find any Network\"}";
   }
 
-  return n;
+  return scanCount;
 }
 
 /* Convert to %*/
