@@ -2,7 +2,7 @@
 ESP32 and ESP8266 wifi template Project
 
 ### Features
-- WIFI
+**WIFI**
   - AP mode
   - STA mode
   - DNS server for AP mode
@@ -12,12 +12,12 @@ ESP32 and ESP8266 wifi template Project
   - OTA Arduino
   - SNTP
 
-- File system handle
+**File system handle**
   - SPIFFS
   - LittleFS
   - SD card
 
-- WebServer
+**WebServer**
   - Async TCP
   - Websocket
   - Event Source
@@ -103,7 +103,7 @@ Convert htm to gzip. Select "Compress this file, output-gz
 - [Json arduino assistant](https://arduinojson.org/v5/assistant/)
 
 ### Some edit AsyncWebserver library
-```C++
+```sh
   WebHandlerlmpl.h edit
   line 32 add: typedef std::function<bool(AsyncWebServerRequest *request)> ArRequestAuthenticateFunction;
   line 49 add: ArRequestAuthenticateFunction _onAuthenticate;
@@ -130,52 +130,52 @@ Convert htm to gzip. Select "Compress this file, output-gz
     }
 
   1. WebServer.cpp at line  82
-Original
-void AsyncWebServer::begin(){
-  _server.setNoDelay(true);  
-  _server.begin();
-}
-
-Change to
-
-void AsyncWebServer::begin(uint16_t port){
-  if (port != 0)
-  {
-    _server.port(port);
+  Original
+  void AsyncWebServer::begin(){
+    _server.setNoDelay(true);  
+    _server.begin();
   }
-  _server.setNoDelay(true);  
-  _server.begin();
-}
 
-2. ESPAsyncWebServer.h at line 408
-Original
-void begin();
+  Change to
 
-Change to
+  void AsyncWebServer::begin(uint16_t port){
+    if (port != 0)
+    {
+      _server.port(port);
+    }
+    _server.setNoDelay(true);  
+    _server.begin();
+  }
 
-void begin(uint16_t port = 0);
+  2. ESPAsyncWebServer.h at line 408
+  Original
+  void begin();
 
-3. AsyncTCP.cpp at line 1264
-Original
-void AsyncServer::begin()
-{}
+  Change to
 
-Change to
+  void begin(uint16_t port = 0);
 
-void AsyncServer::port(uint16_t port)
-{
-    _port = port;
-}
+  3. AsyncTCP.cpp at line 1264
+  Original
+  void AsyncServer::begin()
+  {}
 
-void AsyncServer::begin()
-{}
+  Change to
 
-4. AsyncTCP.h at line 194
-Original
-void begin();
+  void AsyncServer::port(uint16_t port)
+  {
+      _port = port;
+  }
 
-Change to
+  void AsyncServer::begin()
+  {}
 
-void port(uint16_t port);
-void begin();
+  4. AsyncTCP.h at line 194
+  Original
+  void begin();
+
+  Change to
+
+  void port(uint16_t port);
+  void begin();
 ```
