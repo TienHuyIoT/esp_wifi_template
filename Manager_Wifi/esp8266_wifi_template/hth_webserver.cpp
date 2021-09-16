@@ -17,7 +17,7 @@
 #include "hth_esp_sys_data.h"
 #include "hth_esp_soft_reset.h"
 #include "hth_esp_sdcard.h"
-#include "async_webserver.h"
+#include "hth_webserver.h"
 
 
 #define WEB_SERVER_DBG_PORT CONSOLE_PORT
@@ -183,11 +183,16 @@ uint8_t async_webserver::authentication_level(AsyncWebServerRequest *request)
 void async_webserver::updatePrintProgress(size_t prg, size_t sz)
 {
   uint32_t per = prg * 100 / sz;
+#ifdef ESP32
   if (_flashUpdatePercent != per)
+#elif defined(ESP8266)
+  // ESP8266 is not power as ESP32, so once 5% we send a package event.
+  if (((_flashUpdatePercent != per) && (per % 5) == 0) || (per >= 100))
+#endif
   {
     char p[5];
     _flashUpdatePercent = per;
-    WEB_SERVER_DBG_PRINTF("Progress: %u%%\r\n", _flashUpdatePercent);
+    WEB_SERVER_TAG_CONSOLE("Progress: %u%%", _flashUpdatePercent);
     sprintf(p, "%u", _flashUpdatePercent);
     _wsHandler->eventsSend(p, "dfu");
   }
@@ -198,11 +203,16 @@ uint32_t async_webserver::_sdUploadPercent = 0;
 void async_webserver::sdfsPrintProgress(size_t prg, size_t sz)
 {
   uint32_t per = prg * 100 / sz;
+#ifdef ESP32
   if (_sdUploadPercent != per)
+#elif defined(ESP8266)
+  // ESP8266 is not power as ESP32, so once 5% we send a package event.
+  if (((_sdUploadPercent != per) && (per % 5) == 0) || (per >= 100))
+#endif
   {
     char p[5];
     _sdUploadPercent = per;
-    WEB_SERVER_DBG_PRINTF("Progress: %u%%\r\n", _sdUploadPercent);
+    WEB_SERVER_TAG_CONSOLE("Progress: %u%%", _sdUploadPercent);
     sprintf(p, "%u", _sdUploadPercent);
     _wsHandler->eventsSend(p, "sdfs");
   }
@@ -212,11 +222,16 @@ void async_webserver::sdfsPrintProgress(size_t prg, size_t sz)
 void async_webserver::spiffsPrintProgress(size_t prg, size_t sz)
 {
   uint32_t per = prg * 100 / sz;
+#ifdef ESP32
   if (_spiffsUploadPercent != per)
+#elif defined(ESP8266)
+  // ESP8266 is not power as ESP32, so once 5% we send a package event.
+  if (((_spiffsUploadPercent != per) && (per % 5) == 0) || (per >= 100))
+#endif
   {
     char p[5];
     _spiffsUploadPercent = per;
-    WEB_SERVER_DBG_PRINTF("Progress: %u%%\r\n", _spiffsUploadPercent);
+    WEB_SERVER_TAG_CONSOLE("Progress: %u%%", _spiffsUploadPercent);
     sprintf(p, "%u", _spiffsUploadPercent);
     _wsHandler->eventsSend(p, "spiffs");
   }
@@ -381,7 +396,7 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
 
         if (!index)
         {
-          WEB_SERVER_DBG_PORT.printf("Update Start: %s, size=%u\r\n", filename.c_str(), length);
+          WEB_SERVER_TAG_CONSOLE("Update Start: %s, size=%u", filename.c_str(), length);
 #ifdef ESP8266
           _updateProgress = 0;
           // if filename includes spiffs, update the spiffs partition
@@ -430,7 +445,7 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
         {
           if (Update.end(true))
           {
-            WEB_SERVER_DBG_PORT.printf("Update Success: %uB\r\n", index + len);
+            WEB_SERVER_TAG_CONSOLE("Update Success: %uB", index + len);
           }
           else
           {
@@ -442,29 +457,29 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
   _server->onNotFound(
       [](AsyncWebServerRequest *request)
       {
-        WEB_SERVER_DBG_PORT.printf("NOT_FOUND: ");
+        WEB_SERVER_TAG_CONSOLE("NOT_FOUND: ");
         if (request->method() == HTTP_GET)
-          WEB_SERVER_DBG_PORT.printf("GET");
+          WEB_SERVER_TAG_CONSOLE("GET");
         else if (request->method() == HTTP_POST)
-          WEB_SERVER_DBG_PORT.printf("POST");
+          WEB_SERVER_TAG_CONSOLE("POST");
         else if (request->method() == HTTP_DELETE)
-          WEB_SERVER_DBG_PORT.printf("DELETE");
+          WEB_SERVER_TAG_CONSOLE("DELETE");
         else if (request->method() == HTTP_PUT)
-          WEB_SERVER_DBG_PORT.printf("PUT");
+          WEB_SERVER_TAG_CONSOLE("PUT");
         else if (request->method() == HTTP_PATCH)
-          WEB_SERVER_DBG_PORT.printf("PATCH");
+          WEB_SERVER_TAG_CONSOLE("PATCH");
         else if (request->method() == HTTP_HEAD)
-          WEB_SERVER_DBG_PORT.printf("HEAD");
+          WEB_SERVER_TAG_CONSOLE("HEAD");
         else if (request->method() == HTTP_OPTIONS)
-          WEB_SERVER_DBG_PORT.printf("OPTIONS");
+          WEB_SERVER_TAG_CONSOLE("OPTIONS");
         else
-          WEB_SERVER_DBG_PORT.printf("UNKNOWN");
-        WEB_SERVER_DBG_PORT.printf(" http://%s%s\n", request->host().c_str(), request->url().c_str());
+          WEB_SERVER_TAG_CONSOLE("UNKNOWN");
+        WEB_SERVER_TAG_CONSOLE(" http://%s%s\n", request->host().c_str(), request->url().c_str());
 
         if (request->contentLength())
         {
-          WEB_SERVER_DBG_PORT.printf("_CONTENT_TYPE: %s\r\n", request->contentType().c_str());
-          WEB_SERVER_DBG_PORT.printf("_CONTENT_LENGTH: %u\r\n", request->contentLength());
+          WEB_SERVER_TAG_CONSOLE("_CONTENT_TYPE: %s", request->contentType().c_str());
+          WEB_SERVER_TAG_CONSOLE("_CONTENT_LENGTH: %u", request->contentLength());
         }
 
         int headers = request->headers();
@@ -472,7 +487,7 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
         for (i = 0; i < headers; i++)
         {
           AsyncWebHeader *h = request->getHeader(i);
-          WEB_SERVER_DBG_PORT.printf("_HEADER[%s]: %s\r\n", h->name().c_str(), h->value().c_str());
+          WEB_SERVER_TAG_CONSOLE("_HEADER[%s]: %s", h->name().c_str(), h->value().c_str());
         }
 
         int params = request->params();
@@ -481,15 +496,15 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
           AsyncWebParameter *p = request->getParam(i);
           if (p->isFile())
           {
-            WEB_SERVER_DBG_PORT.printf("_FILE[%s]: %s, size: %u\r\n", p->name().c_str(), p->value().c_str(), p->size());
+            WEB_SERVER_TAG_CONSOLE("_FILE[%s]: %s, size: %u", p->name().c_str(), p->value().c_str(), p->size());
           }
           else if (p->isPost())
           {
-            WEB_SERVER_DBG_PORT.printf("_POST[%s]: %s\r\n", p->name().c_str(), p->value().c_str());
+            WEB_SERVER_TAG_CONSOLE("_POST[%s]: %s", p->name().c_str(), p->value().c_str());
           }
           else
           {
-            WEB_SERVER_DBG_PORT.printf("_GET[%s]: %s\r\n", p->name().c_str(), p->value().c_str());
+            WEB_SERVER_TAG_CONSOLE("_GET[%s]: %s", p->name().c_str(), p->value().c_str());
           }
         }
 
@@ -501,12 +516,12 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
       {
         if (!index)
         {
-          WEB_SERVER_DBG_PORT.printf("UploadStart: %s\r\n", filename.c_str());
+          WEB_SERVER_TAG_CONSOLE("UploadStart: %s", filename.c_str());
         }
-        WEB_SERVER_DBG_PORT.printf("%s", (const char *)data);
+        WEB_SERVER_TAG_CONSOLE("%s", (const char *)data);
         if (final)
         {
-          WEB_SERVER_DBG_PORT.printf("UploadEnd: %s (%u)\r\n", filename.c_str(), index + len);
+          WEB_SERVER_TAG_CONSOLE("UploadEnd: %s (%u)", filename.c_str(), index + len);
         }
       });
 
@@ -515,12 +530,12 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
       {
         if (!index)
         {
-          WEB_SERVER_DBG_PORT.printf("BodyStart: %u\r\n", total);
+          WEB_SERVER_TAG_CONSOLE("BodyStart: %u", total);
         }
-        WEB_SERVER_DBG_PORT.printf("%s", (const char *)data);
+        WEB_SERVER_TAG_CONSOLE("%s", (const char *)data);
         if (index + len == total)
         {
-          WEB_SERVER_DBG_PORT.printf("BodyEnd: %u\r\n", total);
+          WEB_SERVER_TAG_CONSOLE("BodyEnd: %u", total);
         }
       });
 
@@ -529,7 +544,7 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
     WFDataFile.tcpPortSet(25123);
   }
 
-  WEB_SERVER_DBG_PRINTF("\r\nInit Web Server Port: %u\r\n", WFDataFile.tcpPort());
+  WEB_SERVER_TAG_CONSOLE("Init Web Server Port: %u", WFDataFile.tcpPort());
 
   _server->begin(WFDataFile.tcpPort());
   if (WFDataFile.tcpPort() != 80)

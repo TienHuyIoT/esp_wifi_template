@@ -5,13 +5,14 @@
 #include "hth_esp_soft_reset.h"
 #include "hth_esp_sys_rtc.h"
 #include "hth_esp_sys_data.h"
-#include "eeprom_data.h"
+#include "hth_esp_eeprom.h"
 #include "hth_esp_sdcard.h"
 #include "hth_console_dbg.h"
-#include "server_data_process.h"
+#include "hth_httpserver_url.h"
 
 #define SERVER_DATA_PORT CONSOLE_PORT
 #define SERVER_DATA_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
+#define HTTPSERVER_URL_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[HTTP_SERVER]", __VA_ARGS__)
 
 #define DATA_GET_HANDLE_NUM     13
 #define DATA_POST_HANDLE_NUM    10
@@ -25,7 +26,7 @@ float esp_internal_temp(void)
 {
     float temp;
     temp = (temprature_sens_read() - 32) / 1.8;
-    SERVER_DATA_PRINTF("\r\nTemp: %.2f", temp);
+    HTTPSERVER_URL_TAG_CONSOLE("Temp: %.2f", temp);
     return temp;
 }
 #elif defined(ESP8266)
@@ -110,7 +111,7 @@ void requestHandler::onHttpGet(AsyncWebServerRequest* request)
  */
 void requestHandler::onHttpGetAuth(AsyncWebServerRequest* request)
 {
-    uint8_t cb = 0;
+    bool isHandler = false;
     /* param wifi get 
      * /get?argName=arg(0)
      * using argName(0) = "param_wifi" is parameter to get wifi information 
@@ -123,15 +124,15 @@ void requestHandler::onHttpGetAuth(AsyncWebServerRequest* request)
         {
             if (p->value() == client_get_handle[i].path_arg)
             {
-                SERVER_DATA_PRINTF("\r\nProcess get callback [%u]", i);
+                HTTPSERVER_URL_TAG_CONSOLE("get [%u]: argName = \"%s\"", i, client_get_handle[i].path_arg);
                 client_get_handle[i].cb(request, this);
-                cb = 1;
+                isHandler = true;
                 break;
             }
         }
     }
     /* non process callback, so return arg parse */
-    if (!cb)
+    if (!isHandler)
     {
         String arg_str = "";
         print_handlerequest(request, arg_str);
@@ -145,7 +146,7 @@ void requestHandler::onHttpGetAuth(AsyncWebServerRequest* request)
  */
 void requestHandler::onHttpPostAuth(AsyncWebServerRequest* request)
 {
-    uint8_t cb = 0;
+    bool isHandler = false;
     /* param wifi post 
      * /post?
      * argName(0) = arg(0)
@@ -157,15 +158,15 @@ void requestHandler::onHttpPostAuth(AsyncWebServerRequest* request)
     {
         if (p->name() == client_post_handle[i].path_arg)
         {
-            SERVER_DATA_PRINTF("\r\nProcess post callback [%u]", i);
+            HTTPSERVER_URL_TAG_CONSOLE("post [%u]: argName = \"%s\"", i, client_post_handle[i].path_arg);
             client_post_handle[i].cb(request, this);
-            cb = 1;
+            isHandler = true;
             break;
         }
     }
 
     /* non process callback, so return arg parse */
-    if (!cb)
+    if (!isHandler)
     {
         String arg_str = "";
         print_handlerequest(request, arg_str);
@@ -204,7 +205,7 @@ void sta_ap_info_get(AsyncWebServerRequest *request, requestHandler* client)
     {
         if(ETH.linkUp())
         {
-            SERVER_DATA_PRINTF("\r\nETH.linkUp OK");
+            HTTPSERVER_URL_TAG_CONSOLE("ETH.linkUp OK");
             connect_st = true;
             local_ip = ETH.localIP();
         }
@@ -266,7 +267,7 @@ void sta_network_get(AsyncWebServerRequest *request, requestHandler* client)
     {
         if(WiFi.scanComplete() == WIFI_SCAN_FAILED) {
             /* run in async mode */
-            SERVER_DATA_PRINTF("\r\nscanNetworks async mode run");
+            HTTPSERVER_URL_TAG_CONSOLE("scanNetworks async mode run");
             WiFi.scanNetworks(true);
         }
     }
@@ -289,7 +290,7 @@ void sta_setting_get(AsyncWebServerRequest *request, requestHandler* client)
     {
         if(ETH.linkUp())
         {
-            SERVER_DATA_PRINTF("\r\nETH.linkUp OK");
+            HTTPSERVER_URL_TAG_CONSOLE("ETH.linkUp OK");
             connect_st = 1;
             local_ip = ETH.localIP();
             gateway_ip = ETH.gatewayIP();
@@ -547,7 +548,7 @@ void sta_network_post(AsyncWebServerRequest *request, requestHandler* client)
     JsonObject& root = djbpo.parseObject(p->value());
     if (!root.success())
     {
-        SERVER_DATA_PRINTF("JSON parsing failed!");
+        HTTPSERVER_URL_TAG_CONSOLE("JSON parsing failed!");
         return;
     }
 
@@ -557,8 +558,8 @@ void sta_network_post(AsyncWebServerRequest *request, requestHandler* client)
 
         WFDataFile.ssidSTASet(root["sta_ssid"].as<String>());
         WFDataFile.passSTASet(root["sta_pass"].as<String>());
-        SERVER_DATA_PRINTF("\r\nSSID: %s", WFDataFile.ssidSTA().c_str());
-        SERVER_DATA_PRINTF("\r\nPASS: %s\r\n", WFDataFile.passSTA().c_str());        
+        HTTPSERVER_URL_TAG_CONSOLE("SSID: %s", WFDataFile.ssidSTA().c_str());
+        HTTPSERVER_URL_TAG_CONSOLE("PASS: %s", WFDataFile.passSTA().c_str());        
 
         WFDataFile.commitToFS();
 
@@ -579,7 +580,7 @@ void sta_setting_post(AsyncWebServerRequest *request, requestHandler* client)
     JsonObject& root = djbpo.parseObject(p->value());
     if (!root.success())
     {
-        SERVER_DATA_PRINTF("JSON parsing failed!");
+        HTTPSERVER_URL_TAG_CONSOLE("JSON parsing failed!");
         return;
     }
 
@@ -619,7 +620,7 @@ void ap_setting_post(AsyncWebServerRequest *request, requestHandler* client)
     JsonObject& root = djbpo.parseObject(p->value());
     if (!root.success())
     {
-        SERVER_DATA_PRINTF("JSON parsing failed!");
+        HTTPSERVER_URL_TAG_CONSOLE("JSON parsing failed!");
         return;
     }
 
@@ -653,7 +654,7 @@ void device_info_post(AsyncWebServerRequest *request, requestHandler* client)
     JsonObject& root = djbpo.parseObject(p->value());
     if (!root.success())
     {
-        SERVER_DATA_PRINTF("JSON parsing failed!");
+        HTTPSERVER_URL_TAG_CONSOLE("JSON parsing failed!");
         return;
     }
 
@@ -682,7 +683,7 @@ void auth_access_post(AsyncWebServerRequest *request, requestHandler* client)
     JsonObject& root = djbpo.parseObject(p->value());
     if (!root.success())
     {
-        SERVER_DATA_PRINTF("JSON parsing failed!");
+        HTTPSERVER_URL_TAG_CONSOLE("JSON parsing failed!");
         return;
     }
 
@@ -733,7 +734,7 @@ void ddns_client_post(AsyncWebServerRequest *request, requestHandler* client)
     JsonObject& root = djbpo.parseObject(p->value());
     if (!root.success())
     {
-        SERVER_DATA_PRINTF("JSON parsing failed!");
+        HTTPSERVER_URL_TAG_CONSOLE("JSON parsing failed!");
         return;
     }
 
@@ -767,7 +768,7 @@ void auth_user_access_post(AsyncWebServerRequest *request, requestHandler* clien
     JsonObject& root = djbpo.parseObject(p->value());
     if (!root.success())
     {
-        SERVER_DATA_PRINTF("JSON parsing failed!");
+        HTTPSERVER_URL_TAG_CONSOLE("JSON parsing failed!");
         return;
     }
 
@@ -804,7 +805,7 @@ void pass_common_post(AsyncWebServerRequest *request, requestHandler* client)
     JsonObject& root = djbpo.parseObject(p->value());
     if (!root.success())
     {
-        SERVER_DATA_PRINTF("JSON parsing failed!");
+        HTTPSERVER_URL_TAG_CONSOLE("JSON parsing failed!");
         return;
     }
 
@@ -835,5 +836,5 @@ void print_handlerequest(AsyncWebServerRequest *request, String &message)
     AsyncWebParameter* p = request->getParam(i);
     message += " NAME:" + p->name() + "\n VALUE:" + p->value() + "\n";
   }
-  SERVER_DATA_PORT.println(message);
+  HTTPSERVER_URL_TAG_CONSOLE("[handlerequest] %s", message.c_str());
 }

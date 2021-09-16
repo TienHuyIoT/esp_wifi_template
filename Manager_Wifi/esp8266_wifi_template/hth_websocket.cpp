@@ -1,5 +1,5 @@
 #include "hth_console_dbg.h"
-#include "async_websocket.h"
+#include "hth_websocket.h"
 
 #define WS_DBG_PORT CONSOLE_PORT
 #define WS_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WS]", __VA_ARGS__)

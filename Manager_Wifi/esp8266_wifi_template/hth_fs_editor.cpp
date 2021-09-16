@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <FS.h>
-#include "fs_editor.h"
+#include "hth_fs_editor.h"
 #include "hth_console_dbg.h"
 
 #define FSEDITOR_DBG_PORT CONSOLE_PORT

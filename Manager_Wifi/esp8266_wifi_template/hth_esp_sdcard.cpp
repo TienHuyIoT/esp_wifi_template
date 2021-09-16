@@ -1,5 +1,5 @@
 #include "app_config.h"
-#include "fs_handle.h"
+#include "hth_fs_handle.h"
 #include "hth_console_dbg.h"
 #include "hth_esp_sdcard.h"
 
@@ -108,17 +108,17 @@ void hth_esp_sdcard::begin(void)
   SD_FS_PRINTF("SD_FS_SYSTEM Card Size: %lluMB\r\n", cardSize);
 
 #if (0)
-  createDir(SD_FS_SYSTEM, "/mydir");
-  listDir(SD_FS_SYSTEM, "/", 0);
-  removeDir(SD_FS_SYSTEM, "/mydir");
-  listDir(SD_FS_SYSTEM, "/", 2);
-  writeFile(SD_FS_SYSTEM, "/hello.txt", "Hello ");
-  appendFile(SD_FS_SYSTEM, "/hello.txt", "World!\n");
-  readFile(SD_FS_SYSTEM, "/hello.txt");
-  deleteFile(SD_FS_SYSTEM, "/foo.txt");
-  renameFile(SD_FS_SYSTEM, "/hello.txt", "/foo.txt");
-  readFile(SD_FS_SYSTEM, "/foo.txt");
-  testFileIO(SD_FS_SYSTEM, "/test.txt");
+  HTH_fsHandle.createDir(SD_FS_SYSTEM, "/mydir");
+  HTH_fsHandle.listDir(SD_FS_SYSTEM, "/", 0);
+  HTH_fsHandle.removeDir(SD_FS_SYSTEM, "/mydir");
+  HTH_fsHandle.listDir(SD_FS_SYSTEM, "/", 2);
+  HTH_fsHandle.writeFile(SD_FS_SYSTEM, "/hello.txt", "Hello ");
+  HTH_fsHandle.appendFile(SD_FS_SYSTEM, "/hello.txt", "World!\n");
+  HTH_fsHandle.readFile(SD_FS_SYSTEM, "/hello.txt");
+  HTH_fsHandle.deleteFile(SD_FS_SYSTEM, "/foo.txt");
+  HTH_fsHandle.renameFile(SD_FS_SYSTEM, "/hello.txt", "/foo.txt");
+  HTH_fsHandle.readFile(SD_FS_SYSTEM, "/foo.txt");
+  HTH_fsHandle.testFileIO(SD_FS_SYSTEM, "/test.txt");
   SD_FS_PRINTFLN("Total space: %lluMB\n", SD_FS_SYSTEM.totalBytes() / (1024 * 1024));
   SD_FS_PRINTFLN("Used space: %lluMB\n", SD_FS_SYSTEM.usedBytes() / (1024 * 1024));
 #endif
