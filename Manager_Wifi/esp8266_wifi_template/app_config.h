@@ -96,7 +96,7 @@ https://github.com/boblemaire/asyncHTTPrequest
 0: Disable
 1: Enable
 */
-#define SD_CARD_ENABLE  0
+#define SD_CARD_ENABLE  1
 
 /* Select sd card interface
 0: SD_MMC

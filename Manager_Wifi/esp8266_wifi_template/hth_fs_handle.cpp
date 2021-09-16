@@ -71,8 +71,8 @@ void hth_fs_handle::listDir(fs::FS &fs, const char *dirname, uint8_t levels)
     }
 }
 
-/* sd_format(SD_FS_SYSTEM, "/"); */
-void hth_fs_handle::sd_format(fs::FS &fs, const char *dirname)
+/* format(SD_FS_SYSTEM, "/"); */
+void hth_fs_handle::format(fs::FS &fs, const char *dirname)
 {
   FS_HANDLE_TAG_CONSOLE("Listing directory: %s", dirname);
 

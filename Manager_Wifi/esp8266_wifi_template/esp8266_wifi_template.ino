@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "app_config.h"
+#include "hth_esp_sdcard.h"
 #include "hth_console_dbg.h"
 #include "hth_esp_sys_rtc.h"
 #include "hth_esp_wifi.h"
@@ -28,6 +29,21 @@ void setup()
                      FW_VERSION_MAJOR,
                      FW_VERSION_MINOR,
                      FW_VERSION_BUILD);
+
+#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
+#if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1)
+    /* Init SPI first */
+#ifdef ESP32
+    SPI.begin(SD_SCK_PIN, SD_MISO_PIN, SD_MOSI_PIN);
+    /* Init Sd Card second*/
+    HTH_sdCard.begin(SPI);
+#elif defined(ESP8266)
+    SPI.begin();
+    /* Init Sd Card second*/
+    HTH_sdCard.begin();
+#endif
+#endif
+#endif
 
     HTH_espEEPROM.begin();
 

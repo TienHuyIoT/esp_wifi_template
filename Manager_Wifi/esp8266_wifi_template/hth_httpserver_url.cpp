@@ -7,6 +7,7 @@
 #include "hth_esp_sys_data.h"
 #include "hth_esp_eeprom.h"
 #include "hth_esp_sdcard.h"
+#include "hth_fs_handle.h"
 #include "hth_console_dbg.h"
 #include "hth_httpserver_url.h"
 
@@ -14,7 +15,7 @@
 #define SERVER_DATA_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 #define HTTPSERVER_URL_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[HTTP_SERVER]", __VA_ARGS__)
 
-#define DATA_GET_HANDLE_NUM     13
+#define DATA_GET_HANDLE_NUM     14
 #define DATA_POST_HANDLE_NUM    10
 
 #ifdef ESP32
@@ -52,6 +53,7 @@ void activated_get(AsyncWebServerRequest *request, requestHandler* client);
 void format_sd_card_get(AsyncWebServerRequest *request, requestHandler* client);
 void ddns_client_get(AsyncWebServerRequest *request, requestHandler* client);
 void pass_common_get(AsyncWebServerRequest *request, requestHandler* client);
+void format_spiffs_get(AsyncWebServerRequest *request, requestHandler* client);
 
 /* Post */
 void sta_ap_info_post(AsyncWebServerRequest *request, requestHandler* client);
@@ -79,7 +81,8 @@ server_get_handle_t client_get_handle[DATA_GET_HANDLE_NUM] = {
 /*09*/{(char*)"activated", activated_get},
 /*10*/{(char*)"format_sd_card", format_sd_card_get},
 /*11*/{(char*)"ddns_client", ddns_client_get},
-/*12*/{(char*)"pass_common", pass_common_get}
+/*12*/{(char*)"pass_common", pass_common_get},
+/*13*/{(char*)"format_spiffs", format_spiffs_get}
 };
 
 server_post_handle_t client_post_handle[DATA_POST_HANDLE_NUM] = {
@@ -479,7 +482,28 @@ void format_sd_card_get(AsyncWebServerRequest *request, requestHandler* client)
     if (request->argName(1) == "pass" && WFDataFile.passConfirmIsOK(request->arg(1), wifi_data_file::CONFIRM_COMMON))
     {
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)    
-        sd_format(SD_FS_SYSTEM, "/");
+#ifdef ESP32
+        HTH_fsHandle.format(SD_FS_SYSTEM, "/");
+#elif defined(ESP8266)
+        SD_FS_SYSTEM.format();
+#endif
+        request->send(200, "text/html", "Format SD card Succeed");
+#else
+        request->send(200, "text/html", "No Support SD Card");
+#endif     
+    }
+    else
+    {
+        request->send(200, "text/json", "Password Setting Wrong");
+    } 
+}
+
+void format_spiffs_get(AsyncWebServerRequest *request, requestHandler* client)
+{
+    if (request->argName(1) == "pass" && WFDataFile.passConfirmIsOK(request->arg(1), wifi_data_file::CONFIRM_COMMON))
+    {
+#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
+        NAND_FS_SYSTEM.format();
         request->send(200, "text/html", "Format SD card Succeed");
 #else
         request->send(200, "text/html", "No Support SD Card");

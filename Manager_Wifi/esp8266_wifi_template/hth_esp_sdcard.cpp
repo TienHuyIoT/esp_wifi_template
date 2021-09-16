@@ -22,14 +22,18 @@
 
 hth_esp_sdcard::hth_esp_sdcard(/* args */)
 {
-    _sd_card_status = false;
+    _sdCardStatus = false;
 }
 
 hth_esp_sdcard::~hth_esp_sdcard()
 {
 }
 
-void hth_esp_sdcard::begin(void)
+#if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1) && (defined ESP32)
+void hth_esp_sdcard::begin(SPIClass &spi)
+#else
+void hth_esp_sdcard::begin()
+#endif
 {
 #if (defined SD_POWER_ENABLE) && (SD_POWER_ENABLE == 1)
   SD_POWER_PINMODE_INIT();
@@ -42,36 +46,30 @@ void hth_esp_sdcard::begin(void)
   if (!SD_FS_SYSTEM.begin())
   {
     SD_FS_PRINTFLN("Card Mount Failed");
-    _sd_card_status = false;
+    _sdCardStatus = false;
     return;
   }
 #else
   SD_NSS_PINMODE_INIT();
   SD_NSS_RELEASE();
 #ifdef ESP32
-  // Init SPI driver.
-  // We must be init SPI PIN the first than Init SD card
-  SPI.begin(SD_SCK_PIN, SD_MISO_PIN, SD_MOSI_PIN, SD_NSS_PIN);
   // Init SD card with SPI clock = 80Mhz
   // https://github.com/espressif/esp-idf/issues/1008
-  if (!SD_FS_SYSTEM.begin(SD_NSS_PIN, SPI, 80E6))
+  if (!SD_FS_SYSTEM.begin(SD_NSS_PIN, spi, 80E6))
 #elif defined(ESP8266)
-  SPI.begin();
   SD.begin(SD_NSS_PIN, SPI_FULL_SPEED); // the same below
-  // SD_FS_SYSTEM.setConfig(SDFSConfig(SD_NSS_PIN, SPI_FULL_SPEED));
-  // if (!SD_FS_SYSTEM.begin())
 #endif
   {
     SD_FS_PRINTFLN("Card Mount Failed");
-    _sd_card_status = false;
+    _sdCardStatus = false;
     return;
   }
 #endif
-  _sd_card_status = true;
+  _sdCardStatus = true;
 
 #ifdef ESP32
   uint8_t cardType = SD_FS_SYSTEM.cardType();
-
+  SD_FS_PRINTFLN("cardType = %u", cardType);
   if (cardType == CARD_NONE)
   {
     SD_FS_PRINTFLN("No SD_FS_SYSTEM card attached");
@@ -123,5 +121,7 @@ void hth_esp_sdcard::begin(void)
   SD_FS_PRINTFLN("Used space: %lluMB\n", SD_FS_SYSTEM.usedBytes() / (1024 * 1024));
 #endif
 }
+
+hth_esp_sdcard HTH_sdCard;
 
 #endif // (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)

@@ -27,13 +27,9 @@ Some Library references:
 #define EASYDDNS_PORT CONSOLE_PORT
 #define EASYDDNS_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
 #define EASYDDNS_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[EASYDDNS]", __VA_ARGS__)
-#define EASYDDNS_GET_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[EASYDDNS GET]", __VA_ARGS__)
-#define EASYDDNS_POST_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[EASYDDNS POST]", __VA_ARGS__)
 #else
 #define EASYDDNS_CONSOLE(f_, ...)
 #define EASYDDNS_TAG_CONSOLE(...)
-#define EASYDDNS_GET_TAG_CONSOLE(f_, ...)
-#define EASYDDNS_POST_TAG_CONSOLE(f_, ...)
 #endif
 
 AsyncEasyDDNSClass::AsyncEasyDDNSClass()
@@ -83,7 +79,7 @@ void AsyncEasyDDNSClass::request_post_ip_cb(void* optParm, asyncHTTPrequest* req
     ddnsip.fromString(new_ip);
     if (old_ip != new_ip)
     {
-      EASYDDNS_CONSOLE("new_ip\r\n");      
+      EASYDDNS_TAG_CONSOLE("new_ip");      
       // Send a callback notification
       if(_ddnsUpdateFunc != nullptr){
         _ddnsUpdateFunc(old_ip.c_str(), new_ip.c_str());
@@ -93,7 +89,7 @@ void AsyncEasyDDNSClass::request_post_ip_cb(void* optParm, asyncHTTPrequest* req
     }
     else
     {
-      EASYDDNS_CONSOLE("old_ip\r\n");
+      EASYDDNS_TAG_CONSOLE("old_ip");
     } 
     EASYDDNS_TAG_CONSOLE("**************************************");     
   }
@@ -113,12 +109,12 @@ void AsyncEasyDDNSClass::run_get_ip()
     }
     else
     {
-      EASYDDNS_GET_TAG_CONSOLE("Can't send bad request");
+      EASYDDNS_TAG_CONSOLE("Can't send bad request");
     }
   }
   else
   {
-    EASYDDNS_GET_TAG_CONSOLE("Can't send request");
+    EASYDDNS_TAG_CONSOLE("Can't send request");
   }
 }
 
@@ -158,17 +154,17 @@ void AsyncEasyDDNSClass::run_post_ip()
     } else if (ddns_choice == "afraid.org") {
       update_url = "http://sync.afraid.org/u/" + ddns_u + "/";
     } else {
-      EASYDDNS_POST_TAG_CONSOLE("## INPUT CORRECT DDNS SERVICE NAME ##\r\n");
+      EASYDDNS_TAG_CONSOLE("## INPUT CORRECT DDNS SERVICE NAME ##");
       return;
     }     
 
-    EASYDDNS_POST_TAG_CONSOLE("URL: %s", update_url.c_str());
+    EASYDDNS_TAG_CONSOLE("URL: %s", update_url.c_str());
     bool result = request_post_ip.open("GET", update_url.c_str());
     if(auth_service)
     {
       String auth = ddns_u + ":" + ddns_p;
       base64Authorization = base64::encode(auth);
-      // EASYDDNS_POST_TAG_CONSOLE("auth (%s)-(%s)", auth.c_str(), FPSTR(base64Authorization.c_str()));
+      // EASYDDNS_TAG_CONSOLE("auth (%s)-(%s)", auth.c_str(), FPSTR(base64Authorization.c_str()));
       request_post_ip.setReqHeader("Authorization: Basic ", FPSTR(base64Authorization.c_str()));
     } 
     if (result)
@@ -178,12 +174,12 @@ void AsyncEasyDDNSClass::run_post_ip()
     }
     else
     {
-      EASYDDNS_POST_TAG_CONSOLE("Can't send bad request");
+      EASYDDNS_TAG_CONSOLE("Can't send bad request");
     }
   }
   else
   {
-    EASYDDNS_POST_TAG_CONSOLE("Can't send request");
+    EASYDDNS_TAG_CONSOLE("Can't send request");
   }
 }
 

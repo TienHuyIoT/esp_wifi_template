@@ -5,6 +5,9 @@
 #include "app_config.h"
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
+#if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1) && (defined ESP32)
+#include <SPI.h>
+#endif
 #include "board.h"
 
 #if (SD_CARD_SYSTEM == 0)
@@ -49,13 +52,19 @@ SD INTERFACE
 class hth_esp_sdcard
 {
 private:
-    bool _sd_card_status;
+    bool _sdCardStatus;
 public:
     hth_esp_sdcard(/* args */);
     ~hth_esp_sdcard();
-    bool statusIsOk() { return _sd_card_status; }
-    void begin(void);
+    bool statusIsOk() { return _sdCardStatus; }
+#if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1) && (defined ESP32)
+    void begin(SPIClass &spi);
+#else
+    void begin();
+#endif
 };
+
+extern hth_esp_sdcard HTH_sdCard;
 
 #endif // (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 

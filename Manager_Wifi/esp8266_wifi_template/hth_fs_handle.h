@@ -13,7 +13,7 @@ public:
     ~hth_fs_handle();
 
     void listDir(fs::FS &fs, const char *dirname, uint8_t levels);
-    void sd_format(fs::FS &fs, const char *dirname);
+    void format(fs::FS &fs, const char *dirname);
     void deleteFile(fs::FS &fs, const char *path);
     void removeDir(fs::FS &fs, const char *path);
     #if (0)
