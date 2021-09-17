@@ -86,12 +86,13 @@ void setup()
     // Init system time with params load from file system
     HTH_sysTime.begin();
 
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+    // If the ethernet is enable, the wifi will not init.
+    HTH_ethernet.start();
+    HTH_espWifi.begin(!HTH_ethernet.isEnable());
+#else
     // Init wifi and accompanied services 
     HTH_espWifi.begin();
-
-#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
-    // Init ethernet
-    HTH_ethernet.start();
 #endif
 
     // register callback handle http request

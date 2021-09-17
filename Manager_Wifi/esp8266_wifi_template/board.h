@@ -34,7 +34,7 @@ SPI BUS
 #define FACTORY_INPUT_PIN       0 /* Button1 36(web485), -1(ken_sos) */
 
 /* GPIO to enable ethernet */
-#define ETH_GPIO_ENABLE         -1 /* Button2 */
+#define ETH_GPIO_ENABLE         4 /* Button2 */
 #if (ETH_GPIO_ENABLE != -1)
 #define ETH_GPIO_ENABLE_INIT()  pinMode(ETH_GPIO_ENABLE, INPUT_PULLUP)
 #define ETH_STATUS_IS_ON()      (digitalRead(ETH_GPIO_ENABLE) == 0)

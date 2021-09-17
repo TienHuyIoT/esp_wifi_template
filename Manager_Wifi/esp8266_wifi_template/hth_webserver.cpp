@@ -91,45 +91,46 @@ void async_webserver::setHandleCallbacks(serverCallbacks* pCallbacks)
 
 void async_webserver::fs_editor_status(AsyncWebServerRequest *request)
 {
-  char buf_ttb[64];
-  char buf_udb[64];
+#ifdef ESP8266
+  uint64_t totalBytes, usedBytes;
+#elif defined(ESP32)
+  unsigned long totalBytes, usedBytes;
+#endif
   String status = request->getParam("status")->value();
-
+  WEB_SERVER_TAG_CONSOLE("fs_editor_status");
   if (status == "spiffs")
   {
 #ifdef ESP8266
-    FSInfo64 fs_info;
-    NAND_FS_SYSTEM.info64(fs_info);
-    sprintf(buf_ttb, "%lu", fs_info.totalBytes);
-    sprintf(buf_udb, "%lu", fs_info.usedBytes);
-    WEB_SERVER_TAG_CONSOLE("Nandflash Total space: %lu", fs_info.totalBytes);
-    WEB_SERVER_TAG_CONSOLE("Nandflash Used space: %lu", fs_info.usedBytes);
+    FSInfo fs_info;
+    NAND_FS_SYSTEM.info(fs_info);
+    totalBytes = fs_info.totalBytes;
+    usedBytes = fs_info.usedBytes;
 #elif defined(ESP32)
-    sprintf(buf_ttb, "%lu", NAND_FS_SYSTEM.totalBytes());
-    sprintf(buf_udb, "%lu", NAND_FS_SYSTEM.usedBytes());
-    WEB_SERVER_TAG_CONSOLE("Nandflash Total space: %lu", NAND_FS_SYSTEM.totalBytes());
-    WEB_SERVER_TAG_CONSOLE("Nandflash Used space: %lu", NAND_FS_SYSTEM.usedBytes());
+    totalBytes = NAND_FS_SYSTEM.totalBytes();
+    usedBytes = NAND_FS_SYSTEM.usedBytes();
 #endif
+    WEB_SERVER_TAG_CONSOLE("Nandflash Total space: %lu", totalBytes);
+    WEB_SERVER_TAG_CONSOLE("Nandflash Used space: %lu", usedBytes);
   }
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
   else
   {
 #ifdef ESP8266
-    FSInfo fs_info;
-    SD_FS_SYSTEM.info(fs_info);
-    sprintf(buf_ttb, "%lu", fs_info.totalBytes);
-    sprintf(buf_udb, "%lu", fs_info.usedBytes);
-    WEB_SERVER_TAG_CONSOLE("Nandflash Total space: %lu", fs_info.totalBytes);
-    WEB_SERVER_TAG_CONSOLE("Nandflash Used space: %lu", fs_info.usedBytes);
+    FSInfo64 fs_info64;
+    // SD_FS_SYSTEM.info64(fs_info64); // error freeClusterCount()
+    fs_info64.totalBytes = SD.size64();
+    fs_info64.usedBytes = 0x40000000ULL; // add for fun
+
+    totalBytes = fs_info64.totalBytes;
+    usedBytes = fs_info64.usedBytes;
 #elif defined(ESP32)
-    sprintf(buf_ttb, "%llu", SD_FS_SYSTEM.totalBytes());
-    sprintf(buf_udb, "%llu", SD_FS_SYSTEM.usedBytes());
-    WEB_SERVER_TAG_CONSOLE("SD Total space: %lu", SD_FS_SYSTEM.totalBytes());
-    WEB_SERVER_TAG_CONSOLE("SD Used space: %lu", SD_FS_SYSTEM.usedBytes());
+    totalBytes = SD_FS_SYSTEM.totalBytes();
+    usedBytes = SD_FS_SYSTEM.usedBytes();
 #endif
+    WEB_SERVER_TAG_CONSOLE("SD Total space: %llu", totalBytes);
+    WEB_SERVER_TAG_CONSOLE("SD Used space: %llu", usedBytes);
   }
 #endif
-
   String output = "{";
 
   output += "\"type\":\"";
@@ -144,9 +145,9 @@ void async_webserver::fs_editor_status(AsyncWebServerRequest *request)
   output += "\", \"isOk\":";
 
   output += F("\"true\", \"totalBytes\":\"");
-  output += buf_ttb;
+  output += String(totalBytes);
   output += F("\", \"usedBytes\":\"");
-  output += buf_udb;
+  output += String(usedBytes);
   output += "\"";
 
   output += F(",\"unsupportedFiles\":\"");

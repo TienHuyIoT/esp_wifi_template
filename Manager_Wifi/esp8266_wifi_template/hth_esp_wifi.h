@@ -67,7 +67,7 @@ public:
     static AsyncEasyDDNSClass* ddnsClient;
 #endif
 
-    void begin();
+    void begin(bool wifiON = true);
     void end();
     void connect(const char* name, const char* pass);
     void loop();

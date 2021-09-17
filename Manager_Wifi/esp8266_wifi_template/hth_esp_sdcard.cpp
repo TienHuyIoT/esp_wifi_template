@@ -57,7 +57,7 @@ void hth_esp_sdcard::begin()
   // https://github.com/espressif/esp-idf/issues/1008
   if (!SD_FS_SYSTEM.begin(SD_NSS_PIN, spi, 80E6))
 #elif defined(ESP8266)
-  SD.begin(SD_NSS_PIN, SPI_FULL_SPEED); // the same below
+  if (!SD.begin(SD_NSS_PIN, SPI_FULL_SPEED))
 #endif
   {
     SD_FS_PRINTFLN("Card Mount Failed");

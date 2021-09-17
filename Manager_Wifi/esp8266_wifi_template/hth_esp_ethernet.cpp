@@ -38,7 +38,7 @@ hth_esp_ethernet::~hth_esp_ethernet()
 
 bool hth_esp_ethernet::start()
 { 
-  if (_status) 
+  if (!_status) 
   {
     ETH_TAG_CONSOLE("ETH disable");
     return false;
@@ -46,12 +46,10 @@ bool hth_esp_ethernet::start()
   ETH_TAG_CONSOLE("ETH Start");
 #ifdef ESP32
   ETH.begin(ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_TYPE, ETH_CLK_MODE);
-#elif defined(ESP8266)
-  ETH.begin();
 #endif
   if (!WFDataFile.dhcpSTA())
   {
-    /* Config must be after begin function */
+    /* Config must be after begin function for ESP32 */
     ETH.config(WFDataFile.ipSTA(), WFDataFile.gwSTA(), WFDataFile.snSTA(), WFDataFile.dnsSTA());
     ETH_TAG_CONSOLE("static IP enable");
     ETH_TAG_CONSOLE("Ip: %s", WFDataFile.ipSTA().toString().c_str());
@@ -59,6 +57,9 @@ bool hth_esp_ethernet::start()
     ETH_TAG_CONSOLE("Sn: %s", WFDataFile.snSTA().toString().c_str());
     ETH_TAG_CONSOLE("Dns: %s\r\n", WFDataFile.dnsSTA().toString().c_str());
   }
+#ifdef ESP8266
+  ETH.begin();
+#endif
   return true;
 }
 

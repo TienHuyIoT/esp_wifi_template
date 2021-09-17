@@ -41,7 +41,7 @@ static void sntp_sync_time_cb(struct timeval *tv) {
     SNTP_TAG_CONSOLE("settimeofday(SNTP)");
 #elif defined(ESP8266)
 static void sntp_sync_time_cb(bool from_sntp /* <= this parameter is optional */) {
-    SNTP_TAG_CONSOLE("settimeofday(%s)", from_sntp ? "SNTP" : "USER");
+    SNTP_TAG_CONSOLE("Callback settimeofday(%s)", from_sntp ? "SNTP" : "USER");
 #endif 
     time_t now = time(nullptr);
     const tm* tm = localtime(&now);
@@ -50,7 +50,7 @@ static void sntp_sync_time_cb(bool from_sntp /* <= this parameter is optional */
      * RTC_CONSOLE_PORT.println(&tmStruct, "\r\nTime: %A, %B %d %Y %H:%M:%S");
      * */
     strftime(buf, 64, "%A, %B %d %Y %H:%M:%S", tm);
-    SNTP_TAG_CONSOLE("Time: %s", buf);
+    SNTP_TAG_CONSOLE("Callback Time: %s", buf);
 
     HTH_sysTime.setSourceUpdate(flatform_rtc::RTC_SNTP_UPDATE);
 }
@@ -384,10 +384,11 @@ void hth_esp_wifi::loop()
 #endif
 }
 
-void hth_esp_wifi::begin()
+void hth_esp_wifi::begin(bool wifiON)
 {
   WiFiMode_t wf_mode = WIFI_OFF;
 
+  ESP_WIFI_TAG_CONSOLE("Begin()");
 #if (defined SNTP_SERVICE_ENABLE) && (SNTP_SERVICE_ENABLE == 1)  
   // sntp service ON
   _sntp->begin();
@@ -396,134 +397,137 @@ void hth_esp_wifi::begin()
   // Register wifi event callback
   this->registerEventHandler();
 
-  /* Once WiFi.persistent(false) is called, WiFi.begin, 
+  if (wifiON)
+  {
+    ESP_WIFI_TAG_CONSOLE("Wifi start");
+    /* Once WiFi.persistent(false) is called, WiFi.begin, 
      WiFi.disconnect, WiFi.softAP, or WiFi.softAPdisconnect 
      only changes the current in-memory Wi-Fi settings, 
      and does not affect the Wi-Fi settings stored in flash memory.
 
      Default is false
     */
-  WiFi.persistent(false);
+    WiFi.persistent(false);
 #ifdef ESP32
-  esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B);
-  /*
-    typedef enum {
-        WIFI_POWER_19_5dBm = 78,// 19.5dBm
-        WIFI_POWER_19dBm = 76,// 19dBm
-        WIFI_POWER_18_5dBm = 74,// 18.5dBm
-        WIFI_POWER_17dBm = 68,// 17dBm
-        WIFI_POWER_15dBm = 60,// 15dBm
-        WIFI_POWER_13dBm = 52,// 13dBm
-        WIFI_POWER_11dBm = 44,// 11dBm
-        WIFI_POWER_8_5dBm = 34,// 8.5dBm
-        WIFI_POWER_7dBm = 28,// 7dBm
-        WIFI_POWER_5dBm = 20,// 5dBm
-        WIFI_POWER_2dBm = 8,// 2dBm
-        WIFI_POWER_MINUS_1dBm = -4// -1dBm
-    } wifi_power_t;
-    */
-  WiFi.setTxPower(WIFI_POWER_19_5dBm);
+    esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B);
+    /*
+      typedef enum {
+          WIFI_POWER_19_5dBm = 78,// 19.5dBm
+          WIFI_POWER_19dBm = 76,// 19dBm
+          WIFI_POWER_18_5dBm = 74,// 18.5dBm
+          WIFI_POWER_17dBm = 68,// 17dBm
+          WIFI_POWER_15dBm = 60,// 15dBm
+          WIFI_POWER_13dBm = 52,// 13dBm
+          WIFI_POWER_11dBm = 44,// 11dBm
+          WIFI_POWER_8_5dBm = 34,// 8.5dBm
+          WIFI_POWER_7dBm = 28,// 7dBm
+          WIFI_POWER_5dBm = 20,// 5dBm
+          WIFI_POWER_2dBm = 8,// 2dBm
+          WIFI_POWER_MINUS_1dBm = -4// -1dBm
+      } wifi_power_t;
+      */
+    WiFi.setTxPower(WIFI_POWER_19_5dBm);
 #elif defined(ESP8266)
-  WiFi.setPhyMode(WIFI_PHY_MODE_11B);
-  WiFi.setOutputPower(20.5);
+    WiFi.setPhyMode(WIFI_PHY_MODE_11B);
+    WiFi.setOutputPower(20.5);
 #endif
 
-  /* sta and ap are disable*/
-  if (WFDataFile.isDisableSTA() && WFDataFile.isDisableAP())
-  {
-    /* smart config is enable*/
-    if (WFDataFile.smartCfgSTA())
+    /* sta and ap are disable*/
+    if (WFDataFile.isDisableSTA() && WFDataFile.isDisableAP())
     {
-      wf_mode = WIFI_STA;
-      ESP_WIFI_TAG_CONSOLE("Wifi Mode WIFI_STA using for smart config");
-    }
-    else
-    {
-      wf_mode = WIFI_OFF;
-      ESP_WIFI_TAG_CONSOLE("Wifi Mode WIFI_OFF");
-    }
-  }
-  /* sta and ap are enable*/
-  else if (!WFDataFile.isDisableSTA() && !WFDataFile.isDisableAP())
-  {
-    wf_mode = WIFI_AP_STA;
-    ESP_WIFI_TAG_CONSOLE("Wifi Mode WIFI_AP_STA");
-  }
-  /* Enable sta and Diasble ap */
-  else if (!WFDataFile.isDisableSTA() && WFDataFile.isDisableAP())
-  {
-    wf_mode = WIFI_STA;
-    ESP_WIFI_TAG_CONSOLE("Wifi Mode WIFI_STA");
-  }
-  /* Disable sta and Enable ap */
-  else
-  {
-    wf_mode = WIFI_AP;
-    ESP_WIFI_TAG_CONSOLE("Wifi Mode WIFI_AP");
-  }
-
-  if (WIFI_OFF == wf_mode)
-  {
-    this->end();
-  }
-  else
-  {
-    WiFi.mode(wf_mode);
-  }
-
-  /* STA enable */
-  if (!WFDataFile.isDisableSTA())
-  {
-    if (WFDataFile.ssidSTA().length() > 0)
-    {
-      if (!WFDataFile.dhcpSTA())
-      {
-        WiFi.config(WFDataFile.ipSTA(), WFDataFile.gwSTA(), WFDataFile.snSTA(), WFDataFile.dnsSTA());
-        ESP_WIFI_TAG_CONSOLE("static IP setup");
-        ESP_WIFI_TAG_CONSOLE("Ip: %s", WFDataFile.ipSTA().toString().c_str());
-        ESP_WIFI_TAG_CONSOLE("Gw: %s", WFDataFile.gwSTA().toString().c_str());
-        ESP_WIFI_TAG_CONSOLE("Sn: %s", WFDataFile.snSTA().toString().c_str());
-        ESP_WIFI_TAG_CONSOLE("Dns: %s\r\n", WFDataFile.dnsSTA().toString().c_str());
-      }
-
-      this->connect(WFDataFile.ssidSTA().c_str(), WFDataFile.passSTA().c_str());
-    }
-    else
-    {
-      /* Smart config enable */
-      ESP_WIFI_TAG_CONSOLE("[beginSmartConfig] = %u\r\n", WFDataFile.smartCfgSTA());
+      /* smart config is enable*/
       if (WFDataFile.smartCfgSTA())
       {
-        WiFi.beginSmartConfig();
+        wf_mode = WIFI_STA;
+        ESP_WIFI_TAG_CONSOLE("Wifi Mode WIFI_STA using for smart config");
+      }
+      else
+      {
+        wf_mode = WIFI_OFF;
+        ESP_WIFI_TAG_CONSOLE("Wifi Mode WIFI_OFF");
       }
     }
-  }
-
-  /* AP enable */
-  if (!WFDataFile.isDisableAP())
-  {
-#ifdef ESP8266
-    String ChipID = String(ESP.getChipId(), HEX);
-#elif defined(ESP32)
-    String ChipID = String((uint32_t)(ESP.getEfuseMac() >> 16), HEX);
-#endif
-    ChipID.toUpperCase();
-    String ssidAP = WFDataFile.ssidAP() + "_" + ChipID;
-    WiFi.softAPConfig(WFDataFile.ipAP(), WFDataFile.ipAP(), WFDataFile.snAP());
-    if (WFDataFile.passAP().length() >= 8)
+    /* sta and ap are enable*/
+    else if (!WFDataFile.isDisableSTA() && !WFDataFile.isDisableAP())
     {
-      // using c_str() for esp32
-      WiFi.softAP(ssidAP.c_str(), WFDataFile.passAP().c_str(), WFDataFile.channelAP(), WFDataFile.isHiddenAP());
+      wf_mode = WIFI_AP_STA;
+      ESP_WIFI_TAG_CONSOLE("Wifi Mode WIFI_AP_STA");
+    }
+    /* Enable sta and Diasble ap */
+    else if (!WFDataFile.isDisableSTA() && WFDataFile.isDisableAP())
+    {
+      wf_mode = WIFI_STA;
+      ESP_WIFI_TAG_CONSOLE("Wifi Mode WIFI_STA");
+    }
+    /* Disable sta and Enable ap */
+    else
+    {
+      wf_mode = WIFI_AP;
+      ESP_WIFI_TAG_CONSOLE("Wifi Mode WIFI_AP");
+    }
+
+    if (WIFI_OFF == wf_mode)
+    {
+      this->end();
     }
     else
     {
-      // using c_str() for esp32
-      WiFi.softAP(ssidAP.c_str());
+      WiFi.mode(wf_mode);
     }
 
-    ESP_WIFI_TAG_CONSOLE("AP IP address: %s\r\n", WiFi.softAPIP().toString().c_str());
-  }
+    /* STA enable */
+    if (!WFDataFile.isDisableSTA())
+    {
+      if (WFDataFile.ssidSTA().length() > 0)
+      {
+        if (!WFDataFile.dhcpSTA())
+        {
+          WiFi.config(WFDataFile.ipSTA(), WFDataFile.gwSTA(), WFDataFile.snSTA(), WFDataFile.dnsSTA());
+          ESP_WIFI_TAG_CONSOLE("static IP setup");
+          ESP_WIFI_TAG_CONSOLE("Ip: %s", WFDataFile.ipSTA().toString().c_str());
+          ESP_WIFI_TAG_CONSOLE("Gw: %s", WFDataFile.gwSTA().toString().c_str());
+          ESP_WIFI_TAG_CONSOLE("Sn: %s", WFDataFile.snSTA().toString().c_str());
+          ESP_WIFI_TAG_CONSOLE("Dns: %s\r\n", WFDataFile.dnsSTA().toString().c_str());
+        }
 
+        this->connect(WFDataFile.ssidSTA().c_str(), WFDataFile.passSTA().c_str());
+      }
+      else
+      {
+        /* Smart config enable */
+        ESP_WIFI_TAG_CONSOLE("[beginSmartConfig] = %u\r\n", WFDataFile.smartCfgSTA());
+        if (WFDataFile.smartCfgSTA())
+        {
+          WiFi.beginSmartConfig();
+        }
+      }
+    }
+
+    /* AP enable */
+    if (!WFDataFile.isDisableAP())
+    {
+#ifdef ESP8266
+      String ChipID = String(ESP.getChipId(), HEX);
+#elif defined(ESP32)
+      String ChipID = String((uint32_t)(ESP.getEfuseMac() >> 16), HEX);
+#endif
+      ChipID.toUpperCase();
+      String ssidAP = WFDataFile.ssidAP() + "_" + ChipID;
+      WiFi.softAPConfig(WFDataFile.ipAP(), WFDataFile.ipAP(), WFDataFile.snAP());
+      if (WFDataFile.passAP().length() >= 8)
+      {
+        // using c_str() for esp32
+        WiFi.softAP(ssidAP.c_str(), WFDataFile.passAP().c_str(), WFDataFile.channelAP(), WFDataFile.isHiddenAP());
+      }
+      else
+      {
+        // using c_str() for esp32
+        WiFi.softAP(ssidAP.c_str());
+      }
+
+      ESP_WIFI_TAG_CONSOLE("AP IP address: %s\r\n", WiFi.softAPIP().toString().c_str());
+    }
+  }
   /* should be called after the wifi init */
 #if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)  
   this->onArduinoOTA();
