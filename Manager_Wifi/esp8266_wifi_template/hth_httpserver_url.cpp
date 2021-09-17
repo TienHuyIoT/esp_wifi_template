@@ -8,6 +8,7 @@
 #include "hth_esp_eeprom.h"
 #include "hth_esp_sdcard.h"
 #include "hth_fs_handle.h"
+#include "hth_esp_ethernet.h"
 #include "hth_console_dbg.h"
 #include "hth_httpserver_url.h"
 
@@ -204,9 +205,13 @@ void sta_ap_info_get(AsyncWebServerRequest *request, requestHandler* client)
     }
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
-    if(eth_is_enable())
+    if(HTH_ethernet.isEnable())
     {
+#ifdef ESP32
         if(ETH.linkUp())
+#elif defined(ESP8266)
+        if(ETH.linkUp())
+#endif
         {
             HTTPSERVER_URL_TAG_CONSOLE("ETH.linkUp OK");
             connect_st = true;
@@ -258,7 +263,7 @@ void sta_network_get(AsyncWebServerRequest *request, requestHandler* client)
 {
     String json_network = "{\"status\":\"ok\",\"mgs\":\"WiFi is scanning ...\"}";
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
-    if(eth_is_enable())
+    if(HTH_ethernet.isEnable())
     {
         json_network = "{\"status\":\"error\",\"mgs\":\"Ethernet Mode\"}";
     }
@@ -266,7 +271,7 @@ void sta_network_get(AsyncWebServerRequest *request, requestHandler* client)
     request->send(200, "text/json", json_network);
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
-    if(!eth_is_enable())
+    if(!HTH_ethernet.isEnable())
     {
         if(WiFi.scanComplete() == WIFI_SCAN_FAILED) {
             /* run in async mode */
@@ -289,9 +294,13 @@ void sta_setting_get(AsyncWebServerRequest *request, requestHandler* client)
     uint8_t connect_st = 0;
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
-    if(eth_is_enable())
+    if(HTH_ethernet.isEnable())
     {
+#ifdef ESP32
         if(ETH.linkUp())
+#elif defined(ESP8266)
+        if(ETH.linkUp())
+#endif
         {
             HTTPSERVER_URL_TAG_CONSOLE("ETH.linkUp OK");
             connect_st = 1;

@@ -42,7 +42,6 @@ LOW:	SD on
 /*
 SD INTERFACE
 */
-#define SD_NSS_PIN				        SPI_NSS_PIN 
 #define SD_NSS_PINMODE_INIT()           pinMode(SD_NSS_PIN, OUTPUT)
 #define SD_NSS_RELEASE()                digitalWrite(SD_NSS_PIN, HIGH)
 #define SD_SCK_PIN     			        SPI_SCK_PIN

@@ -20,12 +20,27 @@ SPI BUS
 #define SPI_MISO_PIN     		12
 #define SPI_MOSI_PIN     		13
 #define SPI_NSS_PIN				15
+
+// GPIO Ethernet SPI Chip select
+#define ETH_NSS_PIN             15
 #endif
 
+// 
+#define SD_NSS_PIN				16 
 // GPIO control power of SD card
 #define SD_POWER_PIN     		5
 
 /* GPIO to reset factory */
 #define FACTORY_INPUT_PIN       0 /* Button1 36(web485), -1(ken_sos) */
 
+/* GPIO to enable ethernet */
+#define ETH_GPIO_ENABLE         -1 /* Button2 */
+#if (ETH_GPIO_ENABLE != -1)
+#define ETH_GPIO_ENABLE_INIT()  pinMode(ETH_GPIO_ENABLE, INPUT_PULLUP)
+#define ETH_STATUS_IS_ON()      (digitalRead(ETH_GPIO_ENABLE) == 0)
+#else
+#define ETH_GPIO_ENABLE_INIT()
+#define ETH_STATUS_IS_ON()    
 #endif
+
+#endif // _BOARD_H

@@ -90,13 +90,13 @@ https://github.com/boblemaire/asyncHTTPrequest
 0: Disable
 1: Enable
 */
-#define ETH_ENABLE    0
+#define ETH_ENABLE    1
 
 /* Enable sd card
 0: Disable
 1: Enable
 */
-#define SD_CARD_ENABLE  0
+#define SD_CARD_ENABLE  1
 
 /* Select sd card interface
 0: SD_MMC
@@ -149,8 +149,10 @@ https://github.com/boblemaire/asyncHTTPrequest
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
 #ifdef ESP32
-#include "lan8720a_cfg.h"
+#include <ETH.h>
 #elif defined(ESP8266)
+#include <SPI.h>
+#include <ENC28J60lwIP.h>
 #endif
 #endif
 

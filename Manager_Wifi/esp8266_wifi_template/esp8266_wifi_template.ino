@@ -8,6 +8,7 @@
 #include "hth_webserver.h"
 #include "hth_httpserver_url.h"
 #include "hth_esp_eeprom.h"
+#include "hth_esp_ethernet.h"
 
 /* Private macro -------------------------------------------------------------*/
 #define MAIN_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[MAIN]", __VA_ARGS__)
@@ -29,6 +30,22 @@ void setup()
                      FW_VERSION_MAJOR,
                      FW_VERSION_MINOR,
                      FW_VERSION_BUILD);
+
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+#if (defined ETH_GPIO_ENABLE) && (ETH_GPIO_ENABLE != -1)
+  ETH_GPIO_ENABLE_INIT();
+  if(ETH_STATUS_IS_ON())
+  {
+    HTH_ethernet.enable();
+  }
+  else
+  {
+    HTH_ethernet.disable();
+  }
+#else
+    HTH_ethernet.enable();
+#endif
+#endif
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 #if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1)
@@ -71,6 +88,11 @@ void setup()
 
     // Init wifi and accompanied services 
     HTH_espWifi.begin();
+
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+    // Init ethernet
+    HTH_ethernet.start();
+#endif
 
     // register callback handle http request
     HTH_asyncServer.setHandleCallbacks(new requestHandler());
