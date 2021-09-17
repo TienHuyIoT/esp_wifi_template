@@ -45,6 +45,7 @@ void setup()
 #endif
 #endif
 
+    // Init params form eeprom memory
     HTH_espEEPROM.begin();
 
 #ifdef ESP32
@@ -53,18 +54,25 @@ void setup()
 #elif defined(ESP8266)
     NAND_FS_SYSTEM.begin();
 #endif
+
     /* List file in nand memory file system */
     HTH_fsHandle.listDir(NAND_FS_SYSTEM, "/", 0);
+#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
+    HTH_fsHandle.listDir(SD_FS_SYSTEM, "/", 0);
+#endif
 
     // Always initialize after NAND_FS_SYSTEM.begin();
     // Because some function of system will need params 
     // load from file system for initial.
     WFDataFile.begin();
     
+    // Init system time with params load from file system
     HTH_sysTime.begin();
 
+    // Init wifi and accompanied services 
     HTH_espWifi.begin();
 
+    // register callback handle http request
     HTH_asyncServer.setHandleCallbacks(new requestHandler());
     HTH_asyncServer.begin();
 }
