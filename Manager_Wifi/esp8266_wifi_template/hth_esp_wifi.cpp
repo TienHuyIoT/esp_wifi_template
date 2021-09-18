@@ -309,6 +309,7 @@ void hth_esp_wifi::onNBNSService()
 
 /** Should be called after init wifi */
 #if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)
+uint32_t hth_esp_wifi::_otaArduinoPercent = 0;
 void hth_esp_wifi::onArduinoOTA()
 {
   ArduinoOTA.onStart(
@@ -325,7 +326,7 @@ void hth_esp_wifi::onArduinoOTA()
           NAND_FS_SYSTEM.end();
         }
 
-        _reconnetTicker.detach(); // disable wifi reconnect access point
+        _reconnetTicker.detach(); // disable wifi auto reconnect access point
 
         /** NOTE: if updating SPIFFS this would be the place
          *  to unmount SPIFFS using SPIFFS.end() */
@@ -337,7 +338,12 @@ void hth_esp_wifi::onArduinoOTA()
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total)
                         {
-                          ESP_WIFI_TAG_CONSOLE("[OTA] Progress: %u%%", (progress / (total / 100)));
+                          uint32_t per = progress * 100 / total;
+                          if (_otaArduinoPercent != per)
+                          {
+                            _otaArduinoPercent = per;
+                            ESP_WIFI_TAG_CONSOLE("[OTA] Progress: %u%%", per);
+                          }
                           /* Watch dog timer feed */
                           // hw_wdt_feed();
                         });

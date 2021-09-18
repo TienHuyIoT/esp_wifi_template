@@ -491,10 +491,12 @@ void format_sd_card_get(AsyncWebServerRequest *request, requestHandler* client)
     if (request->argName(1) == "pass" && WFDataFile.passConfirmIsOK(request->arg(1), wifi_data_file::CONFIRM_COMMON))
     {
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)    
+        // if these takes more time, we should make an event format bind to run in loop
 #ifdef ESP32
         HTH_fsHandle.format(SD_FS_SYSTEM, "/");
 #elif defined(ESP8266)
-        SD_FS_SYSTEM.format();
+        HTH_fsHandle.format(SD_FS_SYSTEM, "/");
+        // SD_FS_SYSTEM.format(); // failed
 #endif
         request->send(200, "text/html", "Format SD card Succeed");
 #else
@@ -511,12 +513,9 @@ void format_spiffs_get(AsyncWebServerRequest *request, requestHandler* client)
 {
     if (request->argName(1) == "pass" && WFDataFile.passConfirmIsOK(request->arg(1), wifi_data_file::CONFIRM_COMMON))
     {
-#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
+        // if these takes more time, we should make an event format bind to run in loop
         NAND_FS_SYSTEM.format();
-        request->send(200, "text/html", "Format SD card Succeed");
-#else
-        request->send(200, "text/html", "No Support SD Card");
-#endif     
+        request->send(200, "text/html", "Format SPIFFS Succeed");    
     }
     else
     {

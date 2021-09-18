@@ -1,13 +1,14 @@
 #include <Arduino.h>
 #include <FS.h>
 #include "hth_fs_editor.h"
+#include "hth_esp_sdcard.h"
 #include "hth_console_dbg.h"
 
 #define FSEDITOR_DBG_PORT CONSOLE_PORT
 #if (defined FS_EDITOR_DEBUG) && (FS_EDITOR_DEBUG == 1)
 #define FSEDITOR_DBG_PRINTF(...) CONSOLE_TAG_LOGI("[FS_EDITOR]", __VA_ARGS__)
 #else
-#define FSEDITOR_DBG_PRINTF(f_, ...)
+#define FSEDITOR_DBG_PRINTF(...)
 #endif
 
 /* File: edit.htm.gz, Size: 4151 */
@@ -1066,7 +1067,8 @@ void FSEditor::handleRequest(AsyncWebServerRequest *request){
       while(dir.next()){
         fs::File entry = dir.openFile("r");
 #endif
-        if (isExcluded(_fs, entry.name())) {
+        if (isExcluded(_fs, entry.name()))
+        {
 #ifdef ESP32
             entry = dir.openNextFile();
 #endif
@@ -1091,6 +1093,7 @@ void FSEditor::handleRequest(AsyncWebServerRequest *request){
 #endif
       output += "]";
       request->send(200, "application/json", output);
+      FSEDITOR_DBG_PRINTF("[list] %s", output.c_str());
       output = String();
     }
     else if(request->hasParam("status"))
@@ -1105,7 +1108,16 @@ void FSEditor::handleRequest(AsyncWebServerRequest *request){
       }
     }
     else if(request->hasParam("edit") || request->hasParam("download")){
-      request->send(request->_tempFile, request->_tempFile.name(), String(), request->hasParam("download"));
+      String name;
+      if (request->hasParam("filename"))
+      {
+        name = request->arg("filename");
+      }
+      else
+      {
+        name = request->_tempFile.name();
+      }
+      request->send(request->_tempFile, name, String(), request->hasParam("download"));
     }
     else {
       const char * buildTime = __DATE__ " " __TIME__ " GMT";

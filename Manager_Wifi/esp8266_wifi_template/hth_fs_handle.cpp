@@ -39,6 +39,7 @@ void hth_fs_handle::listDir(fs::FS &fs, const char *dirname, uint8_t levels)
     if (!root.isDirectory())
     {
         FS_HANDLE_TAG_CONSOLE("Not a directory");
+        root.close();
         return;
     }
 
@@ -85,6 +86,7 @@ void hth_fs_handle::format(fs::FS &fs, const char *dirname)
   if (!root.isDirectory())
   {
     FS_HANDLE_TAG_CONSOLE("Not a directory");
+    root.close();
     return;
   }
 

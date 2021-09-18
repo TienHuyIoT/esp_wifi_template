@@ -66,9 +66,9 @@ serverCallbacks* async_webserver::_pCallbacks = &defaultCallbacks;
 asyncHttpHandler async_webserver::_httpGetAuthHandler = nullptr;
 asyncHttpHandler async_webserver::_httpGetHandler = nullptr;
 asyncHttpHandler async_webserver::_httpPostAuthHandler = nullptr;
-FSEditor* async_webserver::_spiffsEditor = new FSEditor(NAND_FS_SYSTEM, "/edit");
+FSEditor* async_webserver::_spiffsEditor = nullptr;
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-FSEditor* async_webserver::_sdCardEditor = new FSEditor(SD_FS_SYSTEM, "/edit_sdfs");
+FSEditor* async_webserver::_sdCardEditor = nullptr;
 #endif
 String async_webserver::_adminAuthUser = String();
 String async_webserver::_adminAuthPass = String();
@@ -116,13 +116,15 @@ void async_webserver::fs_editor_status(AsyncWebServerRequest *request)
   else
   {
 #ifdef ESP8266
+#if (HTH_SFDS_HANDLE)
     FSInfo64 fs_info64;
-    // SD_FS_SYSTEM.info64(fs_info64); // error freeClusterCount()
-    fs_info64.totalBytes = SD.size64();
-    fs_info64.usedBytes = 0x40000000ULL; // add for fun
-
+    SD_FS_SYSTEM.info64(fs_info64);
     totalBytes = fs_info64.totalBytes;
     usedBytes = fs_info64.usedBytes;
+#else
+    totalBytes = SD.size64();
+    usedBytes = 0x40000000ULL; // add for fun
+#endif
 #elif defined(ESP32)
     totalBytes = SD_FS_SYSTEM.totalBytes();
     usedBytes = SD_FS_SYSTEM.usedBytes();
@@ -145,9 +147,9 @@ void async_webserver::fs_editor_status(AsyncWebServerRequest *request)
   output += "\", \"isOk\":";
 
   output += F("\"true\", \"totalBytes\":\"");
-  output += String(totalBytes);
+  output += totalBytes;
   output += F("\", \"usedBytes\":\"");
-  output += String(usedBytes);
+  output += usedBytes;
   output += "\"";
 
   output += F(",\"unsupportedFiles\":\"");
@@ -292,6 +294,7 @@ void async_webserver::begin(void)
   _server->addHandler(_wsHandler->_ws);
   _server->addHandler(_wsHandler->_events);
 
+  _spiffsEditor = new FSEditor(NAND_FS_SYSTEM, "/edit");
   _spiffsEditor->onAuthenticate([](AsyncWebServerRequest *request)
                                 { return (authentication_level(request) != HTTP_AUTH_FAIL); });
   _spiffsEditor->onProgress(spiffsPrintProgress);
@@ -299,13 +302,13 @@ void async_webserver::begin(void)
   _server->addHandler(_spiffsEditor);
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
+  _sdCardEditor = new FSEditor(SD_FS_SYSTEM, "/edit_sdfs");
   _sdCardEditor->onAuthenticate([](AsyncWebServerRequest *request)
                             { return (authentication_level(request) != HTTP_AUTH_FAIL); });
   _sdCardEditor->onProgress(sdfsPrintProgress);
   _sdCardEditor->onStatus(fs_editor_status);
   _server->addHandler(_sdCardEditor);
 #endif
-
 
 _server->on("/get", HTTP_GET, [](AsyncWebServerRequest *request)
           {
@@ -319,8 +322,6 @@ _server->on("/get", HTTP_GET, [](AsyncWebServerRequest *request)
             }
           });
 
-
-
 _server->on("/get_open", HTTP_GET,
           [](AsyncWebServerRequest *request)
           {
@@ -330,8 +331,6 @@ _server->on("/get_open", HTTP_GET,
             }
             _pCallbacks->onHttpGet(request);
           });
-
-
 
 _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
           {

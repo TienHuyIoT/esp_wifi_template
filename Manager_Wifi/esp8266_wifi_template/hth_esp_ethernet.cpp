@@ -10,6 +10,7 @@
 #define ETH_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[ETH]", __VA_ARGS__)
 
 #ifdef ESP8266
+#include <lwip/apps/sntp.h>
 spi_ethernet::spi_ethernet(/* args */)
 :LwipIntfDev(ETH_NSS_PIN)
 {
@@ -30,6 +31,9 @@ spi_ethernet ETH;
 hth_esp_ethernet::hth_esp_ethernet(/* args */)
 {
   _status = false;
+#ifdef ESP8266
+  _connected = false;
+#endif
 }
 
 hth_esp_ethernet::~hth_esp_ethernet()
@@ -61,6 +65,34 @@ bool hth_esp_ethernet::start()
   ETH.begin();
 #endif
   return true;
+}
+
+void hth_esp_ethernet::loop()
+{
+#ifdef ESP8266
+  if (_status)
+  {
+    if (ETH.connected())
+    {
+      if (!_connected)
+      {
+        ETH_TAG_CONSOLE("Connected");
+        // ETH_TAG_CONSOLE("[SNTP] start");
+        // sntp_stop();
+        // sntp_init();
+        _connected = true;
+      }
+    }
+    else
+    {
+      if (_connected)
+      {
+        ETH_TAG_CONSOLE("disconnect");
+        _connected = false;
+      }
+    }
+  }
+#endif
 }
 
 void hth_esp_ethernet::enable(void)

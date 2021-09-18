@@ -20,9 +20,45 @@
 #define SD_FS_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 #define SD_FS_PRINTFLN(...) CONSOLE_TAG_LOGI("[SD]", __VA_ARGS__)
 
+#ifdef ESP8266
+#if(HTH_SFDS_HANDLE)
+hth_sdfs::hth_sdfs()
+: fs::FS(FSImplPtr(new sdfs::SDFSImpl()))
+{
+}
+
+hth_sdfs::~hth_sdfs(){}
+
+uint8_t hth_sdfs::type() {
+  if (!_impl) {
+      SD_FS_PRINTFLN("[type] FS not mounted\n");
+      return CARD_NONE;
+  }
+    sdfs::SDFSImpl* sd = static_cast<sdfs::SDFSImpl*>(getImpl().get());
+    return sd->type();
+}
+
+bool hth_sdfs::info64(FSInfo64& info)
+{
+  if (!_impl) {
+      SD_FS_PRINTFLN("[info64] FS not mounted\n");
+      return false;
+  }
+  SD_FS_PRINTFLN("[info64] updated\n");
+  sdfs::SDFSImpl* sd = static_cast<sdfs::SDFSImpl*>(getImpl().get());
+  info.blockSize = 512;
+  info.usedBytes = 0x40000000ULL; // add for fun
+  info.totalBytes = (uint64_t)sd->totalClusters() * (uint64_t)sd->blocksPerCluster() * (uint64_t)info.blockSize;
+  return true;
+}
+
+hth_sdfs HTH_sdfs;
+#endif
+#endif
+
 hth_esp_sdcard::hth_esp_sdcard(/* args */)
 {
-    _sdCardStatus = false;
+  _sdCardStatus = false;
 }
 
 hth_esp_sdcard::~hth_esp_sdcard()
@@ -35,6 +71,10 @@ void hth_esp_sdcard::begin(SPIClass &spi)
 void hth_esp_sdcard::begin()
 #endif
 {
+  uint8_t cardType;
+  uint64_t cardSize;
+  uint64_t usedBytes;
+
 #if (defined SD_POWER_ENABLE) && (SD_POWER_ENABLE == 1)
   SD_POWER_PINMODE_INIT();
   SD_POWER_OFF();
@@ -57,7 +97,8 @@ void hth_esp_sdcard::begin()
   // https://github.com/espressif/esp-idf/issues/1008
   if (!SD_FS_SYSTEM.begin(SD_NSS_PIN, spi, 80E6))
 #elif defined(ESP8266)
-  if (!SD.begin(SD_NSS_PIN, SPI_FULL_SPEED))
+  SD_FS_SYSTEM.setConfig(SDFSConfig(SD_NSS_PIN, SPI_FULL_SPEED));
+  if (!SD_FS_SYSTEM.begin())
 #endif
   {
     SD_FS_PRINTFLN("Card Mount Failed");
@@ -65,10 +106,27 @@ void hth_esp_sdcard::begin()
     return;
   }
 #endif
+  SD_FS_PRINTFLN("Card Mount Succeed");
   _sdCardStatus = true;
 
 #ifdef ESP32
-  uint8_t cardType = SD_FS_SYSTEM.cardType();
+  cardSize = SD_FS_SYSTEM.cardSize() / (1024ULL * 1024ULL);
+  usedBytes = SD_FS_SYSTEM.usedBytes() / (1024ULL * 1024ULL);
+  cardType = SD_FS_SYSTEM.cardType();  
+#elif defined(ESP8266)
+#if(HTH_SFDS_HANDLE)
+  FSInfo64 fs_info;
+  SD_FS_SYSTEM.info64(fs_info);
+  cardSize = fs_info.totalBytes / (1024ULL * 1024ULL);
+  usedBytes = fs_info.usedBytes / (1024ULL * 1024ULL);
+  cardType = SD_FS_SYSTEM.type();
+#else
+  cardSize = SD.size64() / (1024ULL * 1024ULL);
+  usedBytes = 0x40000000ULL / (1024ULL * 1024ULL); // add for fun
+  cardType = SD.type();
+#endif
+#endif
+
   SD_FS_PRINTFLN("cardType = %u", cardType);
   if (cardType == CARD_NONE)
   {
@@ -93,17 +151,9 @@ void hth_esp_sdcard::begin()
   {
     SD_FS_PRINTFLN("UNKNOWN");
   }
-  uint64_t cardSize = SD_FS_SYSTEM.cardSize() / (1024 * 1024);
-#elif defined(ESP8266)
-  uint8_t cardType = SD.type();
-  SD_FS_PRINTFLN("cardType = %u", cardType);
 
-  // FSInfo64 fs_info;
-  // SD_FS_SYSTEM.info64(fs_info);
-  // uint64_t cardSize = fs_info.totalBytes / (1024 * 1024);
-  uint64_t cardSize = SD.size64() / (1024 * 1024);
-#endif
   SD_FS_PRINTF("SD_FS_SYSTEM Card Size: %lluMB\r\n", cardSize);
+  SD_FS_PRINTF("SD_FS_SYSTEM Card Space: %lluMB\r\n", usedBytes);
 
 #if (0)
   HTH_fsHandle.createDir(SD_FS_SYSTEM, "/mydir");
@@ -117,8 +167,6 @@ void hth_esp_sdcard::begin()
   HTH_fsHandle.renameFile(SD_FS_SYSTEM, "/hello.txt", "/foo.txt");
   HTH_fsHandle.readFile(SD_FS_SYSTEM, "/foo.txt");
   HTH_fsHandle.testFileIO(SD_FS_SYSTEM, "/test.txt");
-  SD_FS_PRINTFLN("Total space: %lluMB\n", SD_FS_SYSTEM.totalBytes() / (1024 * 1024));
-  SD_FS_PRINTFLN("Used space: %lluMB\n", SD_FS_SYSTEM.usedBytes() / (1024 * 1024));
 #endif
 }
 

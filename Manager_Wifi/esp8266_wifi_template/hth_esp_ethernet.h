@@ -75,14 +75,17 @@ private:
    // spi_ethernet ETH;
 #endif
    bool _status;
-
+#ifdef ESP8266
+   bool _connected;
+#endif
 public:
    hth_esp_ethernet(/* args */);
    ~hth_esp_ethernet();
    bool start();
-   void enable(void);
-   void disable(void);
-   bool isEnable(void);
+   void enable();
+   void disable();
+   bool isEnable();
+   void loop();
 };
 
 extern hth_esp_ethernet HTH_ethernet;

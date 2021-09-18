@@ -129,11 +129,17 @@ public:
   void end() {
     delete _server;
     delete _server80;
-    delete _spiffsEditor;
+    if (_spiffsEditor)
+    {
+      delete _spiffsEditor;
+    }
     delete _wsHandler;
     delete _pCallbacks;
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-    delete _sdCardEditor;
+    if (_sdCardEditor)
+    {
+      delete _sdCardEditor;
+    }
 #endif
   }
 };

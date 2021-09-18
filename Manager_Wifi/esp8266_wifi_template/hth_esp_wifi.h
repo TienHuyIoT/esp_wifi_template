@@ -41,6 +41,7 @@ private:
 #endif
 
 #if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)
+    static uint32_t _otaArduinoPercent;
     void onArduinoOTA();  // Arduino OTA
 #endif
 

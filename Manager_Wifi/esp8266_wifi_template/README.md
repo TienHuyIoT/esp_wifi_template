@@ -40,6 +40,7 @@ ESP32 and ESP8266 wifi template Project
 
 **Request to download file from sd card (method GET)**
   - IP/edit_sdfs?download=/file.txt
+  - IP/edit_sdfs?download=/file.txt&filename=newName
 
 **Request to edit file from sd card (method GET)**
   - IP/edit_sdfs?edit=/file.txt
@@ -49,6 +50,7 @@ ESP32 and ESP8266 wifi template Project
 
 **Request to download file from spiffs/LittleFS (method GET)**
   - IP/edit?download=/file.txt
+  - IP/edit?download=/file.txt&filename=newName
 
 **Request to edit file from spiffs/LittleFS (method GET)**
   - IP/edit?edit=/file.txt

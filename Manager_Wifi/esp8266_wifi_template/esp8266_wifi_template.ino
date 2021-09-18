@@ -47,6 +47,9 @@ void setup()
 #endif
 #endif
 
+    // Init params form eeprom memory
+    HTH_espEEPROM.begin();
+
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 #if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1)
     /* Init SPI first */
@@ -61,9 +64,6 @@ void setup()
 #endif
 #endif
 #endif
-
-    // Init params form eeprom memory
-    HTH_espEEPROM.begin();
 
 #ifdef ESP32
     /* Init nand memory file system */
@@ -103,4 +103,7 @@ void setup()
 void loop()
 {
     HTH_espWifi.loop();
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+    HTH_ethernet.loop();
+#endif
 }

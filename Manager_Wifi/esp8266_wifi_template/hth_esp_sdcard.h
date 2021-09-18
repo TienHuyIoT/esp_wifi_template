@@ -16,10 +16,45 @@
 #ifdef ESP32
 #define SD_FS_SYSTEM SD
 #elif defined(ESP8266)
+#include <SDFS.h>
+
+#define HTH_SFDS_HANDLE 1
+
+typedef enum {
+    CARD_NONE,
+    CARD_MMC,
+    CARD_SD,
+    CARD_SDHC,
+    CARD_UNKNOWN
+} sdcard_type_t;
+
+#if (HTH_SFDS_HANDLE)
+class hth_sdfs : public fs::FS
+{
+
+public:
+    hth_sdfs();
+    ~hth_sdfs();
+
+    uint8_t type();
+
+    /**
+     * SDFS::info64 geting is very slow by freeClusterCount()
+     * So we declared owner info64 function to improvement speed
+    */
+    bool info64(FSInfo64& info);
+private:
+};
+
+extern hth_sdfs HTH_sdfs;
+#define SD_FS_SYSTEM HTH_sdfs
+#else
 // using SDFS instead of SD for almost every case
 #define SD_FS_SYSTEM SDFS
-#endif
-#endif
+#endif // #if (0)
+
+#endif // defined(ESP8266)
+#endif // (SD_CARD_SYSTEM == 0)
 
 /*
 SD POWER
