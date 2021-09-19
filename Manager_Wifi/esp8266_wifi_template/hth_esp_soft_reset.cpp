@@ -1,5 +1,5 @@
 #include <Esp.h>
-#include "app_config.h"
+#include "hth_esp_config.h"
 #include "hth_esp_soft_reset.h"
 #include "hth_esp_sys_rtc.h"
 #include "hth_console_dbg.h"

@@ -1,10 +1,10 @@
 #include <ArduinoJson.h>
-#include "app_config.h"
+#include "hth_esp_config.h"
 #include "hth_esp_wifi.h"
-#include "AsyncEasyDDNS.h"
+#include "hth_AsyncEasyDDNS.h"
 #include "hth_esp_soft_reset.h"
 #include "hth_esp_sys_rtc.h"
-#include "hth_esp_sys_data.h"
+#include "hth_esp_sys_params.h"
 #include "hth_esp_eeprom.h"
 #include "hth_esp_sdcard.h"
 #include "hth_fs_handle.h"
@@ -41,32 +41,32 @@ float esp_internal_temp(void)
 void print_handlerequest(AsyncWebServerRequest *request, String &message);
 
 /* get */
-void sta_ap_info_get(AsyncWebServerRequest *request, requestHandler* client);
-void sta_network_get(AsyncWebServerRequest *request, requestHandler* client);
-void sta_setting_get(AsyncWebServerRequest *request, requestHandler* client);
-void ap_setting_get(AsyncWebServerRequest *request, requestHandler* client);
-void device_info_get(AsyncWebServerRequest *request, requestHandler* client);
-void time_setting_get(AsyncWebServerRequest *request, requestHandler* client);
-void fw_version_get(AsyncWebServerRequest *request, requestHandler* client);
-void restart_device_get(AsyncWebServerRequest *request, requestHandler* client);
-void heap_temperature_get(AsyncWebServerRequest *request, requestHandler* client);
-void activated_get(AsyncWebServerRequest *request, requestHandler* client);
-void format_sd_card_get(AsyncWebServerRequest *request, requestHandler* client);
-void ddns_client_get(AsyncWebServerRequest *request, requestHandler* client);
-void pass_common_get(AsyncWebServerRequest *request, requestHandler* client);
-void format_spiffs_get(AsyncWebServerRequest *request, requestHandler* client);
+void sta_ap_info_get(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void sta_network_get(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void sta_setting_get(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void ap_setting_get(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void device_info_get(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void time_setting_get(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void fw_version_get(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void restart_device_get(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void heap_temperature_get(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void activated_get(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void format_sd_card_get(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void ddns_client_get(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void pass_common_get(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void format_spiffs_get(AsyncWebServerRequest *request, hth_httpserver_url* client);
 
 /* Post */
-void sta_ap_info_post(AsyncWebServerRequest *request, requestHandler* client);
-void sta_network_post(AsyncWebServerRequest *request, requestHandler* client);
-void sta_setting_post(AsyncWebServerRequest *request, requestHandler* client);
-void ap_setting_post(AsyncWebServerRequest *request, requestHandler* client);
-void device_info_post(AsyncWebServerRequest *request, requestHandler* client);
-void auth_access_post(AsyncWebServerRequest *request, requestHandler* client);
-void time_setting_post(AsyncWebServerRequest *request, requestHandler* client);
-void ddns_client_post(AsyncWebServerRequest *request, requestHandler* client);
-void auth_user_access_post(AsyncWebServerRequest *request, requestHandler* client);
-void pass_common_post(AsyncWebServerRequest *request, requestHandler* client);
+void sta_ap_info_post(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void sta_network_post(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void sta_setting_post(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void ap_setting_post(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void device_info_post(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void auth_access_post(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void time_setting_post(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void ddns_client_post(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void auth_user_access_post(AsyncWebServerRequest *request, hth_httpserver_url* client);
+void pass_common_post(AsyncWebServerRequest *request, hth_httpserver_url* client);
 
 /* /get?param_wifi=[param] */
 server_get_handle_t client_get_handle[DATA_GET_HANDLE_NUM] = {
@@ -99,13 +99,13 @@ server_post_handle_t client_post_handle[DATA_POST_HANDLE_NUM] = {
 /*09*/{(char*)"pass_common", pass_common_post}
 };
 
-requestHandler::requestHandler(/* args */){}
-requestHandler::~requestHandler(){}
+hth_httpserver_url::hth_httpserver_url(/* args */){}
+hth_httpserver_url::~hth_httpserver_url(){}
 
 /**
  * Handler called after once request with method GET.
  */
-void requestHandler::onHttpGet(AsyncWebServerRequest* request)
+void hth_httpserver_url::onHttpGet(AsyncWebServerRequest* request)
 {
     onHttpGetAuth(request);
 }
@@ -113,7 +113,7 @@ void requestHandler::onHttpGet(AsyncWebServerRequest* request)
 /**
  * Handler called after once request with method GET and authenticated.
  */
-void requestHandler::onHttpGetAuth(AsyncWebServerRequest* request)
+void hth_httpserver_url::onHttpGetAuth(AsyncWebServerRequest* request)
 {
     bool isHandler = false;
     /* param wifi get 
@@ -148,7 +148,7 @@ void requestHandler::onHttpGetAuth(AsyncWebServerRequest* request)
 /**
  * Handler called after once request with method POST and authenticated.
  */
-void requestHandler::onHttpPostAuth(AsyncWebServerRequest* request)
+void hth_httpserver_url::onHttpPostAuth(AsyncWebServerRequest* request)
 {
     bool isHandler = false;
     /* param wifi post 
@@ -181,7 +181,7 @@ void requestHandler::onHttpPostAuth(AsyncWebServerRequest* request)
 /*---------------------------------------------------------------------*
  *----------------------------data get process-------------------------*
  *---------------------------------------------------------------------*/
-void sta_ap_info_get(AsyncWebServerRequest *request, requestHandler* client)
+void sta_ap_info_get(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {
     IPAddress local_ip(0,0,0,0);
     String json_network;
@@ -259,7 +259,7 @@ void sta_ap_info_get(AsyncWebServerRequest *request, requestHandler* client)
 }
 
 /* Get json sta_network */
-void sta_network_get(AsyncWebServerRequest *request, requestHandler* client)
+void sta_network_get(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {
     String json_network = "{\"status\":\"ok\",\"mgs\":\"WiFi is scanning ...\"}";
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
@@ -284,7 +284,7 @@ void sta_network_get(AsyncWebServerRequest *request, requestHandler* client)
 #endif
 }
 
-void sta_setting_get(AsyncWebServerRequest *request, requestHandler* client) 
+void sta_setting_get(AsyncWebServerRequest *request, hth_httpserver_url* client) 
 {
     IPAddress local_ip(0,0,0,0);
     IPAddress gateway_ip(0,0,0,0);
@@ -373,7 +373,7 @@ void sta_setting_get(AsyncWebServerRequest *request, requestHandler* client)
     request->send(200, "text/json", json_network);
 }
 
-void ap_setting_get(AsyncWebServerRequest *request, requestHandler* client) 
+void ap_setting_get(AsyncWebServerRequest *request, hth_httpserver_url* client) 
 {
     String json_network;
     
@@ -390,7 +390,7 @@ void ap_setting_get(AsyncWebServerRequest *request, requestHandler* client)
     request->send(200, "text/json", json_network);
 }
 
-void device_info_get(AsyncWebServerRequest *request, requestHandler* client)
+void device_info_get(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {
     String json_network;
     DynamicJsonBuffer djbco;
@@ -402,7 +402,7 @@ void device_info_get(AsyncWebServerRequest *request, requestHandler* client)
     request->send(200, "text/json", json_network);
 }
 
-void time_setting_get(AsyncWebServerRequest *request, requestHandler* client)
+void time_setting_get(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {    
     String json_network;
     rtc_time_t rtc;
@@ -432,7 +432,7 @@ void time_setting_get(AsyncWebServerRequest *request, requestHandler* client)
 }
 
 /* /get?param_wifi=fw_version */
-void fw_version_get(AsyncWebServerRequest *request, requestHandler* client)
+void fw_version_get(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {
     char buf[100];
     const char * fwBuild = __DATE__ " " __TIME__ " GMT";
@@ -442,14 +442,14 @@ void fw_version_get(AsyncWebServerRequest *request, requestHandler* client)
 }
 
 /* /get?param_wifi=restart */
-void restart_device_get(AsyncWebServerRequest *request, requestHandler* client)
+void restart_device_get(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {
     request->send(200, "text/json", "Reset OK");
     HTH_softReset.enable(100);
 }
 
 /* /get?param_wifi=heap_temperature */
-void heap_temperature_get(AsyncWebServerRequest *request, requestHandler* client)
+void heap_temperature_get(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {
     String json = "{";
     json += "\"heap\":" + String(ESP.getFreeHeap());
@@ -465,7 +465,7 @@ void heap_temperature_get(AsyncWebServerRequest *request, requestHandler* client
  * [X] = 1: Active
  * [X] > 1: Read status
  */
-void activated_get(AsyncWebServerRequest *request, requestHandler* client)
+void activated_get(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {    
     if (request->argName(1) == "cmd")
     {
@@ -486,9 +486,9 @@ void activated_get(AsyncWebServerRequest *request, requestHandler* client)
     }    
 }
 
-void format_sd_card_get(AsyncWebServerRequest *request, requestHandler* client)
+void format_sd_card_get(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {
-    if (request->argName(1) == "pass" && WFDataFile.passConfirmIsOK(request->arg(1), wifi_data_file::CONFIRM_COMMON))
+    if (request->argName(1) == "pass" && WFDataFile.passConfirmIsOK(request->arg(1), hth_esp_sys_params::CONFIRM_COMMON))
     {
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)    
         // if these takes more time, we should make an event format bind to run in loop
@@ -509,9 +509,9 @@ void format_sd_card_get(AsyncWebServerRequest *request, requestHandler* client)
     } 
 }
 
-void format_spiffs_get(AsyncWebServerRequest *request, requestHandler* client)
+void format_spiffs_get(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {
-    if (request->argName(1) == "pass" && WFDataFile.passConfirmIsOK(request->arg(1), wifi_data_file::CONFIRM_COMMON))
+    if (request->argName(1) == "pass" && WFDataFile.passConfirmIsOK(request->arg(1), hth_esp_sys_params::CONFIRM_COMMON))
     {
         // if these takes more time, we should make an event format bind to run in loop
         NAND_FS_SYSTEM.format();
@@ -523,7 +523,7 @@ void format_spiffs_get(AsyncWebServerRequest *request, requestHandler* client)
     } 
 }
 
-void ddns_client_get(AsyncWebServerRequest *request, requestHandler* client)
+void ddns_client_get(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {
     String json_resp;
     
@@ -535,7 +535,7 @@ void ddns_client_get(AsyncWebServerRequest *request, requestHandler* client)
     root["pass"].set(WFDataFile.passDDNS());
     root["sync_time"].set(WFDataFile.syncTimeDDNS());
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)    
-    root["ip_ddns"].set(HTH_espWifi.ddnsClient->ddnsip.toString());
+    root["ip_ddns"].set(HTH_espWifi.ddnsClient->ddnsIP.toString());
 #else
     root["ip_ddns"].set("Disable");
 #endif
@@ -545,10 +545,10 @@ void ddns_client_get(AsyncWebServerRequest *request, requestHandler* client)
     request->send(200, "text/json", json_resp);
 }
 
-void pass_common_get(AsyncWebServerRequest *request, requestHandler* client)
+void pass_common_get(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {
     if (request->argName(1) != "Pass" 
-    || !WFDataFile.passConfirmIsOK(request->arg(1), wifi_data_file::CONFIRM_COMMON))
+    || !WFDataFile.passConfirmIsOK(request->arg(1), hth_esp_sys_params::CONFIRM_COMMON))
     {
         request->send(200, "text/json", "{\"St\":\"Error\"}");
     }
@@ -561,7 +561,7 @@ void pass_common_get(AsyncWebServerRequest *request, requestHandler* client)
 /*---------------------------------------------------------------------*
  *----------------------------data post process------------------------*
  *---------------------------------------------------------------------*/
-void sta_ap_info_post(AsyncWebServerRequest *request, requestHandler* client)
+void sta_ap_info_post(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {
 }
 
@@ -572,7 +572,7 @@ void sta_ap_info_post(AsyncWebServerRequest *request, requestHandler* client)
 "access_code": "1234"
 }
 */
-void sta_network_post(AsyncWebServerRequest *request, requestHandler* client) 
+void sta_network_post(AsyncWebServerRequest *request, hth_httpserver_url* client) 
 {
     AsyncWebParameter* p = request->getParam(0);
 
@@ -584,7 +584,7 @@ void sta_network_post(AsyncWebServerRequest *request, requestHandler* client)
         return;
     }
 
-    if(WFDataFile.passConfirmIsOK(root["access_code"].as<String>(), wifi_data_file::CONFIRM_COMMON))
+    if(WFDataFile.passConfirmIsOK(root["access_code"].as<String>(), hth_esp_sys_params::CONFIRM_COMMON))
     {
         request->send(200, "text/json", "Wifi Setting Succeed");
 
@@ -604,7 +604,7 @@ void sta_network_post(AsyncWebServerRequest *request, requestHandler* client)
     }
 }
 
-void sta_setting_post(AsyncWebServerRequest *request, requestHandler* client)
+void sta_setting_post(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {
     AsyncWebParameter* p = request->getParam(0);  
 
@@ -616,7 +616,7 @@ void sta_setting_post(AsyncWebServerRequest *request, requestHandler* client)
         return;
     }
 
-    if(WFDataFile.passConfirmIsOK(root["access_code"].as<String>(), wifi_data_file::CONFIRM_COMMON))
+    if(WFDataFile.passConfirmIsOK(root["access_code"].as<String>(), hth_esp_sys_params::CONFIRM_COMMON))
     {
         request->send(200, "text/json", "Wifi Advance Setting Succeed");
 
@@ -644,7 +644,7 @@ void sta_setting_post(AsyncWebServerRequest *request, requestHandler* client)
     }
 }
 
-void ap_setting_post(AsyncWebServerRequest *request, requestHandler* client) 
+void ap_setting_post(AsyncWebServerRequest *request, hth_httpserver_url* client) 
 {
     AsyncWebParameter* p = request->getParam(0);
 
@@ -656,7 +656,7 @@ void ap_setting_post(AsyncWebServerRequest *request, requestHandler* client)
         return;
     }
 
-    if(WFDataFile.passConfirmIsOK(root["access_code"].as<String>(), wifi_data_file::CONFIRM_COMMON))
+    if(WFDataFile.passConfirmIsOK(root["access_code"].as<String>(), hth_esp_sys_params::CONFIRM_COMMON))
     {
         request->send(200, "text/json", "Wifi Advance Setting Succeed");
 
@@ -678,7 +678,7 @@ void ap_setting_post(AsyncWebServerRequest *request, requestHandler* client)
     }
 }
 
-void device_info_post(AsyncWebServerRequest *request, requestHandler* client)
+void device_info_post(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {
     AsyncWebParameter* p = request->getParam(0);
 
@@ -690,7 +690,7 @@ void device_info_post(AsyncWebServerRequest *request, requestHandler* client)
         return;
     }
 
-    if(WFDataFile.passConfirmIsOK(root["access_code"].as<String>(), wifi_data_file::CONFIRM_COMMON))
+    if(WFDataFile.passConfirmIsOK(root["access_code"].as<String>(), hth_esp_sys_params::CONFIRM_COMMON))
     {
         request->send(200, "text/json", "Wifi Advance Setting Succeed");
         WFDataFile.nameDeviceSet(root["name"].as<String>());
@@ -707,7 +707,7 @@ void device_info_post(AsyncWebServerRequest *request, requestHandler* client)
     }
 }
 
-void auth_access_post(AsyncWebServerRequest *request, requestHandler* client)
+void auth_access_post(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {
     AsyncWebParameter* p = request->getParam(0);
 
@@ -719,7 +719,7 @@ void auth_access_post(AsyncWebServerRequest *request, requestHandler* client)
         return;
     }
 
-    if(WFDataFile.passConfirmIsOK(root["access_code"].as<String>(), wifi_data_file::CONFIRM_COMMON))
+    if(WFDataFile.passConfirmIsOK(root["access_code"].as<String>(), hth_esp_sys_params::CONFIRM_COMMON))
     {
         if (root["old_pass"] == WFDataFile.authAdminPass())
         {
@@ -744,11 +744,11 @@ void auth_access_post(AsyncWebServerRequest *request, requestHandler* client)
     }
 }
 
-void time_setting_post(AsyncWebServerRequest *request, requestHandler* client)
+void time_setting_post(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {    
     AsyncWebParameter* p = request->getParam(0);
     const char *rtc_str = p->value().c_str();
-    if (HTH_sysTime.GMTStringUpdate(rtc_str, flatform_rtc::RTC_WEB_UPDATE))
+    if (HTH_sysTime.GMTStringUpdate(rtc_str, hth_esp_sys_rtc::RTC_WEB_UPDATE))
     {
         request->send(200, "text/json", "Time Setting Succeed");
     }
@@ -758,7 +758,7 @@ void time_setting_post(AsyncWebServerRequest *request, requestHandler* client)
     }   
 }
 
-void ddns_client_post(AsyncWebServerRequest *request, requestHandler* client) 
+void ddns_client_post(AsyncWebServerRequest *request, hth_httpserver_url* client) 
 {
     AsyncWebParameter* p = request->getParam(0);
 
@@ -770,7 +770,7 @@ void ddns_client_post(AsyncWebServerRequest *request, requestHandler* client)
         return;
     }
 
-    if(WFDataFile.passConfirmIsOK(root["access_code"].as<String>(), wifi_data_file::CONFIRM_COMMON))
+    if(WFDataFile.passConfirmIsOK(root["access_code"].as<String>(), hth_esp_sys_params::CONFIRM_COMMON))
     {
         request->send(200, "text/json", "DDNS Setting Succeed");
 
@@ -792,7 +792,7 @@ void ddns_client_post(AsyncWebServerRequest *request, requestHandler* client)
     }
 }
 
-void auth_user_access_post(AsyncWebServerRequest *request, requestHandler* client)
+void auth_user_access_post(AsyncWebServerRequest *request, hth_httpserver_url* client)
 { 
     AsyncWebParameter* p = request->getParam(0);
 
@@ -804,7 +804,7 @@ void auth_user_access_post(AsyncWebServerRequest *request, requestHandler* clien
         return;
     }
 
-    if(WFDataFile.passConfirmIsOK(root["access_code"].as<String>(), wifi_data_file::CONFIRM_COMMON))
+    if(WFDataFile.passConfirmIsOK(root["access_code"].as<String>(), hth_esp_sys_params::CONFIRM_COMMON))
     {
         if (root["old_pass"] == WFDataFile.authUserPass())
         {
@@ -829,7 +829,7 @@ void auth_user_access_post(AsyncWebServerRequest *request, requestHandler* clien
     }
 }
 
-void pass_common_post(AsyncWebServerRequest *request, requestHandler* client)
+void pass_common_post(AsyncWebServerRequest *request, hth_httpserver_url* client)
 {
     AsyncWebParameter* p = request->getParam(0);
 
@@ -841,10 +841,10 @@ void pass_common_post(AsyncWebServerRequest *request, requestHandler* client)
         return;
     }
 
-    if(WFDataFile.passConfirmIsOK(root["old_pass"].as<String>(), wifi_data_file::CONFIRM_COMMON))
+    if(WFDataFile.passConfirmIsOK(root["old_pass"].as<String>(), hth_esp_sys_params::CONFIRM_COMMON))
     {
         request->send(200, "text/json", "Setting Password Succeed");   
-        WFDataFile.passConfirmSet(wifi_data_file::CONFIRM_COMMON, root["new_pass"].as<String>().toInt());
+        WFDataFile.passConfirmSet(hth_esp_sys_params::CONFIRM_COMMON, root["new_pass"].as<String>().toInt());
         WFDataFile.commitToFS();
     }
     else

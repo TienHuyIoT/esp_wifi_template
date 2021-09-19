@@ -1,4 +1,4 @@
-#include "app_config.h"
+#include "hth_esp_config.h"
 #include "hth_fs_handle.h"
 #include "hth_console_dbg.h"
 #include "hth_esp_sdcard.h"
@@ -28,6 +28,13 @@ hth_sdfs::hth_sdfs()
 }
 
 hth_sdfs::~hth_sdfs(){}
+
+boolean hth_sdfs::begin(uint8_t csPin, uint32_t cfg) 
+{
+  sdfs::SDFSImpl* sd = static_cast<sdfs::SDFSImpl*>(getImpl().get());
+  sd->setConfig(SDFSConfig(csPin, cfg));
+  return (boolean)sd->begin();
+}
 
 uint8_t hth_sdfs::type() {
   if (!_impl) {
@@ -97,8 +104,7 @@ void hth_esp_sdcard::begin()
   // https://github.com/espressif/esp-idf/issues/1008
   if (!SD_FS_SYSTEM.begin(SD_NSS_PIN, spi, 80E6))
 #elif defined(ESP8266)
-  SD_FS_SYSTEM.setConfig(SDFSConfig(SD_NSS_PIN, SPI_FULL_SPEED));
-  if (!SD_FS_SYSTEM.begin())
+  if (!SD_FS_SYSTEM.begin(SD_NSS_PIN, SPI_FULL_SPEED))
 #endif
   {
     SD_FS_PRINTFLN("Card Mount Failed");

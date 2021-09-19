@@ -3,7 +3,7 @@
 #include <sys/time.h> // struct timeval
 #endif
 #include <ArduinoJson.h>
-#include "app_config.h"
+#include "hth_esp_config.h"
 #include "hth_console_dbg.h"
 #include "hth_esp_sys_rtc.h"
 
@@ -40,17 +40,17 @@ bool getLocalTime(struct tm *info, uint32_t ms)
 }
 #endif
 
-flatform_rtc::flatform_rtc(/* args */)
+hth_esp_sys_rtc::hth_esp_sys_rtc(/* args */)
     : _rtcFile(new rtc_data_file(NAND_FS_SYSTEM))
 {
     _rtcSource = level_update_t::RTC_NON_UPDATE;
 }
 
-flatform_rtc::~flatform_rtc()
+hth_esp_sys_rtc::~hth_esp_sys_rtc()
 {
 }
 
-void flatform_rtc::begin(void)
+void hth_esp_sys_rtc::begin(void)
 {
     struct tm tmStruct;
     rtc_time_t rtc;
@@ -88,7 +88,7 @@ void flatform_rtc::begin(void)
     }
 }
 
-void flatform_rtc::saveToFS()
+void hth_esp_sys_rtc::saveToFS()
 {
     rtc_time_t rtc;
     if (_rtcSource > level_update_t::RTC_NON_UPDATE)
@@ -99,7 +99,7 @@ void flatform_rtc::saveToFS()
     }
 }
 
-void flatform_rtc::setSourceUpdate(level_update_t level)
+void hth_esp_sys_rtc::setSourceUpdate(level_update_t level)
 {
     RTC_TAG_CONSOLE("Update the level: %s", printSourceUpdate(level));
     if (level >= _rtcSource)
@@ -113,7 +113,7 @@ void flatform_rtc::setSourceUpdate(level_update_t level)
     }
 }
 
-void flatform_rtc::setTime(rtc_time_t *rtc)
+void hth_esp_sys_rtc::setTime(rtc_time_t *rtc)
 {
     rtc_time_t g_rtc;
     getTimeDate(&g_rtc);
@@ -123,7 +123,7 @@ void flatform_rtc::setTime(rtc_time_t *rtc)
     setTimeDate(&g_rtc);
 }
 
-void flatform_rtc::setDate(rtc_time_t *rtc)
+void hth_esp_sys_rtc::setDate(rtc_time_t *rtc)
 {
     rtc_time_t g_rtc;
     getTimeDate(&g_rtc);
@@ -133,7 +133,7 @@ void flatform_rtc::setDate(rtc_time_t *rtc)
     setTimeDate(&g_rtc);
 }
 
-void flatform_rtc::setTimeDate(rtc_time_t *rtc)
+void hth_esp_sys_rtc::setTimeDate(rtc_time_t *rtc)
 {
     struct timeval t_val;
     time_t t_now = 0;
@@ -143,7 +143,7 @@ void flatform_rtc::setTimeDate(rtc_time_t *rtc)
 }
 
 /* Convert t_now to rtc */
-rtc_time_t flatform_rtc::now2Time(time_t t_now)
+rtc_time_t hth_esp_sys_rtc::now2Time(time_t t_now)
 {
     struct tm desired_tm;
     rtc_time_t rtc;
@@ -159,7 +159,7 @@ rtc_time_t flatform_rtc::now2Time(time_t t_now)
 }
 
 /* Convert rtc to now */
-time_t flatform_rtc::time2Now(rtc_time_t *rtc)
+time_t hth_esp_sys_rtc::time2Now(rtc_time_t *rtc)
 {
     struct tm desired_tm;
     time_t t_now = 0;
@@ -175,12 +175,12 @@ time_t flatform_rtc::time2Now(rtc_time_t *rtc)
     return t_now;
 }
 
-char *flatform_rtc::printTimeFromNow(time_t t_now)
+char *hth_esp_sys_rtc::printTimeFromNow(time_t t_now)
 {
     return ctime(&t_now);
 }
 
-time_t flatform_rtc::nowCurrent()
+time_t hth_esp_sys_rtc::nowCurrent()
 {
     rtc_time_t rtc;
     time_t t_now = 0;
@@ -193,7 +193,7 @@ time_t flatform_rtc::nowCurrent()
     return t_now;
 }
 
-bool flatform_rtc::getTimeDate(rtc_time_t *rtc)
+bool hth_esp_sys_rtc::getTimeDate(rtc_time_t *rtc)
 {
     struct tm tmStruct;
     if (getLocalTime(&tmStruct, 1))
@@ -218,21 +218,21 @@ bool flatform_rtc::getTimeDate(rtc_time_t *rtc)
 }
 
 /** 15:22:13 is formated with numerical value 152213*/
-uint32_t flatform_rtc::hhmmssFormat(rtc_time_t *rtc)
+uint32_t hth_esp_sys_rtc::hhmmssFormat(rtc_time_t *rtc)
 {
     uint32_t t = rtc->hour * 10000 + rtc->min * 100 + rtc->sec;
     return t;
 }
 
 /** 15/03/2021 is formated with numerical value 150321*/
-uint32_t flatform_rtc::ddmmyyFormat(rtc_time_t *rtc)
+uint32_t hth_esp_sys_rtc::ddmmyyFormat(rtc_time_t *rtc)
 {
     uint32_t d = rtc->mday * 10000 + rtc->mon * 100 + rtc->year % 100;
     return d;
 }
 
 /* "Thu Jan 25 2018 19:39:48 GMT+0700 (SE Asia Standard Time)" */
-bool flatform_rtc::GMTStringUpdate(const char *rtc_web, level_update_t level)
+bool hth_esp_sys_rtc::GMTStringUpdate(const char *rtc_web, level_update_t level)
 {
     rtc_time_t rtc = {0};
 
@@ -367,4 +367,4 @@ void rtc_data_file::remove(void)
     }
 }
 
-flatform_rtc HTH_sysTime;
+hth_esp_sys_rtc HTH_sysTime;

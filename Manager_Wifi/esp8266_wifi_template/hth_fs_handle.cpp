@@ -1,7 +1,7 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include <FS.h>
-#include "app_config.h"
+#include "hth_esp_config.h"
 #include "hth_console_dbg.h"
 #include "hth_fs_handle.h"
 #if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1)

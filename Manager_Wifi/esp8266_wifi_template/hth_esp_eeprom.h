@@ -7,7 +7,7 @@
 #define EEPROM_DEVICE_INACTIVE   0
 #define EEPROM_DEVICE_ACTIVE     1
 
-class eeprom_data
+class hth_eeprom_data
 {
     typedef enum : uint8_t {
         ACTIVE_READ_CM = 0,
@@ -42,8 +42,8 @@ private:
     void activePerform(active_cmd_t Cmd);
 
 public:
-    eeprom_data(/* args */);
-    ~eeprom_data();
+    hth_eeprom_data(/* args */);
+    ~hth_eeprom_data();
 
     uint8_t isDeviceActivated();
     void deviceActive();
@@ -51,6 +51,6 @@ public:
     void begin();
 };
 
-extern eeprom_data HTH_espEEPROM;
+extern hth_eeprom_data HTH_espEEPROM;
 
 #endif /* !_EEPROM_DATA_H */

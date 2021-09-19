@@ -920,7 +920,7 @@ static bool isExcluded(fs::FS &_fs, const char *filename) {
 
 // WEB HANDLER IMPLEMENTATION
 
-FSEditor::FSEditor(const fs::FS& fs, const String& uri, const String& username, const String& password)
+hth_FSEditor::hth_FSEditor(const fs::FS& fs, const String& uri, const String& username, const String& password)
 :_fs(fs)
 ,_username(username)
 ,_password(password)
@@ -945,18 +945,18 @@ FSEditor::FSEditor(const fs::FS& fs, const String& uri, const String& username, 
   }
 }
 
-FSEditor& FSEditor::onProgress(THandlerFunction_Progress fn) {
+hth_FSEditor& hth_FSEditor::onProgress(THandlerFunction_Progress fn) {
     _progress_callback = fn;
     return *this;
 }
 
-FSEditor& FSEditor::onStatus(fs_status fn)
+hth_FSEditor& hth_FSEditor::onStatus(fs_status fn)
 {
   _status_callback = fn;
   return *this;
 }
 
-bool FSEditor::canHandle(AsyncWebServerRequest *request){ 
+bool hth_FSEditor::canHandle(AsyncWebServerRequest *request){ 
   if(request->url().equalsIgnoreCase(_uri)){
     String path = "";
 #if (defined FS_EDITOR_DEBUG) && (FS_EDITOR_DEBUG == 1)
@@ -1025,7 +1025,7 @@ bool FSEditor::canHandle(AsyncWebServerRequest *request){
 }
 
 
-void FSEditor::handleRequest(AsyncWebServerRequest *request){
+void hth_FSEditor::handleRequest(AsyncWebServerRequest *request){
   String path = "";
   if(_username.length() && _password.length())
   {
@@ -1186,7 +1186,7 @@ void FSEditor::handleRequest(AsyncWebServerRequest *request){
   }
 }
 
-void FSEditor::handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
+void hth_FSEditor::handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
   if(!index){
     if(!_username.length() || request->authenticate(_username.c_str(),_password.c_str())){
       _authenticated = true;    
@@ -1223,7 +1223,7 @@ void FSEditor::handleUpload(AsyncWebServerRequest *request, const String& filena
   }
 }
 
-void FSEditor::debug(AsyncWebServerRequest *request) {
+void hth_FSEditor::debug(AsyncWebServerRequest *request) {
   if(request->method() == HTTP_GET)
     FSEDITOR_DBG_PRINTF("GET");
   else if(request->method() == HTTP_POST)

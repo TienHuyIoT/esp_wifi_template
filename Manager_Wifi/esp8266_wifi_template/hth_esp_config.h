@@ -157,7 +157,7 @@ https://github.com/boblemaire/asyncHTTPrequest
 #endif
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)
-#include "AsyncEasyDDNS.h"
+#include "hth_AsyncEasyDDNS.h"
 #endif
 
 #if (defined MDNS_SERVICE_ENABLE) && (MDNS_SERVICE_ENABLE == 1)

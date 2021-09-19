@@ -1,8 +1,8 @@
-#include "app_config.h"
+#include "hth_esp_config.h"
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
 
-#include "hth_esp_sys_data.h"
+#include "hth_esp_sys_params.h"
 #include "hth_esp_ethernet.h"
 #include "hth_console_dbg.h"
 

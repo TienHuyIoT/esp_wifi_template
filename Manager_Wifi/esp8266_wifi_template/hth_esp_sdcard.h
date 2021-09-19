@@ -2,7 +2,7 @@
 #define _SD_CARD_
 
 #include <Arduino.h>
-#include "app_config.h"
+#include "hth_esp_config.h"
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 #if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1) && (defined ESP32)
@@ -28,6 +28,7 @@ typedef enum {
     CARD_UNKNOWN
 } sdcard_type_t;
 
+/* Make the same API with SD class */
 #if (HTH_SFDS_HANDLE)
 class hth_sdfs : public fs::FS
 {
@@ -36,6 +37,7 @@ public:
     hth_sdfs();
     ~hth_sdfs();
 
+    boolean begin(uint8_t csPin, uint32_t cfg = SPI_HALF_SPEED);
     uint8_t type();
 
     /**

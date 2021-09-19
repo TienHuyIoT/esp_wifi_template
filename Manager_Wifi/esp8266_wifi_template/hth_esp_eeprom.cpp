@@ -6,31 +6,31 @@
 #define EEPROM_DATA_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
 #define EEPROM_DATA_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[EEPROM] ", __VA_ARGS__)
 
-eeprom_data::eeprom_data(/* args */)
+hth_eeprom_data::hth_eeprom_data(/* args */)
 {
     memset(&_eepData, 0, sizeof(_eepData));
 }
 
-eeprom_data::~eeprom_data()
+hth_eeprom_data::~hth_eeprom_data()
 {
 }
 
-uint8_t eeprom_data::isDeviceActivated()
+uint8_t hth_eeprom_data::isDeviceActivated()
 {
     return ((uint8_t)DEVICE_ACTIVATED == _eepData.activeStatus);
 }
 
-void eeprom_data::deviceActive()
+void hth_eeprom_data::deviceActive()
 {
     activePerform(ACTIVE_ENABLE_CM);
 }
 
-void eeprom_data::deviceInactive()
+void hth_eeprom_data::deviceInactive()
 {
     activePerform(ACTIVE_DISABLE_CM);
 }
 
-void eeprom_data::begin()
+void hth_eeprom_data::begin()
 {
     uint64_t chipID;
 #ifdef ESP32
@@ -70,7 +70,7 @@ void eeprom_data::begin()
     }
 }
 
-void eeprom_data::activePerform(active_cmd_t Cmd)
+void hth_eeprom_data::activePerform(active_cmd_t Cmd)
 {
     uint64_t chipID;
 #ifdef ESP32
@@ -98,4 +98,4 @@ void eeprom_data::activePerform(active_cmd_t Cmd)
     EEPROM.end();
 }
 
-eeprom_data HTH_espEEPROM;
+hth_eeprom_data HTH_espEEPROM;

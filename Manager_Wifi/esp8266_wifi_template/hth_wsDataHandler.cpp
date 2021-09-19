@@ -1,20 +1,20 @@
 #include <ArduinoJson.h>
 #include <ESPAsyncWebServer.h>
-#include "hth_websocket_payload.h"
+#include "hth_wsDataHandler.h"
 #include "hth_esp_sys_rtc.h"
 #include "hth_console_dbg.h"
 
 #define APP_WS_DBG_PRINT(...) CONSOLE_TAG_LOGI("[APP_WS]", __VA_ARGS__)
 
-wsDataHandler::wsDataHandler(/* args */)
+hth_wsDataHandler::hth_wsDataHandler(/* args */)
 {
 }
 
-wsDataHandler::~wsDataHandler()
+hth_wsDataHandler::~hth_wsDataHandler()
 {
 }
 
-void wsDataHandler::onDataReceived(AsyncWebSocketClient *client, char *payload)
+void hth_wsDataHandler::onDataReceived(AsyncWebSocketClient *client, char *payload)
 {
   uint8_t page;
   uint8_t cmd;
@@ -45,7 +45,7 @@ void wsDataHandler::onDataReceived(AsyncWebSocketClient *client, char *payload)
     const char *s = root["date"];
     if (s != nullptr)
     {
-      HTH_sysTime.GMTStringUpdate(s, flatform_rtc::RTC_WEB_UPDATE);
+      HTH_sysTime.GMTStringUpdate(s, hth_esp_sys_rtc::RTC_WEB_UPDATE);
     }
   }
 }

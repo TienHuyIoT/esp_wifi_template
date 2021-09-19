@@ -11,10 +11,10 @@
 #include <Updater.h>
 #include "flash_hal.h"
 #endif
-#include "app_config.h"
+#include "hth_esp_config.h"
 #include "hth_esp_wifi.h"
 #include "hth_console_dbg.h"
-#include "hth_esp_sys_data.h"
+#include "hth_esp_sys_params.h"
 #include "hth_esp_soft_reset.h"
 #include "hth_esp_sdcard.h"
 #include "hth_webserver.h"
@@ -50,38 +50,38 @@ public:
   }
 };
 
-async_webserver::async_webserver(/* args */)
+hth_webserver::hth_webserver(/* args */)
 {
 }
 
-async_webserver::~async_webserver()
+hth_webserver::~hth_webserver()
 {
   this->end();
 }
 
-AsyncWebServer* async_webserver::_server = new AsyncWebServer(25123);
-AsyncWebServer* async_webserver::_server80 = new AsyncWebServer(80);
-async_websocket* async_webserver::_wsHandler = new async_websocket("/ws", "/events");
-serverCallbacks* async_webserver::_pCallbacks = &defaultCallbacks;
-asyncHttpHandler async_webserver::_httpGetAuthHandler = nullptr;
-asyncHttpHandler async_webserver::_httpGetHandler = nullptr;
-asyncHttpHandler async_webserver::_httpPostAuthHandler = nullptr;
-FSEditor* async_webserver::_spiffsEditor = nullptr;
+AsyncWebServer* hth_webserver::_server = new AsyncWebServer(25123);
+AsyncWebServer* hth_webserver::_server80 = new AsyncWebServer(80);
+hth_websocket* hth_webserver::_wsHandler = new hth_websocket("/ws", "/events");
+serverCallbacks* hth_webserver::_pCallbacks = &defaultCallbacks;
+asyncHttpHandler hth_webserver::_httpGetAuthHandler = nullptr;
+asyncHttpHandler hth_webserver::_httpGetHandler = nullptr;
+asyncHttpHandler hth_webserver::_httpPostAuthHandler = nullptr;
+hth_FSEditor* hth_webserver::_spiffsEditor = nullptr;
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-FSEditor* async_webserver::_sdCardEditor = nullptr;
+hth_FSEditor* hth_webserver::_sdCardEditor = nullptr;
 #endif
-String async_webserver::_adminAuthUser = String();
-String async_webserver::_adminAuthPass = String();
-String async_webserver::_userAuthUser = String();
-String async_webserver::_userAuthPass = String();
-int async_webserver::_flashUpdateType = 0;
+String hth_webserver::_adminAuthUser = String();
+String hth_webserver::_adminAuthPass = String();
+String hth_webserver::_userAuthUser = String();
+String hth_webserver::_userAuthPass = String();
+int hth_webserver::_flashUpdateType = 0;
 #ifdef ESP8266
-size_t async_webserver::_updateProgress = 0;
+size_t hth_webserver::_updateProgress = 0;
 #endif
-uint32_t async_webserver::_spiffsUploadPercent = 0;
-uint32_t async_webserver::_flashUpdatePercent = 0;
+uint32_t hth_webserver::_spiffsUploadPercent = 0;
+uint32_t hth_webserver::_flashUpdatePercent = 0;
 
-void async_webserver::setHandleCallbacks(serverCallbacks* pCallbacks)
+void hth_webserver::setHandleCallbacks(serverCallbacks* pCallbacks)
 {
   if (pCallbacks != nullptr)
   {
@@ -89,7 +89,7 @@ void async_webserver::setHandleCallbacks(serverCallbacks* pCallbacks)
   }
 }
 
-void async_webserver::fs_editor_status(AsyncWebServerRequest *request)
+void hth_webserver::fs_editor_status(AsyncWebServerRequest *request)
 {
 #ifdef ESP8266
   uint64_t totalBytes, usedBytes;
@@ -159,7 +159,7 @@ void async_webserver::fs_editor_status(AsyncWebServerRequest *request)
   output = String();
 }
 
-uint8_t async_webserver::authentication_level(AsyncWebServerRequest *request)
+uint8_t hth_webserver::authentication_level(AsyncWebServerRequest *request)
 {
   uint8_t level;
   if (request->authenticate("admin", "25123"))
@@ -183,7 +183,7 @@ uint8_t async_webserver::authentication_level(AsyncWebServerRequest *request)
   return level;
 }
 
-void async_webserver::updatePrintProgress(size_t prg, size_t sz)
+void hth_webserver::updatePrintProgress(size_t prg, size_t sz)
 {
   uint32_t per = prg * 100 / sz;
 #ifdef ESP32
@@ -202,8 +202,8 @@ void async_webserver::updatePrintProgress(size_t prg, size_t sz)
 }
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-uint32_t async_webserver::_sdUploadPercent = 0;
-void async_webserver::sdfsPrintProgress(size_t prg, size_t sz)
+uint32_t hth_webserver::_sdUploadPercent = 0;
+void hth_webserver::sdfsPrintProgress(size_t prg, size_t sz)
 {
   uint32_t per = prg * 100 / sz;
 #ifdef ESP32
@@ -222,7 +222,7 @@ void async_webserver::sdfsPrintProgress(size_t prg, size_t sz)
 }
 #endif
 
-void async_webserver::spiffsPrintProgress(size_t prg, size_t sz)
+void hth_webserver::spiffsPrintProgress(size_t prg, size_t sz)
 {
   uint32_t per = prg * 100 / sz;
 #ifdef ESP32
@@ -240,7 +240,7 @@ void async_webserver::spiffsPrintProgress(size_t prg, size_t sz)
   }
 }
 
-void async_webserver::syncSsidNetworkToEvents()
+void hth_webserver::syncSsidNetworkToEvents()
 {
 if(WiFi.scanComplete() == WIFI_SCAN_FAILED) {
 #ifdef ESP8266
@@ -263,7 +263,7 @@ if(WiFi.scanComplete() == WIFI_SCAN_FAILED) {
   }
 }
 
-void async_webserver::begin(void)
+void hth_webserver::begin(void)
 {
   _adminAuthUser = WFDataFile.authAdminUser();
   _adminAuthPass = WFDataFile.authAdminPass();
@@ -281,7 +281,7 @@ void async_webserver::begin(void)
       },
       WiFiEvent_t::m_ESP32_EVENT_SCAN_DONE);
 #elif defined(ESP8266)
-  _pCallbacks->onScanNetwork(std::bind(&async_webserver::syncSsidNetworkToEvents, this));
+  _pCallbacks->onScanNetwork(std::bind(&hth_webserver::syncSsidNetworkToEvents, this));
 #endif
   /* redirect port 80 to tcp port */
   if (WFDataFile.tcpPort() != 80)
@@ -289,12 +289,12 @@ void async_webserver::begin(void)
     _server80->addHandler(new RedirectUrlHandler());
   }
 
-  _wsHandler->setHandleCallbacks(new wsDataHandler());
+  _wsHandler->setHandleCallbacks(new hth_wsDataHandler());
   _wsHandler->begin();
   _server->addHandler(_wsHandler->_ws);
   _server->addHandler(_wsHandler->_events);
 
-  _spiffsEditor = new FSEditor(NAND_FS_SYSTEM, "/edit");
+  _spiffsEditor = new hth_FSEditor(NAND_FS_SYSTEM, "/edit");
   _spiffsEditor->onAuthenticate([](AsyncWebServerRequest *request)
                                 { return (authentication_level(request) != HTTP_AUTH_FAIL); });
   _spiffsEditor->onProgress(spiffsPrintProgress);
@@ -302,7 +302,7 @@ void async_webserver::begin(void)
   _server->addHandler(_spiffsEditor);
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-  _sdCardEditor = new FSEditor(SD_FS_SYSTEM, "/edit_sdfs");
+  _sdCardEditor = new hth_FSEditor(SD_FS_SYSTEM, "/edit_sdfs");
   _sdCardEditor->onAuthenticate([](AsyncWebServerRequest *request)
                             { return (authentication_level(request) != HTTP_AUTH_FAIL); });
   _sdCardEditor->onProgress(sdfsPrintProgress);
@@ -553,7 +553,7 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
   }
 }
 
-void async_webserver::loop()
+void hth_webserver::loop()
 {
 
 }

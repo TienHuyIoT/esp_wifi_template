@@ -4,8 +4,8 @@
 #include <Arduino.h>
 #include <Ticker.h>
 #include <DNSServer.h>
-#include "app_config.h"
-#include "AsyncEasyDDNS.h"
+#include "hth_esp_config.h"
+#include "hth_AsyncEasyDDNS.h"
 
 class hth_esp_sntp
 {
@@ -65,7 +65,7 @@ public:
     ~hth_esp_wifi();
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
-    static AsyncEasyDDNSClass* ddnsClient;
+    static hth_AsyncEasyDDNSClass* ddnsClient;
 #endif
 
     void begin(bool wifiON = true);

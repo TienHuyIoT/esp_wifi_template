@@ -22,9 +22,9 @@
 #define MYTZ TZ_Asia_Ho_Chi_Minh
 #endif
 
-#include "app_config.h"
+#include "hth_esp_config.h"
 #include "hth_console_dbg.h"
-#include "hth_esp_sys_data.h"
+#include "hth_esp_sys_params.h"
 #include "hth_esp_sys_rtc.h"
 #include "hth_esp_wifi.h"
 
@@ -52,7 +52,7 @@ static void sntp_sync_time_cb(bool from_sntp /* <= this parameter is optional */
     strftime(buf, 64, "%A, %B %d %Y %H:%M:%S", tm);
     SNTP_TAG_CONSOLE("Callback Time: %s", buf);
 
-    HTH_sysTime.setSourceUpdate(flatform_rtc::RTC_SNTP_UPDATE);
+    HTH_sysTime.setSourceUpdate(hth_esp_sys_rtc::RTC_SNTP_UPDATE);
 }
 
 hth_esp_sntp::hth_esp_sntp() {}
@@ -103,7 +103,7 @@ hth_esp_wifi::~hth_esp_wifi()
 }
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
-AsyncEasyDDNSClass* hth_esp_wifi::ddnsClient = nullptr;
+hth_AsyncEasyDDNSClass* hth_esp_wifi::ddnsClient = nullptr;
 #endif
 Ticker hth_esp_wifi::_reconnetTicker;
 
@@ -213,7 +213,7 @@ void hth_esp_wifi::onDDNSclient()
     return;
   }
   
-  ddnsClient = new AsyncEasyDDNSClass();
+  ddnsClient = new hth_AsyncEasyDDNSClass();
     /*
     List of supported DDNS providers:
     - "duckdns"
@@ -240,7 +240,7 @@ void hth_esp_wifi::onDDNSclient()
   ddnsClient->client(WFDataFile.domainDDNS(), WFDataFile.userDDNS(), WFDataFile.passDDNS());
 
   // Get Notified when your IP changes
-  ddnsClient->onUpdate([&](const char* oldIP, const char* newIP){
+  ddnsClient->onUpdateIP([&](const char* oldIP, const char* newIP){
     ESP_WIFI_TAG_CONSOLE("[DDNS] AsyncEasyDDNS - IP Change Detected: %s", newIP);
   });
 

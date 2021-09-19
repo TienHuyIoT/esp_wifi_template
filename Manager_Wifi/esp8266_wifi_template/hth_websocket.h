@@ -34,7 +34,7 @@ public:
     virtual void onDataReceived(AsyncWebSocketClient* client, char* data);
 };
 
-class async_websocket
+class hth_websocket
 {
 private:
     static Ticker* _ws_ticker;
@@ -53,8 +53,8 @@ private:
     String _wsUrl;
     String _eventUrl;
 public:
-    async_websocket(const String& ws, const String& event);
-    ~async_websocket();
+    hth_websocket(const String& ws, const String& event);
+    ~hth_websocket();
     static AsyncWebSocket* _ws;
     static AsyncEventSource* _events;
     void begin();

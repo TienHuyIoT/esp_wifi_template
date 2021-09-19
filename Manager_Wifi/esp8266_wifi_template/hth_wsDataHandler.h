@@ -35,13 +35,13 @@ const char *const page_card_user_list[] PROGMEM = {
     "PAGE_CMD_ASYCN_DATA"
 };
 
-class wsDataHandler : public wsCallbacks
+class hth_wsDataHandler : public wsCallbacks
 {
 private:
     void onDataReceived(AsyncWebSocketClient* client, char* data);
 public:
-    wsDataHandler(/* args */);
-    ~wsDataHandler();
+    hth_wsDataHandler(/* args */);
+    ~hth_wsDataHandler();
 };
 
 #endif

@@ -1,6 +1,6 @@
 #include <ArduinoJson.h>
-#include "app_config.h"
-#include "hth_esp_sys_data.h"
+#include "hth_esp_config.h"
+#include "hth_esp_sys_params.h"
 #include "hth_console_dbg.h"
 
 #define WIFI_FILE_PORT CONSOLE_PORT
@@ -67,21 +67,21 @@ const char wifi_data_default_json[] PROGMEM = R"=====(
 }
 )=====" ;
 
-wifi_data_file::wifi_data_file(fs::FS &fs)
+hth_esp_sys_params::hth_esp_sys_params(fs::FS &fs)
 :_fs(&fs)
 {
 }
 
-wifi_data_file::~wifi_data_file()
+hth_esp_sys_params::~hth_esp_sys_params()
 {
 }
 
-void wifi_data_file::begin()
+void hth_esp_sys_params::begin()
 {
     syncFromFileSystem();
 }
 
-void wifi_data_file::resetPassword()
+void hth_esp_sys_params::resetPassword()
 {
     strncpy(_file_prams.auth_admin.pass, (const char *)"admin", AUTH_LENGHT_MAX);
     strncpy(_file_prams.auth_user.pass, (const char *)"admin", AUTH_LENGHT_MAX);
@@ -92,17 +92,17 @@ void wifi_data_file::resetPassword()
     saveToFileSystem();
 }
 
-void wifi_data_file::resetDefault()
+void hth_esp_sys_params::resetDefault()
 {
     _fs->remove(WIFI_FILE_PATH);
 }
 
-bool wifi_data_file::passSupperAdminIsOK(const String &pass)
+bool hth_esp_sys_params::passSupperAdminIsOK(const String &pass)
 {
     return (pass == "25251325");
 }
 
-bool wifi_data_file::passConfirmIsOK(const String &pass, wifi_pass_confirm_t type)
+bool hth_esp_sys_params::passConfirmIsOK(const String &pass, wifi_pass_confirm_t type)
 {
     bool result = false;
     if(pass == String(_file_prams.confirm[type]) || passSupperAdminIsOK(pass))
@@ -112,7 +112,7 @@ bool wifi_data_file::passConfirmIsOK(const String &pass, wifi_pass_confirm_t typ
     return result;
 }
 
-void wifi_data_file::saveToFileSystem()
+void hth_esp_sys_params::saveToFileSystem()
 {
     File fs_handle;
     DynamicJsonBuffer djbco;
@@ -180,7 +180,7 @@ void wifi_data_file::saveToFileSystem()
     WIFI_DATA_TAG_CONSOLE("wifi json info updated"); 
 }
 
-void wifi_data_file::syncFromFileSystem()
+void hth_esp_sys_params::syncFromFileSystem()
 {
     File fs_handle;
 
@@ -285,4 +285,4 @@ void wifi_data_file::syncFromFileSystem()
     WIFI_DATA_TAG_CONSOLE("sync data succed!");
 }
 
-wifi_data_file WFDataFile(NAND_FS_SYSTEM);
+hth_esp_sys_params WFDataFile(NAND_FS_SYSTEM);

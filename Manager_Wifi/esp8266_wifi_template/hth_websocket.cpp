@@ -6,25 +6,25 @@
 
 static wsCallbacks defaultCallbacks; //null-object-pattern
 
-async_websocket::async_websocket(const String& ws, const String& event)
+hth_websocket::hth_websocket(const String& ws, const String& event)
 :_wsUrl(ws), _eventUrl(event)
 {
     memset(_ws_connection, 0, sizeof(_ws_connection));
 }
 
-async_websocket::~async_websocket()
+hth_websocket::~hth_websocket()
 {
     this->end();
 }
 
-Ticker* async_websocket::_ws_ticker = nullptr;
-AsyncWebSocket* async_websocket::_ws = nullptr;
-AsyncEventSource* async_websocket::_events = nullptr;
-wsCallbacks* async_websocket::_pCallbacks = nullptr;
-dataSocketHandler async_websocket::_dataHandler = nullptr;
-ws_connection_info_t async_websocket::_ws_connection[NUM_WS_CONNECTION_MAX] = {0};
+Ticker* hth_websocket::_ws_ticker = nullptr;
+AsyncWebSocket* hth_websocket::_ws = nullptr;
+AsyncEventSource* hth_websocket::_events = nullptr;
+wsCallbacks* hth_websocket::_pCallbacks = nullptr;
+dataSocketHandler hth_websocket::_dataHandler = nullptr;
+ws_connection_info_t hth_websocket::_ws_connection[NUM_WS_CONNECTION_MAX] = {0};
 
-void async_websocket::setHandleCallbacks(wsCallbacks* pCallbacks)
+void hth_websocket::setHandleCallbacks(wsCallbacks* pCallbacks)
 {
     if (pCallbacks != nullptr)
     {
@@ -36,14 +36,14 @@ void async_websocket::setHandleCallbacks(wsCallbacks* pCallbacks)
     }
 }
 
-void async_websocket::end()
+void hth_websocket::end()
 {
     delete _ws;
     delete _events;
     delete _ws_ticker;
 }
 
-void async_websocket::begin()
+void hth_websocket::begin()
 {
     _ws_ticker = new Ticker();
     _ws = new AsyncWebSocket(_wsUrl);
@@ -58,18 +58,18 @@ void async_websocket::begin()
 }
 
 /* send message to client */
-void async_websocket::sendTxt(uint8_t ws_index, char *payload)
+void hth_websocket::sendTxt(uint8_t ws_index, char *payload)
 {
     _ws->text(ws_index, payload);
 }
 
 /* send data to all connected clients */
-void async_websocket::sendBroadcastTxt(char *payload)
+void hth_websocket::sendBroadcastTxt(char *payload)
 {
     _ws->textAll(payload);
 }
 
-void async_websocket::intervalCleanUpClients(void)
+void hth_websocket::intervalCleanUpClients(void)
 {
     uint8_t ws_cnt;
 
@@ -85,12 +85,12 @@ void async_websocket::intervalCleanUpClients(void)
 }
 
 /* Init and register callback receive message */
-void async_websocket::onDataHandler(dataSocketHandler handler)
+void hth_websocket::onDataHandler(dataSocketHandler handler)
 {
     _dataHandler = handler;
 }
 
-void async_websocket::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
+void hth_websocket::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
 {
     if (type == WS_EVT_CONNECT)
     {
@@ -209,7 +209,7 @@ void async_websocket::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *cl
 }
 
 /* Disconnect */
-void async_websocket::disconnect(uint8_t ws_index)
+void hth_websocket::disconnect(uint8_t ws_index)
 {
     _ws->close(_ws_connection[ws_index].ws_num);
     _ws_connection[ws_index].status = ASYNC_WS_DISCONNECT;
@@ -219,7 +219,7 @@ void async_websocket::disconnect(uint8_t ws_index)
 }
 
 /* Add connection */
-void async_websocket::connectionEstablish(uint8_t ws_num)
+void hth_websocket::connectionEstablish(uint8_t ws_num)
 {
     for (uint8_t i = 0; i < NUM_WS_CONNECTION_MAX; ++i)
     {
@@ -235,7 +235,7 @@ void async_websocket::connectionEstablish(uint8_t ws_num)
 }
 
 /* Remove connection */
-void async_websocket::connectionRemove(uint8_t ws_num)
+void hth_websocket::connectionRemove(uint8_t ws_num)
 {
     for (uint8_t i = 0; i < NUM_WS_CONNECTION_MAX; ++i)
     {
@@ -253,7 +253,7 @@ void async_websocket::connectionRemove(uint8_t ws_num)
 /* Return the number socket free 
  * 0: There are not socket index to establish
  */
-uint8_t async_websocket::connectionAvailable(void)
+uint8_t hth_websocket::connectionAvailable(void)
 {
     uint8_t count = 0;
     for (uint8_t i = 0; i < NUM_WS_CONNECTION_MAX; ++i)
@@ -271,7 +271,7 @@ uint8_t async_websocket::connectionAvailable(void)
 /* Return the number socket is connected
  * 0: There are not socket index connected
  */
-uint8_t async_websocket::connectedNumber(void)
+uint8_t hth_websocket::connectedNumber(void)
 {
     uint8_t count = 0;
     for (uint8_t i = 0; i < NUM_WS_CONNECTION_MAX; ++i)
@@ -287,7 +287,7 @@ uint8_t async_websocket::connectedNumber(void)
 }
 
 /* Brief: return websocket index in array_list has timelive max */
-uint8_t async_websocket::connectionHasTimeLiveMax(void)
+uint8_t hth_websocket::connectionHasTimeLiveMax(void)
 {
     uint32_t tl_sub;
     uint32_t tl_max = 0;

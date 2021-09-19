@@ -28,36 +28,36 @@ Some Library references:
 #define ASYNC_EASYDDNS_DEBUG    1
 
 // Handler to notify user about new public IP
-typedef std::function<void(const char* old_ip, const char* new_ip)> AsyncDDNSUpdateHandler;
+typedef std::function<void(const char* oldIP, const char* newIP)> AsyncDDNSUpdateHandler;
 
-class AsyncEasyDDNSClass{
+class hth_AsyncEasyDDNSClass{
 public:
-  AsyncEasyDDNSClass();
-  asyncHTTPrequest request_get_ip;
-  asyncHTTPrequest request_post_ip;
-  IPAddress ddnsip;
+  hth_AsyncEasyDDNSClass();
+  IPAddress ddnsIP;
   void service(String ddns_service);
   void client(String ddns_domain, String ddns_username, String ddns_password = "");
   void update();  
 
   // Callback
-  void onUpdate(AsyncDDNSUpdateHandler handler) {
+  void onUpdateIP(AsyncDDNSUpdateHandler handler) {
     _ddnsUpdateFunc = handler;
   }
 
 private:
   AsyncDDNSUpdateHandler _ddnsUpdateFunc = nullptr;
-  String new_ip;
-  String old_ip;
-  String ddns_u;
-  String ddns_p;
-  String ddns_d;
-  String ddns_choice;
-  String base64Authorization;
-  void run_get_ip();
-  void run_post_ip();
-  void request_get_ip_cb(void* optParm, asyncHTTPrequest* request, int readyState);
-  void request_post_ip_cb(void* optParm, asyncHTTPrequest* request, int readyState);
+  asyncHTTPrequest _aHttpGetIP;
+  asyncHTTPrequest _aHttpPostIP;
+  String _newIP;
+  String _oldIP;
+  String _userName;
+  String _passWord;
+  String _domain;
+  String _serverDDNS;
+  String _base64Authorization;
+  void getIP();
+  void postIP();
+  void getIpCallback(void* optParm, asyncHTTPrequest* request, int readyState);
+  void postIpCallback(void* optParm, asyncHTTPrequest* request, int readyState);
 };
 
 #endif // _ASYNC_EASY_DDNS_H

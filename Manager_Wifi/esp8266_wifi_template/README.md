@@ -1,5 +1,5 @@
 ## ESP wifi template
-ESP32 and ESP8266 wifi template Project
+ESP32 and ESP8266 Arduino wifi template 
 
 ### Features
 **WIFI**
@@ -12,18 +12,24 @@ ESP32 and ESP8266 wifi template Project
   - OTA Arduino
   - SNTP
 
+**Ethernet IC supported**
+  - ENC28J60 for ESP8266
+  - W5100 for ESP8266
+  - w5500 for ESP8266
+  - LAN8720A for ESP32
+  - TLK110 for ESP32
+
 **File system handle**
   - SPIFFS
   - LittleFS
-  - SD card
+  - SD card with SPI or SDMMC(only ESP32) interface
 
-**WebServer**
-  - Async TCP
+**Async WebServer**
   - Websocket
   - Event Source
-  - Fs_editor
-  - Updater app
-  - Updater FS
+  - File system editor
+  - Updater application
+  - Updater file system
 
 ### Libraries
 - [ESPAsyncWebServer](https://github.com/TienHuyIoT/ESPAsyncWebServer/tree/feature/update_webserver_port) - C++
@@ -32,31 +38,40 @@ ESP32 and ESP8266 wifi template Project
 - [SyncEasyDDNS](https://github.com/ayushsharma82/EasyDDNS) - C++
 - [ArduinoJson](https://github.com/bblanchon/ArduinoJson/tree/5.x) - C++
 
+### HttpServer page
+| Link | Description |
+| ------ | ------ |
+| /wifi.htm | setting wifi access point and station |
+| /index.htm | Monitor some information system as Heap memory, temperature |
+| /edit | web editor internal file system |
+| /edit | web editor internal file system |
 
-### Usage API Fs editor
-**Web editor**
-  - IP/edit : editor internal file system
-  - IP/edit_sdfs : editor external file system
+### Http request API
+| Link | Description |
+| ------ | ------ |
+| /get?param_wifi=restart | Restart ESP |
+| /get?param_wifi=fw_version | Firmware version |
 
+### Usage API file system editor
 **Request to download file from sd card (method GET)**
-  - IP/edit_sdfs?download=/file.txt
-  - IP/edit_sdfs?download=/file.txt&filename=newName
+  - /edit_sdfs?download=/file.txt
+  - /edit_sdfs?download=/file.txt&filename=newName.txt
 
 **Request to edit file from sd card (method GET)**
-  - IP/edit_sdfs?edit=/file.txt
+  - /edit_sdfs?edit=/file.txt
 
 **Request to delect file from sd card (method DELETE)**
-  - IP/edit_sdfs , path=/file.txt
+  - /edit_sdfs , path=/file.txt
 
 **Request to download file from spiffs/LittleFS (method GET)**
-  - IP/edit?download=/file.txt
-  - IP/edit?download=/file.txt&filename=newName
+  - /edit?download=/file.txt
+  - /edit?download=/file.txt&filename=newName.txt
 
 **Request to edit file from spiffs/LittleFS (method GET)**
-  - IP/edit?edit=/file.txt
+  - /edit?edit=/file.txt
 
 **Request to delect file from spiffs/LittleFS (method DELETE)**
-  - IP/edit , path=/file.txt
+  - /edit , path=/file.txt
 
 ### Usage ESP8266 Sketch Data Upload
 **1. Download ESP8266LittleFS-2.6.0.zip**
@@ -94,91 +109,18 @@ ESP32 and ESP8266 wifi template Project
 - [BLEClient.h](https://github.com/espressif/arduino-esp32/blob/master/libraries/BLE/src/BLEClient.h) - C++
 
 ### Tools using convert gzip
-- [Online Convert gzip](https://online-converting.com/archives/convert-to-gzip/)
-```
-Convert htm to gzip. Select "Compress this file, output-gz
-```
-- [App PeaZip](https://peazip.github.io/index.html)
+- [Online Convert gzip](https://online-converting.com/archives/convert-to-gzip/) - Select "Compress this file, output-gz"
+- [App PeaZip convert gzip](https://peazip.github.io/index.html)
 - [Online Convert file to array C](http://tomeko.net/online_tools/file_to_hex.php?lang=en)
 
 ### Tools usage json
 - [Check json online](http://json.parser.online.fr/)
 - [Json arduino assistant](https://arduinojson.org/v5/assistant/)
 
-### Some edit AsyncWebserver library
-```sh
-  WebHandlerlmpl.h edit
-  line 32 add: typedef std::function<bool(AsyncWebServerRequest *request)> ArRequestAuthenticateFunction;
-  line 49 add: ArRequestAuthenticateFunction _onAuthenticate;
-  line 62 add: AsyncStaticWebHandler& onAuthenticate(ArRequestAuthenticateFunction fn) {_onAuthenticate = fn; return *this;}
+### Some update ESPAsyncWebserver library to handle new port
+- [Commit Upgrade for IDF4.4](https://github.com/TienHuyIoT/ESPAsyncWebServer/commit/15047582660096ce478df061b014545f131197e5)
+- [Commit Enable authentication callback](https://github.com/TienHuyIoT/ESPAsyncWebServer/commit/6eb5b1b8914b4a36d9d655350734c1dedeaeeba7)
+- [Commit Enable change tcp port](https://github.com/TienHuyIoT/ESPAsyncWebServer/commit/68610ad0c9efe5666f71529c78c008d41f0324e3)
 
-  WebHandlers.cpp edit
-  Line 193
-  if(_username != "" && _password != "")
-    {
-      if(!request->authenticate(_username.c_str(), _password.c_str()))
-      {
-        return request->requestAuthentication();
-      } 
-    }     
-    else
-    {
-      if(_onAuthenticate)
-      {
-        if(!_onAuthenticate(request))
-        {
-          return;
-        }
-      }
-    }
-
-  1. WebServer.cpp at line  82
-  Original
-  void AsyncWebServer::begin(){
-    _server.setNoDelay(true);  
-    _server.begin();
-  }
-
-  Change to
-
-  void AsyncWebServer::begin(uint16_t port){
-    if (port != 0)
-    {
-      _server.port(port);
-    }
-    _server.setNoDelay(true);  
-    _server.begin();
-  }
-
-  2. ESPAsyncWebServer.h at line 408
-  Original
-  void begin();
-
-  Change to
-
-  void begin(uint16_t port = 0);
-
-  3. AsyncTCP.cpp at line 1264
-  Original
-  void AsyncServer::begin()
-  {}
-
-  Change to
-
-  void AsyncServer::port(uint16_t port)
-  {
-      _port = port;
-  }
-
-  void AsyncServer::begin()
-  {}
-
-  4. AsyncTCP.h at line 194
-  Original
-  void begin();
-
-  Change to
-
-  void port(uint16_t port);
-  void begin();
-```
+### Some update AsyncTCP library to handle new port for ESP32
+- [Commit Enable change tcp port](https://github.com/TienHuyIoT/AsyncTCP/commit/66c82d67ff3e2571d3b4989529bb6511060f377f)

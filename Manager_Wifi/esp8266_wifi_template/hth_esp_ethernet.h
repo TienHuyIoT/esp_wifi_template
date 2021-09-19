@@ -2,7 +2,7 @@
 #define _HTH_ESP_ETHERNET_H
 
 #include <Arduino.h>
-#include "app_config.h"
+#include "hth_esp_config.h"
 #include "board.h"
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)

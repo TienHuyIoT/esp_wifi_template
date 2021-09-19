@@ -3,11 +3,11 @@
 
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
-#include "app_config.h"
+#include "hth_esp_config.h"
 #include "hth_fs_editor.h"
 #include "hth_fs_handle.h"
 #include "hth_websocket.h"
-#include "hth_websocket_payload.h"
+#include "hth_wsDataHandler.h"
 
 typedef enum {
   HTTP_AUTH_LV0 = 0,
@@ -60,19 +60,19 @@ public:
   }
 };
 
-class async_webserver
+class hth_webserver
 {
 private:
   static AsyncWebServer* _server;
   static AsyncWebServer* _server80;
-  static FSEditor* _spiffsEditor;
-  static async_websocket* _wsHandler;
+  static hth_FSEditor* _spiffsEditor;
+  static hth_websocket* _wsHandler;
   static serverCallbacks* _pCallbacks;
   static asyncHttpHandler _httpGetAuthHandler;
   static asyncHttpHandler _httpGetHandler;
   static asyncHttpHandler _httpPostAuthHandler;
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-  static FSEditor* _sdCardEditor;
+  static hth_FSEditor* _sdCardEditor;
   static uint32_t _sdUploadPercent;
 #endif
   static String _adminAuthUser;
@@ -98,8 +98,8 @@ private:
   static void fs_editor_status(AsyncWebServerRequest *request);
 
 public:
-  async_webserver(/* args */);
-  ~async_webserver();
+  hth_webserver(/* args */);
+  ~hth_webserver();
 
   void begin();
   void loop();

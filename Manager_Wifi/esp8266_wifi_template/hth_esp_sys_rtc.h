@@ -29,7 +29,7 @@ public:
   void remove(void);
 };
 
-class flatform_rtc
+class hth_esp_sys_rtc
 {
 public:
   typedef enum : uint8_t
@@ -69,8 +69,8 @@ private:
   }
 
 public:
-  flatform_rtc(/* args */);
-  ~flatform_rtc();
+  hth_esp_sys_rtc(/* args */);
+  ~hth_esp_sys_rtc();
 
   void begin();
 
@@ -108,6 +108,6 @@ public:
   bool GMTStringUpdate(const char *rtc_web, level_update_t level);
 };
 
-extern flatform_rtc HTH_sysTime;
+extern hth_esp_sys_rtc HTH_sysTime;
 
 #endif

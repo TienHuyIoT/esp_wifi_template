@@ -9,19 +9,19 @@
 
 typedef std::function<bool(AsyncWebServerRequest *request)> fs_ArRequestAuthenticateFunction;
 
-class FSEditor: public AsyncWebHandler {  
+class hth_FSEditor: public AsyncWebHandler {  
   public:
     typedef std::function<void(size_t, size_t)> THandlerFunction_Progress;
     typedef std::function<void(AsyncWebServerRequest*)> fs_status;
 
-    FSEditor(const fs::FS& fs, const String& uri=String("edit"), const String& username=String(), const String& password=String());
+    hth_FSEditor(const fs::FS& fs, const String& uri=String("edit"), const String& username=String(), const String& password=String());
     /*
       This callback will be called when Update is receiving data
     */
-    FSEditor& onProgress(THandlerFunction_Progress fn);
-    FSEditor& onStatus(fs_status fn);
-    FSEditor& setAuthentication(const char *username, const char *password){  _username = String(username);_password = String(password); return *this; };
-    FSEditor& onAuthenticate(fs_ArRequestAuthenticateFunction fn) {_onAuthenticate = fn; return *this;}
+    hth_FSEditor& onProgress(THandlerFunction_Progress fn);
+    hth_FSEditor& onStatus(fs_status fn);
+    hth_FSEditor& setAuthentication(const char *username, const char *password){  _username = String(username);_password = String(password); return *this; };
+    hth_FSEditor& onAuthenticate(fs_ArRequestAuthenticateFunction fn) {_onAuthenticate = fn; return *this;}
     virtual bool canHandle(AsyncWebServerRequest *request) override final;
     virtual void handleRequest(AsyncWebServerRequest *request) override final;
     virtual void handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) override final;

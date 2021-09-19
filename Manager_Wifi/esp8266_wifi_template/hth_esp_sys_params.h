@@ -78,7 +78,7 @@ typedef struct {
     }ddns;
 } wifi_file_json_t;
 
-class wifi_data_file
+class hth_esp_sys_params
 {
 public:
     typedef enum : uint8_t {
@@ -95,8 +95,8 @@ private:
     void syncFromFileSystem();
     void saveToFileSystem();
 public:
-    wifi_data_file(fs::FS &fs);
-    ~wifi_data_file();
+    hth_esp_sys_params(fs::FS &fs);
+    ~hth_esp_sys_params();
 
     void begin();
     void commitToFS() { saveToFileSystem(); }
@@ -227,6 +227,6 @@ public:
     void disableDDNSSet(uint8_t disable) { _file_prams.ddns.disable = disable; }
 };
 
-extern wifi_data_file WFDataFile;
+extern hth_esp_sys_params WFDataFile;
 
 #endif // __HTH_ESP_SYS_DATA_H
