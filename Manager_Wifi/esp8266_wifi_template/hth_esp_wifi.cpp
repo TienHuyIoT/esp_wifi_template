@@ -100,6 +100,10 @@ hth_esp_wifi::~hth_esp_wifi()
 #if (defined SNTP_SERVICE_ENABLE) && (SNTP_SERVICE_ENABLE == 1)  
   delete _sntp;
 #endif
+
+#if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1) 
+    delete _dnsServer;
+#endif
 }
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
@@ -230,19 +234,19 @@ void hth_esp_wifi::onDDNSclient()
   */
   ddnsClient->service(WFDataFile.serviceDDNS());
 
-  /*
-    For DDNS Providers where you get a token:
-      Use this: ddnsClient->client("domain", "token");
-    
-    For DDNS Providers where you get username and password: ( Leave the password field empty "" if not required )
-      Use this: ddnsClient->client("domain", "username", "password");
-  */
-  ddnsClient->client(WFDataFile.domainDDNS(), WFDataFile.userDDNS(), WFDataFile.passDDNS());
-
   // Get Notified when your IP changes
   ddnsClient->onUpdateIP([&](const char* oldIP, const char* newIP){
     ESP_WIFI_TAG_CONSOLE("[DDNS] AsyncEasyDDNS - IP Change Detected: %s", newIP);
   });
+
+  /*
+    For DDNS Providers where you get a token:
+      Use this: ddnsClient->begin("domain", "token");
+    
+    For DDNS Providers where you get username and password: ( Leave the password field empty "" if not required )
+      Use this: ddnsClient->begin("domain", "username", "password");
+  */
+  ddnsClient->begin(WFDataFile.domainDDNS(), WFDataFile.userDDNS(), WFDataFile.passDDNS());
 
   constexpr uint8_t DDNS_SYNC_TIME_MIN = 10; // should not zero
   constexpr uint8_t DDNS_SYNC_TIME_MAX = 60; // unlimited
@@ -484,7 +488,7 @@ void hth_esp_wifi::begin(bool wifiON)
     /* STA enable */
     if (!WFDataFile.isDisableSTA())
     {
-      if (WFDataFile.ssidSTA().length() > 0)
+      if (WFDataFile.ssidSTA().length() > 0) // not exist the access point 
       {
         if (!WFDataFile.dhcpSTA())
         {
@@ -520,7 +524,8 @@ void hth_esp_wifi::begin(bool wifiON)
       ChipID.toUpperCase();
       String ssidAP = WFDataFile.ssidAP() + "_" + ChipID;
       WiFi.softAPConfig(WFDataFile.ipAP(), WFDataFile.ipAP(), WFDataFile.snAP());
-      if (WFDataFile.passAP().length() >= 8)
+      constexpr uint8_t PASSWORD_LENGTH_MIN = 8;
+      if (WFDataFile.passAP().length() >= PASSWORD_LENGTH_MIN)
       {
         // using c_str() for esp32
         WiFi.softAP(ssidAP.c_str(), WFDataFile.passAP().c_str(), WFDataFile.channelAP(), WFDataFile.isHiddenAP());
@@ -606,7 +611,8 @@ void hth_esp_wifi::connect(const char *name, const char *pass)
      should be used.
     */
   WiFi.setAutoReconnect(false);
-  if (strlen(pass) >= 8)
+  constexpr uint8_t PASSWORD_LENGTH_MIN = 8;
+  if (strlen(pass) >= PASSWORD_LENGTH_MIN)
   {
     WiFi.begin(name, pass);
   }

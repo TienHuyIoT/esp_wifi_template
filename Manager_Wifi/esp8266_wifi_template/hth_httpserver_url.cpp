@@ -783,7 +783,7 @@ void ddns_client_post(AsyncWebServerRequest *request, hth_httpserver_url* client
         WFDataFile.commitToFS();
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)        
         HTH_espWifi.ddnsClient->service(WFDataFile.serviceDDNS());
-        HTH_espWifi.ddnsClient->client(WFDataFile.domainDDNS(), WFDataFile.userDDNS(), WFDataFile.passDDNS());
+        HTH_espWifi.ddnsClient->begin(WFDataFile.domainDDNS(), WFDataFile.userDDNS(), WFDataFile.passDDNS());
 #endif 
     }
     else

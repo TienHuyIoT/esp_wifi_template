@@ -35,7 +35,7 @@ public:
   hth_AsyncEasyDDNSClass();
   IPAddress ddnsIP;
   void service(String ddns_service);
-  void client(String ddns_domain, String ddns_username, String ddns_password = "");
+  void begin(String ddns_domain, String ddns_username, String ddns_password = "");
   void update();  
 
   // Callback

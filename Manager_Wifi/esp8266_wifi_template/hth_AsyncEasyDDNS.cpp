@@ -51,7 +51,7 @@ void hth_AsyncEasyDDNSClass::service(String ddns_service) {
   _serverDDNS = ddns_service;
 }
 
-void hth_AsyncEasyDDNSClass::client(String ddns_domain, String ddns_username, String ddns_password) {
+void hth_AsyncEasyDDNSClass::begin(String ddns_domain, String ddns_username, String ddns_password) {
   _domain = ddns_domain;
   _userName = ddns_username;
   _passWord = ddns_password;

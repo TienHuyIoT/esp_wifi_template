@@ -60,7 +60,7 @@ ESP32 and ESP8266 Arduino wifi template
 **Request to edit file from sd card (method GET)**
   - /edit_sdfs?edit=/file.txt
 
-**Request to delect file from sd card (method DELETE)**
+**Request to delete file from sd card (method DELETE)**
   - /edit_sdfs , path=/file.txt
 
 **Request to download file from spiffs/LittleFS (method GET)**
@@ -70,7 +70,7 @@ ESP32 and ESP8266 Arduino wifi template
 **Request to edit file from spiffs/LittleFS (method GET)**
   - /edit?edit=/file.txt
 
-**Request to delect file from spiffs/LittleFS (method DELETE)**
+**Request to delete file from spiffs/LittleFS (method DELETE)**
   - /edit , path=/file.txt
 
 ### Usage ESP8266 Sketch Data Upload
