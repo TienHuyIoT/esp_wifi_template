@@ -77,9 +77,10 @@ void hth_esp_ethernet::loop()
       if (!_connected)
       {
         ETH_TAG_CONSOLE("Connected");
-        // ETH_TAG_CONSOLE("[SNTP] start");
-        // sntp_stop();
-        // sntp_init();
+        ETH_TAG_CONSOLE("Ip: %s", ETH.localIP().toString().c_str());
+        ETH_TAG_CONSOLE("Gw: %s", ETH.gatewayIP().toString().c_str());
+        ETH_TAG_CONSOLE("Sn: %s", ETH.subnetMask().toString().c_str());
+        ETH_TAG_CONSOLE("Dns: %s\r\n", ETH.dnsIP().toString().c_str());
         _connected = true;
       }
     }
@@ -109,7 +110,7 @@ void hth_esp_ethernet::disable(void)
 
 bool hth_esp_ethernet::isEnable(void)
 {
-  ETH_TAG_CONSOLE("status %u", _status);
+  ETH_TAG_CONSOLE("status %u", _status ? "ON" : "OFF");
   return _status;
 }
 

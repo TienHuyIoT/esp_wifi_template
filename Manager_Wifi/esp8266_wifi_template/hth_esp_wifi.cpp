@@ -20,6 +20,28 @@
 #include <sntp.h>      // sntp_servermode_dhcp()
 
 #define MYTZ TZ_Asia_Ho_Chi_Minh
+
+// OPTIONAL: change SNTP startup delay
+// a weak function is already defined and returns 0 (RFC violation)
+// it can be redefined:
+#if (0)
+uint32_t sntp_startup_delay_MS_rfc_not_less_than_60000 ()
+{
+   //info_sntp_startup_delay_MS_rfc_not_less_than_60000_has_been_called = true;
+   return 60000; // 60s (or lwIP's original default: (random() % 5000))
+}
+#endif
+
+// OPTIONAL: change SNTP update delay
+// a weak function is already defined and returns 1 hour
+// it can be redefined:
+#if (0)
+uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 ()
+{
+  //  info_sntp_update_delay_MS_rfc_not_less_than_15000_has_been_called = true;
+   return 15000; // 15s
+}
+#endif
 #endif
 
 #include "hth_esp_config.h"
@@ -67,11 +89,18 @@ void hth_esp_sntp::begin()
     // Using callback event instead to check sntp status
     // while (sntp_get_sync_status() != SNTP_SYNC_STATUS_COMPLETED) {};
 #elif defined(ESP8266)
+    SNTP_TAG_CONSOLE("sntp_getoperatingmode = %u", sntp_getoperatingmode());
     // install callback - called when settimeofday is called (by SNTP or user)
     // once enabled (by DHCP), SNTP is updated every hour by default
     // ** optional boolean in callback function is true when triggered by SNTP **
     settimeofday_cb(sntp_sync_time_cb);
+    // OPTIONAL: disable obtaining SNTP servers from DHCP
+    sntp_servermode_dhcp(0);
     configTime(_gmtOffset_sec, _daylightOffset_sec, _ntpServer1, _ntpServer2);
+
+    // Give now a chance to the settimeofday callback,
+    // because it is *always* deferred to the next yield()/loop()-call.
+    yield();
 #endif
 }
 

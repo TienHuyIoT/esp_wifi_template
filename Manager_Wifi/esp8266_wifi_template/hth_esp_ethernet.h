@@ -13,6 +13,7 @@
 #include <LwipIntfDev.h>
 #include <utility/enc28j60.h>
 
+// make the same Ethernet ESP32 API
 class spi_ethernet : public LwipIntfDev<ENC28J60>
 {
 private:
