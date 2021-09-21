@@ -1,5 +1,5 @@
-#ifndef	_BOARD_H
-#define _BOARD_H
+#ifndef	__ESP_BOARD_H
+#define __ESP_BOARD_H
 
 #define LED_STATUS_GPIO         2 /* 3(web485), 23(ken_sos) */
 #define led_status_init()       pinMode(LED_STATUS_GPIO, OUTPUT)
@@ -43,4 +43,4 @@ SPI BUS
 #define ETH_STATUS_IS_ON()    
 #endif
 
-#endif // _BOARD_H
+#endif // __ESP_BOARD_H

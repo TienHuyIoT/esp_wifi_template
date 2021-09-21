@@ -1,16 +1,16 @@
-#ifndef	_FS_HANDLE_H
-#define _FS_HANDLE_H
+#ifndef	__ESP_FS_HANDLE_H
+#define __ESP_FS_HANDLE_H
 
 #include <Arduino.h>
 #include <FS.h>
 
-class ESPFSHandler
+class ESPFSHandle
 {
 private:
     /* data */
 public:
-    ESPFSHandler(/* args */);
-    ~ESPFSHandler();
+    ESPFSHandle(/* args */);
+    ~ESPFSHandle();
 
     void listDir(fs::FS &fs, const char *dirname, uint8_t levels);
     void format(fs::FS &fs, const char *dirname);
@@ -27,6 +27,6 @@ public:
     #endif // (0)
 };
 
-extern ESPFSHandler FSHandle;
+extern ESPFSHandle FSHandle;
 
-#endif // _FS_HANDLE_H
+#endif // __ESP_FS_HANDLE_H

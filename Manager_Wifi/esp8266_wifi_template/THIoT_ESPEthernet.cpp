@@ -1,10 +1,10 @@
-#include "hth_esp_config.h"
+#include "THIoT_ESPConfig.h"
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
 
-#include "hth_esp_sys_params.h"
-#include "hth_esp_ethernet.h"
-#include "hth_serial_trace.h"
+#include "THIoT_ESPSysParams.h"
+#include "THIoT_ESPEthernet.h"
+#include "THIoT_SerialTrace.h"
 
 #define ESP_ETH_PORT CONSOLE_PORT
 #define ETH_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[ETH]", __VA_ARGS__)

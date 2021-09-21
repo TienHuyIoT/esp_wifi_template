@@ -1,5 +1,5 @@
-#ifndef _CONSOLE_CONSOLE_H
-#define _CONSOLE_CONSOLE_H
+#ifndef __SERIAL_TRACE_H
+#define __SERIAL_TRACE_H
 
 #include <Arduino.h>
 
@@ -44,4 +44,4 @@ void log(const std::string_view message,
 #define FUNCTION_OUT(...) do{DBG_PRINTF("\r\n\t[%s] OUT ", __FUNCTION__); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n\r\n");}while(0)
 #endif
 
-#endif
+#endif // __SERIAL_TRACE_H

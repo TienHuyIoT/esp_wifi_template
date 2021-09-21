@@ -1,6 +1,6 @@
 #include <EEPROM.h>
-#include "hth_esp_eeprom.h"
-#include "hth_serial_trace.h"
+#include "THIoT_ESPEEPromParams.h"
+#include "THIoT_SerialTrace.h"
 
 #define EEPROM_DATA_PORT CONSOLE_PORT
 #define EEPROM_DATA_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)

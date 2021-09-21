@@ -1,5 +1,5 @@
-#ifndef	_ESP_REBOOT_H_
-#define _ESP_REBOOT_H_
+#ifndef	__ESP_SOFT_RESET_H
+#define __ESP_SOFT_RESET_H
 
 #include <Arduino.h>
 #include <Ticker.h>
@@ -14,6 +14,6 @@ public:
     void enable(uint32_t timeout);
 };
 
-extern ESPSoftReset HTH_softReset;
+extern ESPSoftReset SOFTReset;
 
-#endif // _ESP_REBOOT_H_
+#endif // __ESP_SOFT_RESET_H

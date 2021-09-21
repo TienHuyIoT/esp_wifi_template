@@ -1,5 +1,5 @@
-#ifndef	_EEPROM_DATA_H
-#define _EEPROM_DATA_H
+#ifndef	__ESP_EEPROM_PARAMS_H
+#define __ESP_EEPROM_PARAMS_H
 
 #include <Arduino.h>
 
@@ -53,4 +53,4 @@ public:
 
 extern ESPEEPromParams EEPParams;
 
-#endif /* !_EEPROM_DATA_H */
+#endif /* !__ESP_EEPROM_PARAMS_H */

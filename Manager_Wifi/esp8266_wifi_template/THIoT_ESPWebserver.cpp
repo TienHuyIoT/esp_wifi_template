@@ -5,19 +5,19 @@
 #include <WiFi.h>
 #include <WiFiType.h>
 #include <Update.h>
-#include "hth_esp_event_signal.h"
+#include "THIoT_ESPEventSignal.h"
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>
 #include <Updater.h>
 #include "flash_hal.h"
 #endif
-#include "hth_esp_config.h"
-#include "hth_esp_wifi.h"
-#include "hth_serial_trace.h"
-#include "hth_esp_sys_params.h"
+#include "THIoT_ESPConfig.h"
+#include "THIoT_ESPWifiHandle.h"
+#include "THIoT_SerialTrace.h"
+#include "THIoT_ESPSysParams.h"
 #include "THIoT_ESPSoftReset.h"
-#include "hth_esp_sdcard.h"
-#include "hth_webserver.h"
+#include "THIoT_SDFSClass.h"
+#include "THIoT_ESPWebserver.h"
 
 
 #define WEB_SERVER_DBG_PORT CONSOLE_PORT
@@ -303,7 +303,7 @@ void ESPWebserver::begin(void)
     _server80->begin();
   }
 
-  _wsHandler->setHandleCallbacks(new ESPWsDataHandler());
+  _wsHandler->setHandleCallbacks(new ESPWsDataHandle());
   _wsHandler->begin();
   _server->addHandler(_wsHandler->_ws);
   _server->addHandler(_wsHandler->_events);
@@ -392,7 +392,7 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
           updatePrintProgress(100, 100); // 100% --> Done
           if (U_FLASH == _flashUpdateType)
           {
-            HTH_softReset.enable(500);
+            SOFTReset.enable(500);
           }
           else
           {

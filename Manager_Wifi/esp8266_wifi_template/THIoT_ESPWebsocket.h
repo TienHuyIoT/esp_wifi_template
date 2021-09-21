@@ -1,5 +1,5 @@
-#ifndef	_ASYNC_WEB_SOCKET_H
-#define _ASYNC_WEB_SOCKET_H
+#ifndef	__ESP_WEBSOCKET_H
+#define __ESP_WEBSOCKET_H
 
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
@@ -69,4 +69,4 @@ public:
     }
 };
 
-#endif
+#endif // __ESP_WEBSOCKET_H

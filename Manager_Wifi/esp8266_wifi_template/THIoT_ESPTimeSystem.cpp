@@ -3,9 +3,9 @@
 #include <sys/time.h> // struct timeval
 #endif
 #include <ArduinoJson.h>
-#include "hth_esp_config.h"
-#include "hth_serial_trace.h"
-#include "hth_esp_sys_rtc.h"
+#include "THIoT_ESPConfig.h"
+#include "THIoT_SerialTrace.h"
+#include "THIoT_ESPTimeSystem.h"
 
 #define RTC_CONSOLE_PORT CONSOLE_PORT
 #define RTC_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)

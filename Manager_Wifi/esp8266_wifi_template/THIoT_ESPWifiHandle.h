@@ -1,11 +1,11 @@
-#ifndef _HTH_ESP_WIFI_H
-#define _HTH_ESP_WIFI_H
+#ifndef __ESP_WIFI_HANDLE_H
+#define __ESP_WIFI_HANDLE_H
 
 #include <Arduino.h>
 #include <Ticker.h>
 #include <DNSServer.h>
-#include "hth_esp_config.h"
-#include "hth_AsyncEasyDDNS.h"
+#include "THIoT_ESPConfig.h"
+#include "THIoT_ESPAsyncEasyDDNS.h"
 
 class ESPSntpService
 {
@@ -20,7 +20,7 @@ public:
     void begin();
 };
 
-class ESPWifiHandler
+class ESPWifiHandle
 {
 private:
 #if (defined SNTP_SERVICE_ENABLE) && (SNTP_SERVICE_ENABLE == 1)  
@@ -61,11 +61,11 @@ private:
     void registerEventHandler();   // wifi event
 
 public:
-    ESPWifiHandler(/* args */);
-    ~ESPWifiHandler();
+    ESPWifiHandle(/* args */);
+    ~ESPWifiHandle();
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
-    static hth_AsyncEasyDDNSClass* ddnsClient;
+    static ESPAsyncEasyDDNS* ddnsClient;
 #endif
 
     void begin(bool wifiON = true);
@@ -75,6 +75,6 @@ public:
     int ssidScan(String &json);
 };
 
-extern ESPWifiHandler ESPWifi;
+extern ESPWifiHandle ESPWifi;
 
-#endif // _HTH_ESP_WIFI_H
+#endif // __ESP_WIFI_HANDLE_H

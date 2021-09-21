@@ -18,8 +18,8 @@ Some Library references:
   https://github.com/me-no-dev/AsyncTCP
 */
 
-#ifndef _ASYNC_EASY_DDNS_H
-#define _ASYNC_EASY_DDNS_H
+#ifndef __ESP_ASYNC_EASY_DDNS_H
+#define __ESP_ASYNC_EASY_DDNS_H
 
 #include <Arduino.h>
 
@@ -30,9 +30,9 @@ Some Library references:
 // Handler to notify user about new public IP
 typedef std::function<void(const char* oldIP, const char* newIP)> AsyncDDNSUpdateHandler;
 
-class hth_AsyncEasyDDNSClass{
+class ESPAsyncEasyDDNS{
 public:
-  hth_AsyncEasyDDNSClass();
+  ESPAsyncEasyDDNS();
   IPAddress ddnsIP;
   void service(String ddns_service);
   void begin(String ddns_domain, String ddns_username, String ddns_password = "");
@@ -60,4 +60,4 @@ private:
   void postIpCallback(void* optParm, asyncHTTPrequest* request, int readyState);
 };
 
-#endif // _ASYNC_EASY_DDNS_H
+#endif // __ESP_ASYNC_EASY_DDNS_H

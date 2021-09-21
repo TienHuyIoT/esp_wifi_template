@@ -2,8 +2,8 @@
 #define _HTH_ESP_ETHERNET_H
 
 #include <Arduino.h>
-#include "hth_esp_config.h"
-#include "board.h"
+#include "THIoT_ESPConfig.h"
+#include "THIoT_ESPBoard.h"
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
 #ifdef ESP32

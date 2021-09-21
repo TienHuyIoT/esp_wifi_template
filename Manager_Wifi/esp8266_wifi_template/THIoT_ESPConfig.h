@@ -1,5 +1,5 @@
-#ifndef	__APP_CONFIG_H
-#define __APP_CONFIG_H
+#ifndef	__ESP_CONFIG_H
+#define __ESP_CONFIG_H
 
 // <h> Hardware Version
 
@@ -157,7 +157,7 @@ https://github.com/boblemaire/asyncHTTPrequest
 #endif
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)
-#include "hth_AsyncEasyDDNS.h"
+#include "THIoT_ESPAsyncEasyDDNS.h"
 #endif
 
 #if (defined MDNS_SERVICE_ENABLE) && (MDNS_SERVICE_ENABLE == 1)
@@ -183,4 +183,4 @@ https://github.com/boblemaire/asyncHTTPrequest
 #include <ArduinoOTA.h>
 #endif
 
-#endif // __APP_CONFIG_H
+#endif // __ESP_CONFIG_H

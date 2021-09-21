@@ -1,5 +1,5 @@
-#include "hth_serial_trace.h"
-#include "hth_websocket.h"
+#include "THIoT_SerialTrace.h"
+#include "THIoT_ESPWebsocket.h"
 
 #define WS_DBG_PORT CONSOLE_PORT
 #define WS_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WS]", __VA_ARGS__)

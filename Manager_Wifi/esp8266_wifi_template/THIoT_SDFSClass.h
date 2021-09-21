@@ -1,14 +1,14 @@
-#ifndef	_SD_CARD_
-#define _SD_CARD_
+#ifndef	__SDFS_CLASS_H
+#define __SDFS_CLASS_H
 
 #include <Arduino.h>
-#include "hth_esp_config.h"
+#include "THIoT_ESPConfig.h"
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 #if (defined SD_SPI_INTERFACE) && (SD_SPI_INTERFACE == 1) && (defined ESP32)
 #include <SPI.h>
 #endif
-#include "board.h"
+#include "THIoT_ESPBoard.h"
 
 #if (SD_SPI_INTERFACE == 0)
 #define SD_FS_SYSTEM SD_MMC
@@ -104,4 +104,4 @@ extern ESPSdCard HTH_sdCard;
 
 #endif // (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 
-#endif // _SD_CARD_
+#endif // __SDFS_CLASS_H

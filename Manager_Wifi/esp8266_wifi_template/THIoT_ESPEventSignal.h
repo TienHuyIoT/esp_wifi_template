@@ -1,7 +1,7 @@
 #ifndef __ESP_EVENT_SIGNAL_H
 #define __ESP_EVENT_SIGNAL_H
 
-#include "hth_esp_config.h"
+#include "THIoT_ESPConfig.h"
 #ifdef ESP32
 #include "esp_event_legacy.h"
 #if ESP_IDF_VERSION_MAJOR >= 4

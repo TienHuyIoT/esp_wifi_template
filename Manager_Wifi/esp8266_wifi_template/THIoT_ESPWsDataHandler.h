@@ -1,8 +1,8 @@
-#ifndef	_APP_ASYNC_WS_H
-#define _APP_ASYNC_WS_H
+#ifndef	__ESP_WS_DATA_HANDLER_H
+#define __ESP_WS_DATA_HANDLER_H
 
 #include <Arduino.h>
-#include "hth_websocket.h"
+#include "THIoT_ESPWebsocket.h"
 
 typedef enum {
     WS_PAGE_CARD_HISTORY = 0,
@@ -35,13 +35,13 @@ const char *const page_card_user_list[] PROGMEM = {
     "PAGE_CMD_ASYCN_DATA"
 };
 
-class ESPWsDataHandler : public WebsocketCallbacks
+class ESPWsDataHandle : public WebsocketCallbacks
 {
 private:
     void onDataReceived(AsyncWebSocketClient* client, char* data);
 public:
-    ESPWsDataHandler(/* args */);
-    ~ESPWsDataHandler();
+    ESPWsDataHandle(/* args */);
+    ~ESPWsDataHandle();
 };
 
-#endif
+#endif // __ESP_WS_DATA_HANDLER_H

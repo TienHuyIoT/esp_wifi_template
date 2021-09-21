@@ -1,7 +1,7 @@
 #include <ArduinoJson.h>
-#include "hth_esp_config.h"
-#include "hth_esp_sys_params.h"
-#include "hth_serial_trace.h"
+#include "THIoT_ESPConfig.h"
+#include "THIoT_ESPSysParams.h"
+#include "THIoT_SerialTrace.h"
 
 #define WIFI_FILE_PORT CONSOLE_PORT
 #define WIFI_DATA_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)

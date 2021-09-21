@@ -1,5 +1,5 @@
-#ifndef	__HTH_ESP_SYS_DATA_H
-#define __HTH_ESP_SYS_DATA_H
+#ifndef	__ESP_SYS_PARAMS_H
+#define __ESP_SYS_PARAMS_H
 
 #include <Arduino.h>
 #include <FS.h>
@@ -229,4 +229,4 @@ public:
 
 extern ESPSysParams ESPConfig;
 
-#endif // __HTH_ESP_SYS_DATA_H
+#endif // __ESP_SYS_PARAMS_H

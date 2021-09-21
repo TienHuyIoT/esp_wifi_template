@@ -20,10 +20,10 @@ Some Library references:
 
 #include <Arduino.h>
 #include <base64.h>
-#include "hth_AsyncEasyDDNS.h"
+#include "THIoT_ESPAsyncEasyDDNS.h"
 
 #if (defined ASYNC_EASYDDNS_DEBUG) && (ASYNC_EASYDDNS_DEBUG == 1)
-#include "hth_serial_trace.h"
+#include "THIoT_SerialTrace.h"
 #define EASYDDNS_PORT CONSOLE_PORT
 #define EASYDDNS_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
 #define EASYDDNS_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[EASYDDNS]", __VA_ARGS__)
@@ -32,7 +32,7 @@ Some Library references:
 #define EASYDDNS_TAG_CONSOLE(...)
 #endif
 
-hth_AsyncEasyDDNSClass::hth_AsyncEasyDDNSClass()
+ESPAsyncEasyDDNS::ESPAsyncEasyDDNS()
 {
   using namespace std::placeholders;  
   ddnsIP.fromString("0.0.0.0");
@@ -43,21 +43,21 @@ hth_AsyncEasyDDNSClass::hth_AsyncEasyDDNSClass()
   _ddnsUpdateFunc = nullptr;
   _aHttpGetIP.setDebug(false);  
   _aHttpPostIP.setDebug(false); 
-  _aHttpGetIP.onReadyStateChange(std::bind(&hth_AsyncEasyDDNSClass::getIpCallback, this, _1, _2, _3));
-  _aHttpPostIP.onReadyStateChange(std::bind(&hth_AsyncEasyDDNSClass::postIpCallback, this, _1, _2, _3));
+  _aHttpGetIP.onReadyStateChange(std::bind(&ESPAsyncEasyDDNS::getIpCallback, this, _1, _2, _3));
+  _aHttpPostIP.onReadyStateChange(std::bind(&ESPAsyncEasyDDNS::postIpCallback, this, _1, _2, _3));
 }
 
-void hth_AsyncEasyDDNSClass::service(String ddns_service) {
+void ESPAsyncEasyDDNS::service(String ddns_service) {
   _serverDDNS = ddns_service;
 }
 
-void hth_AsyncEasyDDNSClass::begin(String ddns_domain, String ddns_username, String ddns_password) {
+void ESPAsyncEasyDDNS::begin(String ddns_domain, String ddns_username, String ddns_password) {
   _domain = ddns_domain;
   _userName = ddns_username;
   _passWord = ddns_password;
 }
 
-void hth_AsyncEasyDDNSClass::getIpCallback(void* optParm, asyncHTTPrequest* request, int readyState) 
+void ESPAsyncEasyDDNS::getIpCallback(void* optParm, asyncHTTPrequest* request, int readyState) 
 {
   if (readyState == 4) 
   {
@@ -70,7 +70,7 @@ void hth_AsyncEasyDDNSClass::getIpCallback(void* optParm, asyncHTTPrequest* requ
   }
 }
 
-void hth_AsyncEasyDDNSClass::postIpCallback(void* optParm, asyncHTTPrequest* request, int readyState) 
+void ESPAsyncEasyDDNS::postIpCallback(void* optParm, asyncHTTPrequest* request, int readyState) 
 {
   if (readyState == 4) 
   {
@@ -96,7 +96,7 @@ void hth_AsyncEasyDDNSClass::postIpCallback(void* optParm, asyncHTTPrequest* req
   }
 }
 
-void hth_AsyncEasyDDNSClass::getIP()
+void ESPAsyncEasyDDNS::getIP()
 {
   ddnsIP.fromString("0.0.0.0");
   if (_aHttpGetIP.readyState() == 0 || _aHttpGetIP.readyState() == 4)
@@ -119,7 +119,7 @@ void hth_AsyncEasyDDNSClass::getIP()
   }
 }
 
-void hth_AsyncEasyDDNSClass::postIP()
+void ESPAsyncEasyDDNS::postIP()
 {
   if (_aHttpPostIP.readyState() == 0 || _aHttpPostIP.readyState() == 4)
   {
@@ -184,7 +184,7 @@ void hth_AsyncEasyDDNSClass::postIP()
   }
 }
 
-void hth_AsyncEasyDDNSClass::update() 
+void ESPAsyncEasyDDNS::update() 
 {
   EASYDDNS_TAG_CONSOLE("Update IP");
   // ######## GET PUBLIC IP ######## //

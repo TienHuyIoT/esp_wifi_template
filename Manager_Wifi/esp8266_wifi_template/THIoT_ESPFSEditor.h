@@ -1,5 +1,5 @@
-#ifndef _FS_EDITOR_H_
-#define _FS_EDITOR_H_
+#ifndef __ESP_FS_EDITOR_H
+#define __ESP_FS_EDITOR_H
 
 #include <FS.h>
 #include <SD.h>
@@ -43,4 +43,4 @@ class ESPFSEditor: public AsyncWebHandler {
     fs_ArRequestAuthenticateFunction _onAuthenticate;
 };
 
-#endif
+#endif // __ESP_FS_EDITOR_H

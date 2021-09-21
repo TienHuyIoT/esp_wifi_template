@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #include <FS.h>
-#include "hth_fs_editor.h"
-#include "hth_esp_sdcard.h"
-#include "hth_serial_trace.h"
+#include "THIoT_ESPFSEditor.h"
+#include "THIoT_SDFSClass.h"
+#include "THIoT_SerialTrace.h"
 
 #define FSEDITOR_DBG_PORT CONSOLE_PORT
 #if (defined FS_EDITOR_DEBUG) && (FS_EDITOR_DEBUG == 1)

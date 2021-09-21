@@ -1,16 +1,16 @@
 #include <ArduinoJson.h>
-#include "hth_esp_config.h"
-#include "hth_esp_wifi.h"
-#include "hth_AsyncEasyDDNS.h"
+#include "THIoT_ESPConfig.h"
+#include "THIoT_ESPWifiHandle.h"
+#include "THIoT_ESPAsyncEasyDDNS.h"
 #include "THIoT_ESPSoftReset.h"
-#include "hth_esp_sys_rtc.h"
-#include "hth_esp_sys_params.h"
-#include "hth_esp_eeprom.h"
-#include "hth_esp_sdcard.h"
-#include "hth_fs_handle.h"
-#include "hth_esp_ethernet.h"
-#include "hth_serial_trace.h"
-#include "hth_httpserver_url.h"
+#include "THIoT_ESPTimeSystem.h"
+#include "THIoT_ESPSysParams.h"
+#include "THIoT_ESPEEPromParams.h"
+#include "THIoT_SDFSClass.h"
+#include "THIoT_ESPFSHandle.h"
+#include "THIoT_ESPEthernet.h"
+#include "THIoT_SerialTrace.h"
+#include "THIoT_WebserverURLHandle.h"
 
 #define SERVER_DATA_PORT CONSOLE_PORT
 #define SERVER_DATA_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
@@ -441,7 +441,7 @@ void fw_version_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
 void restart_device_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
 {
     request->send(200, "text/json", "Reset OK");
-    HTH_softReset.enable(100);
+    SOFTReset.enable(100);
 }
 
 /* /get?param_wifi=heap_temperature */
@@ -592,7 +592,7 @@ void sta_network_post(AsyncWebServerRequest *request, WebserverURLHandle* client
         ESPConfig.save();
 
         /* Reset to access new network */
-        HTH_softReset.enable(500);
+        SOFTReset.enable(500);
     }
     else
     {
@@ -632,7 +632,7 @@ void sta_setting_post(AsyncWebServerRequest *request, WebserverURLHandle* client
         ESPConfig.save();
 
         /* Reset to access new network */
-        HTH_softReset.enable(500);
+        SOFTReset.enable(500);
     }
     else
     {
@@ -666,7 +666,7 @@ void ap_setting_post(AsyncWebServerRequest *request, WebserverURLHandle* client)
         ESPConfig.save();
 
         /* Reset to access new network */
-        HTH_softReset.enable(500);
+        SOFTReset.enable(500);
     }
     else
     {
@@ -695,7 +695,7 @@ void device_info_post(AsyncWebServerRequest *request, WebserverURLHandle* client
         ESPConfig.save();
 
         /* Reset to access new network */
-        HTH_softReset.enable(500);
+        SOFTReset.enable(500);
     }
     else
     {
@@ -726,7 +726,7 @@ void auth_access_post(AsyncWebServerRequest *request, WebserverURLHandle* client
             ESPConfig.save();
 
             /* Reset to access new network */
-            HTH_softReset.enable(500);
+            SOFTReset.enable(500);
         }
         else
         {
@@ -811,7 +811,7 @@ void auth_user_access_post(AsyncWebServerRequest *request, WebserverURLHandle* c
             ESPConfig.save();
 
             /* Reset to access new network */
-            HTH_softReset.enable(500);
+            SOFTReset.enable(500);
         }
         else
         {

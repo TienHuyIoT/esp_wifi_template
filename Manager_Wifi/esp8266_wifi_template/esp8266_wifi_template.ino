@@ -1,14 +1,14 @@
 #include <Arduino.h>
-#include "hth_esp_config.h"
-#include "hth_esp_sdcard.h"
-#include "hth_serial_trace.h"
-#include "hth_esp_sys_rtc.h"
-#include "hth_esp_wifi.h"
-#include "hth_esp_sys_params.h"
-#include "hth_webserver.h"
-#include "hth_httpserver_url.h"
-#include "hth_esp_eeprom.h"
-#include "hth_esp_ethernet.h"
+#include "THIoT_ESPConfig.h"
+#include "THIoT_SDFSClass.h"
+#include "THIoT_SerialTrace.h"
+#include "THIoT_ESPTimeSystem.h"
+#include "THIoT_ESPWifiHandle.h"
+#include "THIoT_ESPSysParams.h"
+#include "THIoT_ESPWebserver.h"
+#include "THIoT_WebserverURLHandle.h"
+#include "THIoT_ESPEEPromParams.h"
+#include "THIoT_ESPEthernet.h"
 
 /* Private macro -------------------------------------------------------------*/
 #define MAIN_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[MAIN]", __VA_ARGS__)

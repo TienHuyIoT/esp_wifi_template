@@ -3,7 +3,7 @@
 #include <esp_wifi.h>
 #include <WiFiType.h>
 #include <time.h>
-#include "hth_esp_event_signal.h"
+#include "THIoT_ESPEventSignal.h"
 #if ESP_IDF_VERSION_MAJOR >= 4
 #include <esp_sntp.h>
 #else
@@ -44,11 +44,11 @@ uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 ()
 #endif
 #endif
 
-#include "hth_esp_config.h"
-#include "hth_serial_trace.h"
-#include "hth_esp_sys_params.h"
-#include "hth_esp_sys_rtc.h"
-#include "hth_esp_wifi.h"
+#include "THIoT_ESPConfig.h"
+#include "THIoT_SerialTrace.h"
+#include "THIoT_ESPSysParams.h"
+#include "THIoT_ESPTimeSystem.h"
+#include "THIoT_ESPWifiHandle.h"
 
 #define SNTP_CONSOLE_PORT CONSOLE_PORT
 #define SNTP_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
@@ -104,10 +104,10 @@ void ESPSntpService::begin()
 #endif
 }
 
-/* ESPWifiHandler class --------------------------------------------------------
+/* ESPWifiHandle class --------------------------------------------------------
  -----------------------------------------------------------------------------
  ---------------------------------------------------------------------------*/
-ESPWifiHandler::ESPWifiHandler(/* args */)
+ESPWifiHandle::ESPWifiHandle(/* args */)
 #if (defined SNTP_SERVICE_ENABLE) && (SNTP_SERVICE_ENABLE == 1)  
     : _sntp(new ESPSntpService())
 #endif
@@ -117,7 +117,7 @@ ESPWifiHandler::ESPWifiHandler(/* args */)
 {
 }
 
-ESPWifiHandler::~ESPWifiHandler()
+ESPWifiHandle::~ESPWifiHandle()
 {
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
   if (ddnsClient)
@@ -136,11 +136,11 @@ ESPWifiHandler::~ESPWifiHandler()
 }
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
-hth_AsyncEasyDDNSClass* ESPWifiHandler::ddnsClient = nullptr;
+ESPAsyncEasyDDNS* ESPWifiHandle::ddnsClient = nullptr;
 #endif
-Ticker ESPWifiHandler::_reconnetTicker;
+Ticker ESPWifiHandle::_reconnetTicker;
 
-void ESPWifiHandler::registerEventHandler()
+void ESPWifiHandle::registerEventHandler()
 {
   ESP_WIFI_TAG_CONSOLE("registerEventHandler");
 #ifdef ESP32
@@ -233,7 +233,7 @@ void ESPWifiHandler::registerEventHandler()
 }
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
-void ESPWifiHandler::onDDNSclient()
+void ESPWifiHandle::onDDNSclient()
 {
   if (ESPConfig.disableDDNS())
   {
@@ -246,7 +246,7 @@ void ESPWifiHandler::onDDNSclient()
     return;
   }
   
-  ddnsClient = new hth_AsyncEasyDDNSClass();
+  ddnsClient = new ESPAsyncEasyDDNS();
     /*
     List of supported DDNS providers:
     - "duckdns"
@@ -300,7 +300,7 @@ void ESPWifiHandler::onDDNSclient()
 
 /* Should be called on wifi event gotIP */
 #if (defined MDNS_SERVICE_ENABLE) && (MDNS_SERVICE_ENABLE == 1)
-void ESPWifiHandler::onMDNSService()
+void ESPWifiHandle::onMDNSService()
 {
   // Set up mDNS responder:
   // - first argument is the domain name, in this example
@@ -324,7 +324,7 @@ void ESPWifiHandler::onMDNSService()
 #endif
 
 #if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)
-void ESPWifiHandler::onDNSServer()
+void ESPWifiHandle::onDNSServer()
 {
   constexpr uint16_t DNS_SERVER_PORT = 53;
   _dnsServer->setErrorReplyCode(DNSReplyCode::ServerFailure);
@@ -334,7 +334,7 @@ void ESPWifiHandler::onDNSServer()
 
 /** Should be called on wifi event gotIP*/
 #if (defined NBNS_SERVICE_ENABLE) && (NBNS_SERVICE_ENABLE == 1)
-void ESPWifiHandler::onNBNSService()
+void ESPWifiHandle::onNBNSService()
 {
   NBNS.begin(ESPConfig.hostNameSTA().c_str());
 }
@@ -342,8 +342,8 @@ void ESPWifiHandler::onNBNSService()
 
 /** Should be called after init wifi */
 #if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)
-uint32_t ESPWifiHandler::_otaArduinoPercent = 0;
-void ESPWifiHandler::onArduinoOTA()
+uint32_t ESPWifiHandle::_otaArduinoPercent = 0;
+void ESPWifiHandle::onArduinoOTA()
 {
   ArduinoOTA.onStart(
       []()
@@ -412,7 +412,7 @@ void ESPWifiHandler::onArduinoOTA()
 }
 #endif
 
-void ESPWifiHandler::loop()
+void ESPWifiHandle::loop()
 {
 #if (defined MDNS_SERVICE_ENABLE) && (MDNS_SERVICE_ENABLE == 1) && (defined ESP8266)
   MDNS.update();
@@ -423,7 +423,7 @@ void ESPWifiHandler::loop()
 #endif
 }
 
-void ESPWifiHandler::begin(bool wifiON)
+void ESPWifiHandle::begin(bool wifiON)
 {
   WiFiMode_t wf_mode = WIFI_OFF;
 
@@ -602,7 +602,7 @@ void ESPWifiHandler::begin(bool wifiON)
 #endif
 }
 
-void ESPWifiHandler::end(void)
+void ESPWifiHandle::end(void)
 {
   if (WIFI_OFF != WiFi.getMode())
   {
@@ -622,7 +622,7 @@ void ESPWifiHandler::end(void)
 #endif
 }
 
-void ESPWifiHandler::connect(const char *name, const char *pass)
+void ESPWifiHandle::connect(const char *name, const char *pass)
 {
   // We start by connecting to a WiFi network
   ESP_WIFI_TAG_CONSOLE("Connecting to %s", name);
@@ -663,7 +663,7 @@ void ESPWifiHandler::connect(const char *name, const char *pass)
   ]
 }
 */
-int ESPWifiHandler::ssidScan(String &json)
+int ESPWifiHandle::ssidScan(String &json)
 {
   boolean removeDuplicateAPs = true;
   int minimumQuality = -1;
@@ -791,7 +791,7 @@ int ESPWifiHandler::ssidScan(String &json)
 }
 
 /* Convert to %*/
-int ESPWifiHandler::getRSSIasQuality(int RSSI)
+int ESPWifiHandle::getRSSIasQuality(int RSSI)
 {
   int quality = 0;
   if (RSSI <= -100)
@@ -809,4 +809,4 @@ int ESPWifiHandler::getRSSIasQuality(int RSSI)
   return quality;
 }
 
-ESPWifiHandler ESPWifi;
+ESPWifiHandle ESPWifi;

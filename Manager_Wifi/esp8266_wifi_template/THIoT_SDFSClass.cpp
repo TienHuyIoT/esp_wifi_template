@@ -1,7 +1,7 @@
-#include "hth_esp_config.h"
-#include "hth_fs_handle.h"
-#include "hth_serial_trace.h"
-#include "hth_esp_sdcard.h"
+#include "THIoT_ESPConfig.h"
+#include "THIoT_ESPFSHandle.h"
+#include "THIoT_SerialTrace.h"
+#include "THIoT_SDFSClass.h"
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 /* Includes ------------------------------------------------------------------*/

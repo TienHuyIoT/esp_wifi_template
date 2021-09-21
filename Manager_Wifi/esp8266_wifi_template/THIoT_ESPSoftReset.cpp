@@ -1,8 +1,8 @@
 #include <Esp.h>
-#include "hth_esp_config.h"
+#include "THIoT_ESPConfig.h"
 #include "THIoT_ESPSoftReset.h"
-#include "hth_esp_sys_rtc.h"
-#include "hth_serial_trace.h"
+#include "THIoT_ESPTimeSystem.h"
+#include "THIoT_SerialTrace.h"
 
 #define RESET_DBG_PORT CONSOLE_PORT
 #define RESET_DBG_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
@@ -18,4 +18,4 @@ void ESPSoftReset::enable(uint32_t timeout)
     });
 }
 
-ESPSoftReset HTH_softReset;
+ESPSoftReset SOFTReset;

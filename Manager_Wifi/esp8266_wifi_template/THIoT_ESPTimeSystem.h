@@ -1,5 +1,5 @@
-#ifndef __RTC_H
-#define __RTC_H
+#ifndef __ESP_TIME_SYSTEM_H
+#define __ESP_TIME_SYSTEM_H
 
 #include <Arduino.h>
 #include <FS.h>
@@ -110,4 +110,4 @@ public:
 
 extern ESPTimeSystem ESPTime;
 
-#endif
+#endif // __ESP_TIME_SYSTEM_H

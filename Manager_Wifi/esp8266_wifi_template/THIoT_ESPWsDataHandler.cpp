@@ -1,20 +1,20 @@
 #include <ArduinoJson.h>
 #include <ESPAsyncWebServer.h>
 #include "THIoT_ESPWsDataHandler.h"
-#include "hth_esp_sys_rtc.h"
-#include "hth_serial_trace.h"
+#include "THIoT_ESPTimeSystem.h"
+#include "THIoT_SerialTrace.h"
 
 #define APP_WS_DBG_PRINT(...) CONSOLE_TAG_LOGI("[APP_WS]", __VA_ARGS__)
 
-ESPWsDataHandler::ESPWsDataHandler(/* args */)
+ESPWsDataHandle::ESPWsDataHandle(/* args */)
 {
 }
 
-ESPWsDataHandler::~ESPWsDataHandler()
+ESPWsDataHandle::~ESPWsDataHandle()
 {
 }
 
-void ESPWsDataHandler::onDataReceived(AsyncWebSocketClient *client, char *payload)
+void ESPWsDataHandle::onDataReceived(AsyncWebSocketClient *client, char *payload)
 {
   uint8_t page;
   uint8_t cmd;
