@@ -1,7 +1,7 @@
 #include <ArduinoJson.h>
 #include "hth_esp_config.h"
 #include "hth_esp_sys_params.h"
-#include "hth_console_dbg.h"
+#include "hth_serial_trace.h"
 
 #define WIFI_FILE_PORT CONSOLE_PORT
 #define WIFI_DATA_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
@@ -67,110 +67,114 @@ const char wifi_data_default_json[] PROGMEM = R"=====(
 }
 )=====" ;
 
-hth_esp_sys_params::hth_esp_sys_params(fs::FS &fs)
+ESPSysParams::ESPSysParams(fs::FS &fs)
 :_fs(&fs)
 {
 }
 
-hth_esp_sys_params::~hth_esp_sys_params()
+ESPSysParams::~ESPSysParams()
 {
 }
 
-void hth_esp_sys_params::begin()
+void ESPSysParams::load(fs::FS* fs)
 {
+    if (fs != nullptr)
+    {
+        _fs = fs;
+    }
     syncFromFileSystem();
 }
 
-void hth_esp_sys_params::resetPassword()
+void ESPSysParams::resetPassword()
 {
-    strncpy(_file_prams.auth_admin.pass, (const char *)"admin", AUTH_LENGHT_MAX);
-    strncpy(_file_prams.auth_user.pass, (const char *)"admin", AUTH_LENGHT_MAX);
-    _file_prams.confirm[CONFIRM_COMMON] = PASS_COMMON_DEFAULT;
-    _file_prams.confirm[CONFIRM_PU3] = PASS_PU3_DEFAULT;
-    _file_prams.confirm[CONFIRM_COST] = PASS_COST_DEFAULT;
-    _file_prams.confirm[CONFIRM_LOGFILE] = PASS_LOGFILE_DEFAULT;
+    strncpy(_sys_prams.auth_admin.pass, (const char *)"admin", AUTH_LENGHT_MAX);
+    strncpy(_sys_prams.auth_user.pass, (const char *)"admin", AUTH_LENGHT_MAX);
+    _sys_prams.confirm[CONFIRM_COMMON] = PASS_COMMON_DEFAULT;
+    _sys_prams.confirm[CONFIRM_PU3] = PASS_PU3_DEFAULT;
+    _sys_prams.confirm[CONFIRM_COST] = PASS_COST_DEFAULT;
+    _sys_prams.confirm[CONFIRM_LOGFILE] = PASS_LOGFILE_DEFAULT;
     saveToFileSystem();
 }
 
-void hth_esp_sys_params::resetDefault()
+void ESPSysParams::resetDefault()
 {
     _fs->remove(WIFI_FILE_PATH);
 }
 
-bool hth_esp_sys_params::passSupperAdminIsOK(const String &pass)
+bool ESPSysParams::passSupperAdminIsOK(const String &pass)
 {
     return (pass == "25251325");
 }
 
-bool hth_esp_sys_params::passConfirmIsOK(const String &pass, wifi_pass_confirm_t type)
+bool ESPSysParams::passConfirmIsOK(const String &pass, passConfirm_t type)
 {
     bool result = false;
-    if(pass == String(_file_prams.confirm[type]) || passSupperAdminIsOK(pass))
+    if(pass == String(_sys_prams.confirm[type]) || passSupperAdminIsOK(pass))
     {
         result = true;
     }
     return result;
 }
 
-void hth_esp_sys_params::saveToFileSystem()
+void ESPSysParams::saveToFileSystem()
 {
     File fs_handle;
     DynamicJsonBuffer djbco;
     JsonObject& root = djbco.createObject();
 
     JsonObject& port = root.createNestedObject("port");
-    port["udp"].set(_file_prams.port.udp);
-    port["tcp"].set(_file_prams.port.tcp);
-    port["ws"].set(_file_prams.port.ws);
+    port["udp"].set(_sys_prams.port.udp);
+    port["tcp"].set(_sys_prams.port.tcp);
+    port["ws"].set(_sys_prams.port.ws);
 
     JsonObject& device = root.createNestedObject("device");
-    device["name"].set(_file_prams.device.name);
-    device["addr"].set(_file_prams.device.addr);
-    device["tell"].set(_file_prams.device.tell);
+    device["name"].set(_sys_prams.device.name);
+    device["addr"].set(_sys_prams.device.addr);
+    device["tell"].set(_sys_prams.device.tell);
 
     JsonObject& auth_admin = root.createNestedObject("auth_admin");
-    auth_admin["user"].set(_file_prams.auth_admin.user);
-    auth_admin["pass"].set(_file_prams.auth_admin.pass);
+    auth_admin["user"].set(_sys_prams.auth_admin.user);
+    auth_admin["pass"].set(_sys_prams.auth_admin.pass);
 
     JsonObject& auth_user = root.createNestedObject("auth_user");
-    auth_user["user"].set(_file_prams.auth_user.user);
-    auth_user["pass"].set(_file_prams.auth_user.pass);
+    auth_user["user"].set(_sys_prams.auth_user.user);
+    auth_user["pass"].set(_sys_prams.auth_user.pass);
 
     JsonArray& confirm = root.createNestedArray("confirm");
     for(uint8_t i = 0; i < CONFIRM_NUM_MAX; ++i)
     {
-        confirm.add(_file_prams.confirm[i]);
+        confirm.add(_sys_prams.confirm[i]);
     }
 
     JsonObject& sta = root.createNestedObject("sta");
-    sta["ip"].set(_file_prams.sta.ip.toString());
-    sta["gw"].set(_file_prams.sta.gw.toString());
-    sta["sn"].set(_file_prams.sta.sn.toString());
-    sta["dns"].set(_file_prams.sta.dns.toString());
-    sta["ssid"].set(_file_prams.sta.ssid);
-    sta["psk"].set(_file_prams.sta.pass);
-    sta["hostname"].set(_file_prams.sta.hostname);
-    sta["dhcp"].set(_file_prams.sta.dhcp);
-    sta["disable"].set(_file_prams.sta.disable);
-    sta["smart_cfg"].set(_file_prams.sta.smart_cfg);
+    sta["ip"].set(_sys_prams.sta.ip.toString());
+    sta["gw"].set(_sys_prams.sta.gw.toString());
+    sta["sn"].set(_sys_prams.sta.sn.toString());
+    sta["dns"].set(_sys_prams.sta.dns.toString());
+    sta["ssid"].set(_sys_prams.sta.ssid);
+    sta["psk"].set(_sys_prams.sta.pass);
+    sta["hostname"].set(_sys_prams.sta.hostname);
+    sta["dhcp"].set(_sys_prams.sta.dhcp);
+    sta["disable"].set(_sys_prams.sta.disable);
+    sta["smart_cfg"].set(_sys_prams.sta.smart_cfg);
 
     JsonObject& ap = root.createNestedObject("ap");
-    ap["ip"].set(_file_prams.ap.ip.toString());
-    ap["sn"].set(_file_prams.ap.sn.toString());
-    ap["ssid"].set(_file_prams.ap.ssid);
-    ap["psk"].set(_file_prams.ap.pass);
-    ap["dns_name"].set(_file_prams.ap.dns_name);    
-    ap["disable"].set(_file_prams.ap.disable);
-    ap["hidden"].set(_file_prams.ap.hidden);
-    ap["channel"].set(_file_prams.ap.channel); 
+    ap["ip"].set(_sys_prams.ap.ip.toString());
+    ap["sn"].set(_sys_prams.ap.sn.toString());
+    ap["ssid"].set(_sys_prams.ap.ssid);
+    ap["psk"].set(_sys_prams.ap.pass);
+    ap["dns_name"].set(_sys_prams.ap.dns_name);    
+    ap["disable"].set(_sys_prams.ap.disable);
+    ap["hidden"].set(_sys_prams.ap.hidden);
+    ap["channel"].set(_sys_prams.ap.channel); 
 
     JsonObject& ddns = root.createNestedObject("ddns");
-    ddns["service"].set(_file_prams.ddns.service);
-    ddns["domain"].set(_file_prams.ddns.domain);
-    ddns["user"].set(_file_prams.ddns.user);    
-    ddns["pass"].set(_file_prams.ddns.pass); 
-    ddns["sync_time"].set(_file_prams.ddns.sync_time); 
-    ddns["disable"].set(_file_prams.ddns.disable);
+    ddns["service"].set(_sys_prams.ddns.service);
+    ddns["domain"].set(_sys_prams.ddns.domain);
+    ddns["user"].set(_sys_prams.ddns.user);    
+    ddns["pass"].set(_sys_prams.ddns.pass); 
+    ddns["sync_time"].set(_sys_prams.ddns.sync_time); 
+    ddns["disable"].set(_sys_prams.ddns.disable);
 
     WIFI_DATA_TAG_CONSOLE("Json created:");
     // root.prettyPrintTo(WIFI_FILE_PORT);
@@ -180,7 +184,7 @@ void hth_esp_sys_params::saveToFileSystem()
     WIFI_DATA_TAG_CONSOLE("wifi json info updated"); 
 }
 
-void hth_esp_sys_params::syncFromFileSystem()
+void ESPSysParams::syncFromFileSystem()
 {
     File fs_handle;
 
@@ -206,31 +210,31 @@ void hth_esp_sys_params::syncFromFileSystem()
     JsonObject& port = root["port"];
     if (port.success())
     {
-        _file_prams.port.udp = port["udp"].as<int>();
-        _file_prams.port.tcp = port["tcp"].as<int>();
-        _file_prams.port.ws  = port["ws"].as<int>();
+        _sys_prams.port.udp = port["udp"].as<int>();
+        _sys_prams.port.tcp = port["tcp"].as<int>();
+        _sys_prams.port.ws  = port["ws"].as<int>();
     }
 
     JsonObject& device = root["device"];
     if (device.success())
     {
-        device["name"].as<String>().toCharArray(_file_prams.device.name, DEVICENAME_LENGHT_MAX + 1);
-        device["addr"].as<String>().toCharArray(_file_prams.device.addr, DEVICE_ADDR_LENGHT_MAX + 1);
-        device["tell"].as<String>().toCharArray(_file_prams.device.tell, DEVICE_TELL_LENGHT_MAX + 1);
+        device["name"].as<String>().toCharArray(_sys_prams.device.name, DEVICENAME_LENGHT_MAX + 1);
+        device["addr"].as<String>().toCharArray(_sys_prams.device.addr, DEVICE_ADDR_LENGHT_MAX + 1);
+        device["tell"].as<String>().toCharArray(_sys_prams.device.tell, DEVICE_TELL_LENGHT_MAX + 1);
     }
 
     JsonObject& auth_admin = root["auth_admin"];
     if (auth_admin.success())
     {
-        auth_admin["user"].as<String>().toCharArray(_file_prams.auth_admin.user, AUTH_LENGHT_MAX + 1);
-        auth_admin["pass"].as<String>().toCharArray(_file_prams.auth_admin.pass, AUTH_LENGHT_MAX + 1);
+        auth_admin["user"].as<String>().toCharArray(_sys_prams.auth_admin.user, AUTH_LENGHT_MAX + 1);
+        auth_admin["pass"].as<String>().toCharArray(_sys_prams.auth_admin.pass, AUTH_LENGHT_MAX + 1);
     }
 
     JsonObject& auth_user = root["auth_user"];
     if (auth_user.success())
     {
-        auth_user["user"].as<String>().toCharArray(_file_prams.auth_user.user, AUTH_LENGHT_MAX + 1);
-        auth_user["pass"].as<String>().toCharArray(_file_prams.auth_user.pass, AUTH_LENGHT_MAX + 1);
+        auth_user["user"].as<String>().toCharArray(_sys_prams.auth_user.user, AUTH_LENGHT_MAX + 1);
+        auth_user["pass"].as<String>().toCharArray(_sys_prams.auth_user.pass, AUTH_LENGHT_MAX + 1);
     }
 
     JsonArray& confirm = root["confirm"];
@@ -239,50 +243,50 @@ void hth_esp_sys_params::syncFromFileSystem()
         uint8_t num = min((int)(confirm.size()), (int)CONFIRM_NUM_MAX);
         for(uint8_t i = 0; i < num; ++i)
         {
-            _file_prams.confirm[i] = confirm[i];
+            _sys_prams.confirm[i] = confirm[i];
         }        
     }
 
     JsonObject& sta = root["sta"];
     if (sta.success())
     {
-        _file_prams.sta.ip.fromString(sta["ip"].as<String>());
-        _file_prams.sta.gw.fromString(sta["gw"].as<String>());
-        _file_prams.sta.sn.fromString(sta["sn"].as<String>());
-        _file_prams.sta.dns.fromString(sta["dns"].as<String>());
-        sta["ssid"].as<String>().toCharArray(_file_prams.sta.ssid, SSID_LENGHT_MAX + 1);
-        sta["psk"].as<String>().toCharArray(_file_prams.sta.pass, PASS_LENGHT_MAX + 1);
-        sta["hostname"].as<String>().toCharArray(_file_prams.sta.hostname, HOSTNAME_LENGHT_MAX + 1); 
-        _file_prams.sta.dhcp      = sta["dhcp"].as<int>();  
-        _file_prams.sta.disable   = sta["disable"].as<int>();
-        _file_prams.sta.smart_cfg = sta["smart_cfg"].as<int>();
+        _sys_prams.sta.ip.fromString(sta["ip"].as<String>());
+        _sys_prams.sta.gw.fromString(sta["gw"].as<String>());
+        _sys_prams.sta.sn.fromString(sta["sn"].as<String>());
+        _sys_prams.sta.dns.fromString(sta["dns"].as<String>());
+        sta["ssid"].as<String>().toCharArray(_sys_prams.sta.ssid, SSID_LENGHT_MAX + 1);
+        sta["psk"].as<String>().toCharArray(_sys_prams.sta.pass, PASS_LENGHT_MAX + 1);
+        sta["hostname"].as<String>().toCharArray(_sys_prams.sta.hostname, HOSTNAME_LENGHT_MAX + 1); 
+        _sys_prams.sta.dhcp      = sta["dhcp"].as<int>();  
+        _sys_prams.sta.disable   = sta["disable"].as<int>();
+        _sys_prams.sta.smart_cfg = sta["smart_cfg"].as<int>();
     }
 
     JsonObject& ap = root["ap"];
     if (ap.success())
     {
-        _file_prams.ap.ip.fromString(ap["ip"].as<String>());
-        _file_prams.ap.sn.fromString(ap["sn"].as<String>()); 
-        ap["ssid"].as<String>().toCharArray(_file_prams.ap.ssid, SSID_LENGHT_MAX + 1);
-        ap["psk"].as<String>().toCharArray(_file_prams.ap.pass, PASS_LENGHT_MAX + 1);       
-        ap["dns_name"].as<String>().toCharArray(_file_prams.ap.dns_name, HOSTNAME_LENGHT_MAX + 1);
-        _file_prams.ap.disable = ap["disable"].as<int>();  
-        _file_prams.ap.channel = ap["channel"].as<int>();
-        _file_prams.ap.hidden  = ap["hidden"].as<int>(); 
+        _sys_prams.ap.ip.fromString(ap["ip"].as<String>());
+        _sys_prams.ap.sn.fromString(ap["sn"].as<String>()); 
+        ap["ssid"].as<String>().toCharArray(_sys_prams.ap.ssid, SSID_LENGHT_MAX + 1);
+        ap["psk"].as<String>().toCharArray(_sys_prams.ap.pass, PASS_LENGHT_MAX + 1);       
+        ap["dns_name"].as<String>().toCharArray(_sys_prams.ap.dns_name, HOSTNAME_LENGHT_MAX + 1);
+        _sys_prams.ap.disable = ap["disable"].as<int>();  
+        _sys_prams.ap.channel = ap["channel"].as<int>();
+        _sys_prams.ap.hidden  = ap["hidden"].as<int>(); 
     }  
 
     JsonObject& ddns = root["ddns"];
     if (ddns.success())
     {
-        ddns["service"].as<String>().toCharArray(_file_prams.ddns.service, DDNS_SERVICE_LENGTH_MAX + 1);
-        ddns["domain"].as<String>().toCharArray(_file_prams.ddns.domain, DDNS_DOMAIN_LENGTH_MAX + 1);
-        ddns["user"].as<String>().toCharArray(_file_prams.ddns.user, DDNS_USER_LENGTH_MAX + 1);
-        ddns["pass"].as<String>().toCharArray(_file_prams.ddns.pass, DDNS_PASS_LENGTH_MAX + 1);
-        _file_prams.ddns.sync_time = ddns["sync_time"].as<int>();
-        _file_prams.ddns.disable = ddns["disable"].as<int>();
+        ddns["service"].as<String>().toCharArray(_sys_prams.ddns.service, DDNS_SERVICE_LENGTH_MAX + 1);
+        ddns["domain"].as<String>().toCharArray(_sys_prams.ddns.domain, DDNS_DOMAIN_LENGTH_MAX + 1);
+        ddns["user"].as<String>().toCharArray(_sys_prams.ddns.user, DDNS_USER_LENGTH_MAX + 1);
+        ddns["pass"].as<String>().toCharArray(_sys_prams.ddns.pass, DDNS_PASS_LENGTH_MAX + 1);
+        _sys_prams.ddns.sync_time = ddns["sync_time"].as<int>();
+        _sys_prams.ddns.disable = ddns["disable"].as<int>();
     } 
 
     WIFI_DATA_TAG_CONSOLE("sync data succed!");
 }
 
-hth_esp_sys_params WFDataFile(NAND_FS_SYSTEM);
+ESPSysParams ESPConfig(NAND_FS_SYSTEM);

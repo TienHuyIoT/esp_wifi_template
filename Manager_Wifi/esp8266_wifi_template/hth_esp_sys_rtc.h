@@ -15,21 +15,21 @@ typedef struct rtc_time
   int sec;  /** 0..59 */
 } rtc_time_t;
 
-class rtc_data_file
+class RtcFileHandler
 {
 private:
   fs::FS *_fs;
 
 public:
-  rtc_data_file(fs::FS &fs);
-  ~rtc_data_file();
+  RtcFileHandler(fs::FS &fs);
+  ~RtcFileHandler();
 
   void save(rtc_time_t *rtc);
   bool sync(rtc_time_t *rtc);
   void remove(void);
 };
 
-class hth_esp_sys_rtc
+class ESPTimeSystem
 {
 public:
   typedef enum : uint8_t
@@ -40,7 +40,7 @@ public:
   } level_update_t;
 
 private:
-  rtc_data_file *_rtcFile;
+  RtcFileHandler *_rtcFile;
   level_update_t _rtcSource;
 
   const char *printSourceUpdate(level_update_t level)
@@ -69,12 +69,12 @@ private:
   }
 
 public:
-  hth_esp_sys_rtc(/* args */);
-  ~hth_esp_sys_rtc();
+  ESPTimeSystem(/* args */);
+  ~ESPTimeSystem();
 
-  void begin();
+  void load();
 
-  void saveToFS();
+  void saveToFileSystem();
 
   level_update_t getSourceUpdate() { return _rtcSource; }
 
@@ -84,21 +84,21 @@ public:
 
   void setDate(rtc_time_t *rtc);
 
-  void setTimeDate(rtc_time_t *rtc);
+  void set(rtc_time_t *rtc);
 
   /* Convert now to rtc */
-  rtc_time_t now2Time(time_t t_now);
+  rtc_time_t makeRtcFromNow(time_t t_now);
 
   /* Convert rtc to now */
-  time_t time2Now(rtc_time_t *rtc);
+  time_t makeNowFromRtc(rtc_time_t *rtc);
 
   char *printTimeFromNow(time_t t_now);
 
   /* Return time now number of rtc system */
-  time_t nowCurrent();
+  time_t toNow();
 
   /* Get rtc */
-  bool getTimeDate(rtc_time_t *rtc);
+  bool get(rtc_time_t *rtc);
 
   uint32_t hhmmssFormat(rtc_time_t *rtc);
 
@@ -108,6 +108,6 @@ public:
   bool GMTStringUpdate(const char *rtc_web, level_update_t level);
 };
 
-extern hth_esp_sys_rtc HTH_sysTime;
+extern ESPTimeSystem ESPTime;
 
 #endif

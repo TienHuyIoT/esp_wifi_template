@@ -7,7 +7,7 @@
 #include "hth_esp_config.h"
 #include "hth_AsyncEasyDDNS.h"
 
-class hth_esp_sntp
+class ESPSntpService
 {
 private:
     static constexpr char *_ntpServer1 = "pool.ntp.org";
@@ -15,16 +15,16 @@ private:
     static constexpr long _gmtOffset_sec = 3600 * 7;
     static constexpr int _daylightOffset_sec = 0;
 public:
-    hth_esp_sntp(/* args */);
-    ~hth_esp_sntp();
+    ESPSntpService(/* args */);
+    ~ESPSntpService();
     void begin();
 };
 
-class hth_esp_wifi
+class ESPWifiHandler
 {
 private:
 #if (defined SNTP_SERVICE_ENABLE) && (SNTP_SERVICE_ENABLE == 1)  
-    hth_esp_sntp* _sntp;
+    ESPSntpService* _sntp;
 #endif
     
 #if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1) 
@@ -52,17 +52,17 @@ private:
 
     static Ticker _reconnetTicker;
 #ifdef ESP8266
-    WiFiEventHandler accessPointConnectedHandler;
-    WiFiEventHandler accessPointDisconnectedHandler;
-    WiFiEventHandler accessPointGotIpHandler;
+    WiFiEventHandler _accessPointConnectedHandler;
+    WiFiEventHandler _accessPointDisconnectedHandler;
+    WiFiEventHandler _accessPointGotIpHandler;
 #endif
 
     static int getRSSIasQuality(int RSSI);
     void registerEventHandler();   // wifi event
 
 public:
-    hth_esp_wifi(/* args */);
-    ~hth_esp_wifi();
+    ESPWifiHandler(/* args */);
+    ~ESPWifiHandler();
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
     static hth_AsyncEasyDDNSClass* ddnsClient;
@@ -75,6 +75,6 @@ public:
     int ssidScan(String &json);
 };
 
-extern hth_esp_wifi HTH_espWifi;
+extern ESPWifiHandler ESPWifi;
 
 #endif // _HTH_ESP_WIFI_H

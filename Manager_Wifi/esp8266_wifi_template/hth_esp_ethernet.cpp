@@ -4,31 +4,31 @@
 
 #include "hth_esp_sys_params.h"
 #include "hth_esp_ethernet.h"
-#include "hth_console_dbg.h"
+#include "hth_serial_trace.h"
 
 #define ESP_ETH_PORT CONSOLE_PORT
 #define ETH_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[ETH]", __VA_ARGS__)
 
 #ifdef ESP8266
 #include <lwip/apps/sntp.h>
-spi_ethernet::spi_ethernet(/* args */)
+SPIEthernet::SPIEthernet(/* args */)
 :LwipIntfDev(ETH_NSS_PIN)
 {
 }
 
-spi_ethernet::~spi_ethernet()
+SPIEthernet::~SPIEthernet()
 {
 }
 
-bool spi_ethernet::linkUp()
+bool SPIEthernet::linkUp()
 {
   return (status() == WL_CONNECTED);
 }
 
-spi_ethernet ETH;
+SPIEthernet ETH;
 #endif
 
-hth_esp_ethernet::hth_esp_ethernet(/* args */)
+ESPEthernet::ESPEthernet(/* args */)
 {
   _status = false;
 #ifdef ESP8266
@@ -36,11 +36,11 @@ hth_esp_ethernet::hth_esp_ethernet(/* args */)
 #endif
 }
 
-hth_esp_ethernet::~hth_esp_ethernet()
+ESPEthernet::~ESPEthernet()
 {
 }
 
-bool hth_esp_ethernet::start()
+bool ESPEthernet::begin()
 { 
   if (!_status) 
   {
@@ -51,15 +51,15 @@ bool hth_esp_ethernet::start()
 #ifdef ESP32
   ETH.begin(ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_TYPE, ETH_CLK_MODE);
 #endif
-  if (!WFDataFile.dhcpSTA())
+  if (!ESPConfig.dhcpSTA())
   {
     /* Config must be after begin function for ESP32 */
-    ETH.config(WFDataFile.ipSTA(), WFDataFile.gwSTA(), WFDataFile.snSTA(), WFDataFile.dnsSTA());
+    ETH.config(ESPConfig.ipSTA(), ESPConfig.gwSTA(), ESPConfig.snSTA(), ESPConfig.dnsSTA());
     ETH_TAG_CONSOLE("static IP enable");
-    ETH_TAG_CONSOLE("Ip: %s", WFDataFile.ipSTA().toString().c_str());
-    ETH_TAG_CONSOLE("Gw: %s", WFDataFile.gwSTA().toString().c_str());
-    ETH_TAG_CONSOLE("Sn: %s", WFDataFile.snSTA().toString().c_str());
-    ETH_TAG_CONSOLE("Dns: %s\r\n", WFDataFile.dnsSTA().toString().c_str());
+    ETH_TAG_CONSOLE("Ip: %s", ESPConfig.ipSTA().toString().c_str());
+    ETH_TAG_CONSOLE("Gw: %s", ESPConfig.gwSTA().toString().c_str());
+    ETH_TAG_CONSOLE("Sn: %s", ESPConfig.snSTA().toString().c_str());
+    ETH_TAG_CONSOLE("Dns: %s\r\n", ESPConfig.dnsSTA().toString().c_str());
   }
 #ifdef ESP8266
   ETH.begin();
@@ -67,7 +67,7 @@ bool hth_esp_ethernet::start()
   return true;
 }
 
-void hth_esp_ethernet::loop()
+void ESPEthernet::loop()
 {
 #ifdef ESP8266
   if (_status)
@@ -96,24 +96,24 @@ void hth_esp_ethernet::loop()
 #endif
 }
 
-void hth_esp_ethernet::enable(void)
+void ESPEthernet::enable(void)
 {
   ETH_TAG_CONSOLE("ETH Enable");
   _status = 1;
 }
 
-void hth_esp_ethernet::disable(void)
+void ESPEthernet::disable(void)
 {
   ETH_TAG_CONSOLE("ETH Disable");
   _status = 0;
 }
 
-bool hth_esp_ethernet::isEnable(void)
+bool ESPEthernet::isEnable(void)
 {
   ETH_TAG_CONSOLE("status %u", _status ? "ON" : "OFF");
   return _status;
 }
 
-hth_esp_ethernet HTH_ethernet;
+ESPEthernet Ethernet;
 
 #endif

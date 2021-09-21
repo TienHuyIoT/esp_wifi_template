@@ -25,7 +25,7 @@ SPI BUS
 #define ETH_NSS_PIN             15
 #endif
 
-// 
+// GPIO SDcard SPI Chip select
 #define SD_NSS_PIN				16 
 // GPIO control power of SD card
 #define SD_POWER_PIN     		5

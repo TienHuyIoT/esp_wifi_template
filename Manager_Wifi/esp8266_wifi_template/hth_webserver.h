@@ -7,7 +7,7 @@
 #include "hth_fs_editor.h"
 #include "hth_fs_handle.h"
 #include "hth_websocket.h"
-#include "hth_wsDataHandler.h"
+#include "THIoT_ESPWsDataHandler.h"
 
 typedef enum {
   HTTP_AUTH_LV0 = 0,
@@ -20,12 +20,12 @@ typedef std::function<void(AsyncWebServerRequest *)> asyncHttpHandler;
 
 typedef std::function<void(void)> scanNetworkHandler;
 
-class serverUrlCallbacks {
+class WebserverURLHandleCallbacks {
 private:
   scanNetworkHandler _pScanNetworkCb;
 public:
-  serverUrlCallbacks();
-	virtual ~serverUrlCallbacks();
+  WebserverURLHandleCallbacks();
+	virtual ~WebserverURLHandleCallbacks();
   /**
   * Handler called after once request with method GET and authenticated.
   */
@@ -60,20 +60,20 @@ public:
   }
 };
 
-class hth_webserver
+class ESPWebserver
 {
 private:
   static constexpr uint16_t SERVER_PORT_DEFAULT = 25123;
   static AsyncWebServer* _server;
   static AsyncWebServer* _server80;
-  static hth_FSEditor* _spiffsEditor;
-  static hth_websocket* _wsHandler;
-  static serverUrlCallbacks* _pUrlCallbacks;
+  static ESPFSEditor* _spiffsEditor;
+  static ESPWebsocket* _wsHandler;
+  static WebserverURLHandleCallbacks* _pUrlCallbacks;
   static asyncHttpHandler _httpGetAuthHandler;
   static asyncHttpHandler _httpGetHandler;
   static asyncHttpHandler _httpPostAuthHandler;
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-  static hth_FSEditor* _sdCardEditor;
+  static ESPFSEditor* _sdCardEditor;
   static uint32_t _sdUploadPercent;
 #endif
   static String _adminAuthUser;
@@ -99,8 +99,8 @@ private:
   static void fs_editor_status(AsyncWebServerRequest *request);
 
 public:
-  hth_webserver(/* args */);
-  ~hth_webserver();
+  ESPWebserver(/* args */);
+  ~ESPWebserver();
 
   void begin();
   void loop();
@@ -123,7 +123,7 @@ public:
     _uriHttpPostAuth = uri;
   }
 
-  void setHandleCallbacks(serverUrlCallbacks* pCallbacks);
+  void setHandleCallbacks(WebserverURLHandleCallbacks* pCallbacks);
 
   void syncSsidNetworkToEvents();
 

@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "hth_esp_config.h"
 #include "hth_esp_sdcard.h"
-#include "hth_console_dbg.h"
+#include "hth_serial_trace.h"
 #include "hth_esp_sys_rtc.h"
 #include "hth_esp_wifi.h"
 #include "hth_esp_sys_params.h"
@@ -16,7 +16,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 const char *build_time = __DATE__ " " __TIME__ " GMT";
-hth_webserver HTH_asyncServer;
+ESPWebserver webServer;
 
 void setup()
 {
@@ -36,22 +36,22 @@ void setup()
   ETH_GPIO_ENABLE_INIT();
   if(ETH_STATUS_IS_ON())
   {
-    HTH_ethernet.enable();
+    Ethernet.enable();
   }
   else
   {
-    HTH_ethernet.disable();
+    Ethernet.disable();
   }
 #else
-    HTH_ethernet.enable();
+    Ethernet.enable();
 #endif
 #endif
 
-    // Init params form eeprom memory
-    HTH_espEEPROM.begin();
+    // Load params form eeprom memory
+    EEPParams.load();
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-#if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1)
+#if (defined SD_SPI_INTERFACE) && (SD_SPI_INTERFACE == 1)
     /* Init SPI first */
 #ifdef ESP32
     SPI.begin(SD_SCK_PIN, SD_MISO_PIN, SD_MOSI_PIN);
@@ -61,49 +61,52 @@ void setup()
     SPI.begin();
     /* Init Sd Card second*/
     HTH_sdCard.begin();
-#endif
-#endif
-#endif
+#endif // ESP32
+#else
+    // SDMMC interface only with ESP32
+    HTH_sdCard.begin();
+#endif // (defined SD_SPI_INTERFACE) && (SD_SPI_INTERFACE == 1)
+#endif // (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 
+    // Initialize and auto format nand memory file system
 #ifdef ESP32
-    /* Init nand memory file system */
     NAND_FS_SYSTEM.begin(true);
 #elif defined(ESP8266)
     NAND_FS_SYSTEM.begin();
 #endif
 
     /* List file in nand memory file system */
-    HTH_fsHandle.listDir(NAND_FS_SYSTEM, "/", 0);
+    FSHandle.listDir(NAND_FS_SYSTEM, "/", 0);
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-    HTH_fsHandle.listDir(SD_FS_SYSTEM, "/", 0);
+    FSHandle.listDir(SD_FS_SYSTEM, "/", 0);
 #endif
 
     // Always initialize after NAND_FS_SYSTEM.begin();
     // Because some function of system will need params 
     // load from file system for initial.
-    WFDataFile.begin();
+    ESPConfig.load(&NAND_FS_SYSTEM);
     
-    // Init system time with params load from file system
-    HTH_sysTime.begin();
+    // Init system time with params option load from the file system
+    ESPTime.load();
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
     // If the ethernet is enable, the wifi will not init.
-    HTH_ethernet.start();
-    HTH_espWifi.begin(!HTH_ethernet.isEnable());
+    Ethernet.begin();
+    ESPWifi.begin(!Ethernet.isEnable());
 #else
     // Init wifi and accompanied services 
-    HTH_espWifi.begin();
+    ESPWifi.begin();
 #endif
 
     // register callback handle http request
-    HTH_asyncServer.setHandleCallbacks(new hth_httpserver_url());
-    HTH_asyncServer.begin();
+    webServer.setHandleCallbacks(new WebserverURLHandle());
+    webServer.begin();
 }
 
 void loop()
 {
-    HTH_espWifi.loop();
+    ESPWifi.loop();
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
-    HTH_ethernet.loop();
+    Ethernet.loop();
 #endif
 }

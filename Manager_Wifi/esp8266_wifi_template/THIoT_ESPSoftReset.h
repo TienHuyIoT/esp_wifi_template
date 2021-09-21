@@ -4,16 +4,16 @@
 #include <Arduino.h>
 #include <Ticker.h>
 
-class hth_esp_soft_reset
+class ESPSoftReset
 {
 private:
     Ticker _reset;
 public:
-    hth_esp_soft_reset(/* args */) {}
-    ~hth_esp_soft_reset() {}
+    ESPSoftReset(/* args */) {}
+    ~ESPSoftReset() {}
     void enable(uint32_t timeout);
 };
 
-extern hth_esp_soft_reset HTH_softReset;
+extern ESPSoftReset HTH_softReset;
 
 #endif // _ESP_REBOOT_H_

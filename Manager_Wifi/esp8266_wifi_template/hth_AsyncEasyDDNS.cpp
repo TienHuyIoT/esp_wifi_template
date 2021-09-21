@@ -23,7 +23,7 @@ Some Library references:
 #include "hth_AsyncEasyDDNS.h"
 
 #if (defined ASYNC_EASYDDNS_DEBUG) && (ASYNC_EASYDDNS_DEBUG == 1)
-#include "hth_console_dbg.h"
+#include "hth_serial_trace.h"
 #define EASYDDNS_PORT CONSOLE_PORT
 #define EASYDDNS_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
 #define EASYDDNS_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[EASYDDNS]", __VA_ARGS__)

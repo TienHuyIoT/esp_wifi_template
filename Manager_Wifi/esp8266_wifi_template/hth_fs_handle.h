@@ -4,13 +4,13 @@
 #include <Arduino.h>
 #include <FS.h>
 
-class hth_fs_handle
+class ESPFSHandler
 {
 private:
     /* data */
 public:
-    hth_fs_handle(/* args */);
-    ~hth_fs_handle();
+    ESPFSHandler(/* args */);
+    ~ESPFSHandler();
 
     void listDir(fs::FS &fs, const char *dirname, uint8_t levels);
     void format(fs::FS &fs, const char *dirname);
@@ -27,6 +27,6 @@ public:
     #endif // (0)
 };
 
-extern hth_fs_handle HTH_fsHandle;
+extern ESPFSHandler FSHandle;
 
 #endif // _FS_HANDLE_H

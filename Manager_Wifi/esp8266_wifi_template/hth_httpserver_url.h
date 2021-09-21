@@ -4,7 +4,7 @@
 #include <ESPAsyncWebServer.h>
 #include "hth_webserver.h"
 
-class hth_httpserver_url : public serverUrlCallbacks {
+class WebserverURLHandle : public WebserverURLHandleCallbacks {
 private:
     /**
      * Handler called after once request with method GET and authenticated.
@@ -19,18 +19,18 @@ private:
      */
     void onHttpPostAuth(AsyncWebServerRequest* request);
 public:
-    hth_httpserver_url(/* args */);
-    ~hth_httpserver_url();
+    WebserverURLHandle(/* args */);
+    ~WebserverURLHandle();
 };
 
 typedef struct {
     char *path_arg;
-    void (*cb)(AsyncWebServerRequest *request, hth_httpserver_url* client);
+    void (*cb)(AsyncWebServerRequest *request, WebserverURLHandle* client);
 } server_post_handle_t;
 
 typedef struct {
     char *path_arg;
-    void (*cb)(AsyncWebServerRequest *request, hth_httpserver_url* client);
+    void (*cb)(AsyncWebServerRequest *request, WebserverURLHandle* client);
 } server_get_handle_t;
 
 #endif

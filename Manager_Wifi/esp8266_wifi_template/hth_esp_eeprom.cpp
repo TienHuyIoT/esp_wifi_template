@@ -1,36 +1,36 @@
 #include <EEPROM.h>
 #include "hth_esp_eeprom.h"
-#include "hth_console_dbg.h"
+#include "hth_serial_trace.h"
 
 #define EEPROM_DATA_PORT CONSOLE_PORT
 #define EEPROM_DATA_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
 #define EEPROM_DATA_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[EEPROM] ", __VA_ARGS__)
 
-hth_eeprom_data::hth_eeprom_data(/* args */)
+ESPEEPromParams::ESPEEPromParams(/* args */)
 {
     memset(&_eepData, 0, sizeof(_eepData));
 }
 
-hth_eeprom_data::~hth_eeprom_data()
+ESPEEPromParams::~ESPEEPromParams()
 {
 }
 
-uint8_t hth_eeprom_data::isDeviceActivated()
+uint8_t ESPEEPromParams::isDeviceActivated()
 {
     return ((uint8_t)DEVICE_ACTIVATED == _eepData.activeStatus);
 }
 
-void hth_eeprom_data::deviceActive()
+void ESPEEPromParams::deviceActive()
 {
     activePerform(ACTIVE_ENABLE_CM);
 }
 
-void hth_eeprom_data::deviceInactive()
+void ESPEEPromParams::deviceInactive()
 {
     activePerform(ACTIVE_DISABLE_CM);
 }
 
-void hth_eeprom_data::begin()
+void ESPEEPromParams::load()
 {
     uint64_t chipID;
 #ifdef ESP32
@@ -70,7 +70,7 @@ void hth_eeprom_data::begin()
     }
 }
 
-void hth_eeprom_data::activePerform(active_cmd_t Cmd)
+void ESPEEPromParams::activePerform(active_cmd_t Cmd)
 {
     uint64_t chipID;
 #ifdef ESP32
@@ -98,4 +98,4 @@ void hth_eeprom_data::activePerform(active_cmd_t Cmd)
     EEPROM.end();
 }
 
-hth_eeprom_data HTH_espEEPROM;
+ESPEEPromParams EEPParams;

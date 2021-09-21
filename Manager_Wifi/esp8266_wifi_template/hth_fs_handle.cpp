@@ -2,9 +2,9 @@
 
 #include <FS.h>
 #include "hth_esp_config.h"
-#include "hth_console_dbg.h"
+#include "hth_serial_trace.h"
 #include "hth_fs_handle.h"
-#if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1)
+#if (defined SD_SPI_INTERFACE) && (SD_SPI_INTERFACE == 1)
 #include <SD.h>
 #include <SPI.h>
 #endif
@@ -18,15 +18,15 @@
 #define FS_HANDLE_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
 #define FS_HANDLE_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[FS]", __VA_ARGS__)
 
-hth_fs_handle::hth_fs_handle(/* args */)
+ESPFSHandler::ESPFSHandler(/* args */)
 {
 }
 
-hth_fs_handle::~hth_fs_handle()
+ESPFSHandler::~ESPFSHandler()
 {
 }
 
-void hth_fs_handle::listDir(fs::FS &fs, const char *dirname, uint8_t levels)
+void ESPFSHandler::listDir(fs::FS &fs, const char *dirname, uint8_t levels)
 {
     FS_HANDLE_TAG_CONSOLE("Listing directory: %s", dirname);
     File root = fs.open(dirname, "r");
@@ -73,7 +73,7 @@ void hth_fs_handle::listDir(fs::FS &fs, const char *dirname, uint8_t levels)
 }
 
 /* format(SD_FS_SYSTEM, "/"); */
-void hth_fs_handle::format(fs::FS &fs, const char *dirname)
+void ESPFSHandler::format(fs::FS &fs, const char *dirname)
 {
   FS_HANDLE_TAG_CONSOLE("Listing directory: %s", dirname);
 
@@ -108,7 +108,7 @@ void hth_fs_handle::format(fs::FS &fs, const char *dirname)
   }
 }
 
-void hth_fs_handle::deleteFile(fs::FS &fs, const char *path)
+void ESPFSHandler::deleteFile(fs::FS &fs, const char *path)
 {
   FS_HANDLE_TAG_CONSOLE("Deleting file: %s", path);
   if (fs.remove(path))
@@ -121,7 +121,7 @@ void hth_fs_handle::deleteFile(fs::FS &fs, const char *path)
   }
 }
 
-void hth_fs_handle::removeDir(fs::FS &fs, const char *path)
+void ESPFSHandler::removeDir(fs::FS &fs, const char *path)
 {
   FS_HANDLE_TAG_CONSOLE("Removing Dir: %s", path);
   if (fs.rmdir(path))
@@ -135,7 +135,7 @@ void hth_fs_handle::removeDir(fs::FS &fs, const char *path)
 }
 
 #if (0)
-void hth_fs_handle::createDir(fs::FS &fs, const char *path)
+void ESPFSHandler::createDir(fs::FS &fs, const char *path)
 {
   FS_HANDLE_TAG_CONSOLE("Creating Dir: %s", path);
   if (fs.mkdir(path))
@@ -148,7 +148,7 @@ void hth_fs_handle::createDir(fs::FS &fs, const char *path)
   }
 }
 
-void hth_fs_handle::readFile(fs::FS &fs, const char *path)
+void ESPFSHandler::readFile(fs::FS &fs, const char *path)
 {
   FS_HANDLE_TAG_CONSOLE("Reading file: %s", path);
 
@@ -166,7 +166,7 @@ void hth_fs_handle::readFile(fs::FS &fs, const char *path)
   }
 }
 
-void hth_fs_handle::writeFile(fs::FS &fs, const char *path, const char *message)
+void ESPFSHandler::writeFile(fs::FS &fs, const char *path, const char *message)
 {
   FS_HANDLE_TAG_CONSOLE("Writing file: %s", path);
 
@@ -186,7 +186,7 @@ void hth_fs_handle::writeFile(fs::FS &fs, const char *path, const char *message)
   }
 }
 
-void hth_fs_handle::appendFile(fs::FS &fs, const char *path, const char *message)
+void ESPFSHandler::appendFile(fs::FS &fs, const char *path, const char *message)
 {
   FS_HANDLE_TAG_CONSOLE("Appending to file: %s", path);
 
@@ -206,7 +206,7 @@ void hth_fs_handle::appendFile(fs::FS &fs, const char *path, const char *message
   }
 }
 
-void hth_fs_handle::renameFile(fs::FS &fs, const char *path1, const char *path2)
+void ESPFSHandler::renameFile(fs::FS &fs, const char *path1, const char *path2)
 {
   FS_HANDLE_TAG_CONSOLE("Renaming file %s to %s", path1, path2);
   if (fs.rename(path1, path2))
@@ -219,7 +219,7 @@ void hth_fs_handle::renameFile(fs::FS &fs, const char *path1, const char *path2)
   }
 }
 
-void hth_fs_handle::testFileIO(fs::FS &fs, const char *path)
+void ESPFSHandler::testFileIO(fs::FS &fs, const char *path)
 {
   File file = fs.open(path);
   static uint8_t buf[512];
@@ -270,4 +270,4 @@ void hth_fs_handle::testFileIO(fs::FS &fs, const char *path)
 
 #endif // (0)
 
-hth_fs_handle HTH_fsHandle;
+ESPFSHandler FSHandle;

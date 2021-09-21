@@ -2,7 +2,7 @@
 #include <FS.h>
 #include "hth_fs_editor.h"
 #include "hth_esp_sdcard.h"
-#include "hth_console_dbg.h"
+#include "hth_serial_trace.h"
 
 #define FSEDITOR_DBG_PORT CONSOLE_PORT
 #if (defined FS_EDITOR_DEBUG) && (FS_EDITOR_DEBUG == 1)
@@ -920,7 +920,7 @@ static bool isExcluded(fs::FS &_fs, const char *filename) {
 
 // WEB HANDLER IMPLEMENTATION
 
-hth_FSEditor::hth_FSEditor(const fs::FS& fs, const String& uri, const String& username, const String& password)
+ESPFSEditor::ESPFSEditor(const fs::FS& fs, const String& uri, const String& username, const String& password)
 :_fs(fs)
 ,_username(username)
 ,_password(password)
@@ -945,18 +945,18 @@ hth_FSEditor::hth_FSEditor(const fs::FS& fs, const String& uri, const String& us
   }
 }
 
-hth_FSEditor& hth_FSEditor::onProgress(THandlerFunction_Progress fn) {
+ESPFSEditor& ESPFSEditor::onProgress(THandlerFunction_Progress fn) {
     _progress_callback = fn;
     return *this;
 }
 
-hth_FSEditor& hth_FSEditor::onStatus(fs_status fn)
+ESPFSEditor& ESPFSEditor::onStatus(fs_status fn)
 {
   _status_callback = fn;
   return *this;
 }
 
-bool hth_FSEditor::canHandle(AsyncWebServerRequest *request){ 
+bool ESPFSEditor::canHandle(AsyncWebServerRequest *request){ 
   if(request->url().equalsIgnoreCase(_uri)){
     String path = "";
 #if (defined FS_EDITOR_DEBUG) && (FS_EDITOR_DEBUG == 1)
@@ -1025,7 +1025,7 @@ bool hth_FSEditor::canHandle(AsyncWebServerRequest *request){
 }
 
 
-void hth_FSEditor::handleRequest(AsyncWebServerRequest *request){
+void ESPFSEditor::handleRequest(AsyncWebServerRequest *request){
   String path = "";
   if(_username.length() && _password.length())
   {
@@ -1186,7 +1186,7 @@ void hth_FSEditor::handleRequest(AsyncWebServerRequest *request){
   }
 }
 
-void hth_FSEditor::handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
+void ESPFSEditor::handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
   if(!index){
     if(!_username.length() || request->authenticate(_username.c_str(),_password.c_str())){
       _authenticated = true;    
@@ -1223,7 +1223,7 @@ void hth_FSEditor::handleUpload(AsyncWebServerRequest *request, const String& fi
   }
 }
 
-void hth_FSEditor::debug(AsyncWebServerRequest *request) {
+void ESPFSEditor::debug(AsyncWebServerRequest *request) {
   if(request->method() == HTTP_GET)
     FSEDITOR_DBG_PRINTF("GET");
   else if(request->method() == HTTP_POST)

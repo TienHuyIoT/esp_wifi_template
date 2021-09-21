@@ -76,9 +76,9 @@ typedef struct {
         uint8_t     sync_time;
         uint8_t     disable : 1;
     }ddns;
-} wifi_file_json_t;
+} esp_sys_params_t;
 
-class hth_esp_sys_params
+class ESPSysParams
 {
 public:
     typedef enum : uint8_t {
@@ -87,146 +87,146 @@ public:
         CONFIRM_COST,
         CONFIRM_LOGFILE,
         CONFIRM_RESERVE
-    } wifi_pass_confirm_t;
+    } passConfirm_t;
 
 private:
     fs::FS *_fs;
-    wifi_file_json_t _file_prams;
+    esp_sys_params_t _sys_prams;
     void syncFromFileSystem();
     void saveToFileSystem();
 public:
-    hth_esp_sys_params(fs::FS &fs);
-    ~hth_esp_sys_params();
+    ESPSysParams(fs::FS &fs = NAND_FS_SYSTEM);
+    ~ESPSysParams();
 
-    void begin();
-    void commitToFS() { saveToFileSystem(); }
+    void load(fs::FS* fs = nullptr);
+    void save() { saveToFileSystem(); }
     void resetPassword();
     void resetDefault();
     bool passSupperAdminIsOK(const String &pass);
     /* Port API */
-    uint16_t udpPort() const { return _file_prams.port.udp; }
-    uint16_t tcpPort() { return _file_prams.port.tcp; }
-    uint16_t wsPort() { return _file_prams.port.ws; }
-    void udpPortSet(uint16_t port) { _file_prams.port.udp = port; }
-    void tcpPortSet(uint16_t port) { _file_prams.port.tcp = port; }
-    void wsPortSet(uint16_t port) { _file_prams.port.ws = port; }
+    uint16_t udpPort() const { return _sys_prams.port.udp; }
+    uint16_t tcpPort() { return _sys_prams.port.tcp; }
+    uint16_t wsPort() { return _sys_prams.port.ws; }
+    void udpPortSet(uint16_t port) { _sys_prams.port.udp = port; }
+    void tcpPortSet(uint16_t port) { _sys_prams.port.tcp = port; }
+    void wsPortSet(uint16_t port) { _sys_prams.port.ws = port; }
     /* Device API */
-    String nameDevice() { return _file_prams.device.name; }
-    String addrDevice() { return _file_prams.device.addr; }
-    String tellDevice() { return _file_prams.device.tell; }
+    String nameDevice() { return _sys_prams.device.name; }
+    String addrDevice() { return _sys_prams.device.addr; }
+    String tellDevice() { return _sys_prams.device.tell; }
     void nameDeviceSet(const String &name) { 
-        name.toCharArray(_file_prams.device.name, DEVICENAME_LENGHT_MAX + 1);
+        name.toCharArray(_sys_prams.device.name, DEVICENAME_LENGHT_MAX + 1);
     }
     void addrDeviceSet(const String &addr) { 
-        addr.toCharArray(_file_prams.device.addr, DEVICE_ADDR_LENGHT_MAX + 1);
+        addr.toCharArray(_sys_prams.device.addr, DEVICE_ADDR_LENGHT_MAX + 1);
     }
     void tellDeviceSet(const String &tell) { 
-        tell.toCharArray(_file_prams.device.tell, DEVICE_TELL_LENGHT_MAX + 1);
+        tell.toCharArray(_sys_prams.device.tell, DEVICE_TELL_LENGHT_MAX + 1);
     }
     /* Auth API */
-    String authAdminUser() { return _file_prams.auth_admin.user; }
-    String authAdminPass() { return _file_prams.auth_admin.pass; }
-    String authUserUser() { return _file_prams.auth_user.user; }
-    String authUserPass() { return _file_prams.auth_user.pass; }
+    String authAdminUser() { return _sys_prams.auth_admin.user; }
+    String authAdminPass() { return _sys_prams.auth_admin.pass; }
+    String authUserUser() { return _sys_prams.auth_user.user; }
+    String authUserPass() { return _sys_prams.auth_user.pass; }
     void authAdminUserSet(const String &user) { 
-        user.toCharArray(_file_prams.auth_admin.user, AUTH_LENGHT_MAX + 1);
+        user.toCharArray(_sys_prams.auth_admin.user, AUTH_LENGHT_MAX + 1);
     }
     void authAdminPassSet(const String &pass) { 
-        pass.toCharArray(_file_prams.auth_admin.pass, AUTH_LENGHT_MAX + 1);
+        pass.toCharArray(_sys_prams.auth_admin.pass, AUTH_LENGHT_MAX + 1);
     }
     void authUserUserSet(const String &user) { 
-        user.toCharArray(_file_prams.auth_user.user, AUTH_LENGHT_MAX + 1);
+        user.toCharArray(_sys_prams.auth_user.user, AUTH_LENGHT_MAX + 1);
     }
     void authUserPassSet(const String &pass) { 
-        pass.toCharArray(_file_prams.auth_user.pass, AUTH_LENGHT_MAX + 1);
+        pass.toCharArray(_sys_prams.auth_user.pass, AUTH_LENGHT_MAX + 1);
     }
     /* Confirm pass */
-    bool passConfirmIsOK(const String &pass, wifi_pass_confirm_t type);
-    uint16_t passConfirm(wifi_pass_confirm_t passType) { 
-        return _file_prams.confirm[passType]; 
+    bool passConfirmIsOK(const String &pass, passConfirm_t type);
+    uint16_t passConfirm(passConfirm_t passType) { 
+        return _sys_prams.confirm[passType]; 
     }
-    void passConfirmSet(wifi_pass_confirm_t passType, uint16_t pass) { 
-        _file_prams.confirm[passType] = pass;
+    void passConfirmSet(passConfirm_t passType, uint16_t pass) { 
+        _sys_prams.confirm[passType] = pass;
     }
     /* STA API */
-    IPAddress ipSTA() { return _file_prams.sta.ip; }
-    IPAddress gwSTA() { return _file_prams.sta.gw; }
-    IPAddress snSTA() { return _file_prams.sta.sn; }
-    IPAddress dnsSTA() { return _file_prams.sta.dns; }
-    String ssidSTA() { return _file_prams.sta.ssid; }
-    String passSTA() { return _file_prams.sta.pass; }
-    String hostNameSTA() { return _file_prams.sta.hostname; }
-    uint8_t dhcpSTA() { return _file_prams.sta.dhcp; }
-    uint8_t isDisableSTA() { return _file_prams.sta.disable; }
-    uint8_t smartCfgSTA() { return _file_prams.sta.smart_cfg; }
-    void ipSTASet(IPAddress ip) { _file_prams.sta.ip = ip; }
-    void ipSTASet(const String &address) { _file_prams.sta.ip.fromString(address); }
-    void gwSTASet(IPAddress gw) { _file_prams.sta.gw = gw; }
-    void gwSTASet(const String &address) { _file_prams.sta.gw.fromString(address); }
-    void snSTASet(IPAddress sn) { _file_prams.sta.sn = sn; }
-    void snSTASet(const String &address) { _file_prams.sta.sn.fromString(address); }
-    void dnsSTASet(IPAddress dns) { _file_prams.sta.dns = dns; }
-    void dnsSTASet(const String &address) { _file_prams.sta.dns.fromString(address); }
+    IPAddress ipSTA() { return _sys_prams.sta.ip; }
+    IPAddress gwSTA() { return _sys_prams.sta.gw; }
+    IPAddress snSTA() { return _sys_prams.sta.sn; }
+    IPAddress dnsSTA() { return _sys_prams.sta.dns; }
+    String ssidSTA() { return _sys_prams.sta.ssid; }
+    String passSTA() { return _sys_prams.sta.pass; }
+    String hostNameSTA() { return _sys_prams.sta.hostname; }
+    uint8_t dhcpSTA() { return _sys_prams.sta.dhcp; }
+    uint8_t isDisableSTA() { return _sys_prams.sta.disable; }
+    uint8_t smartCfgSTA() { return _sys_prams.sta.smart_cfg; }
+    void ipSTASet(IPAddress ip) { _sys_prams.sta.ip = ip; }
+    void ipSTASet(const String &address) { _sys_prams.sta.ip.fromString(address); }
+    void gwSTASet(IPAddress gw) { _sys_prams.sta.gw = gw; }
+    void gwSTASet(const String &address) { _sys_prams.sta.gw.fromString(address); }
+    void snSTASet(IPAddress sn) { _sys_prams.sta.sn = sn; }
+    void snSTASet(const String &address) { _sys_prams.sta.sn.fromString(address); }
+    void dnsSTASet(IPAddress dns) { _sys_prams.sta.dns = dns; }
+    void dnsSTASet(const String &address) { _sys_prams.sta.dns.fromString(address); }
     void ssidSTASet(const String &ssid) { 
-        ssid.toCharArray(_file_prams.sta.ssid, SSID_LENGHT_MAX + 1);
+        ssid.toCharArray(_sys_prams.sta.ssid, SSID_LENGHT_MAX + 1);
     }
     void passSTASet(const String &pass) { 
-        pass.toCharArray(_file_prams.sta.pass, PASS_LENGHT_MAX + 1);
+        pass.toCharArray(_sys_prams.sta.pass, PASS_LENGHT_MAX + 1);
     }
     void hostNameSTASet(const String &hostName) { 
-        hostName.toCharArray(_file_prams.sta.hostname, HOSTNAME_LENGHT_MAX + 1);
+        hostName.toCharArray(_sys_prams.sta.hostname, HOSTNAME_LENGHT_MAX + 1);
     }
-    void dhcpSTASet(uint8_t dhcp) { _file_prams.sta.dhcp = dhcp; }
-    void disableSTASet(uint8_t disable) { _file_prams.sta.disable = disable; }
-    void smartCfgSTASet(uint8_t smart_cfg) { _file_prams.sta.smart_cfg = smart_cfg; }
+    void dhcpSTASet(uint8_t dhcp) { _sys_prams.sta.dhcp = dhcp; }
+    void disableSTASet(uint8_t disable) { _sys_prams.sta.disable = disable; }
+    void smartCfgSTASet(uint8_t smart_cfg) { _sys_prams.sta.smart_cfg = smart_cfg; }
     /* AP API */
-    IPAddress ipAP() { return _file_prams.ap.ip; }
-    IPAddress snAP() { return _file_prams.ap.sn; }
-    String ssidAP() { return _file_prams.ap.ssid; }
-    String passAP() { return _file_prams.ap.pass; }
-    String dnsNameAP() { return _file_prams.ap.dns_name; }
-    uint8_t channelAP() { return _file_prams.ap.channel; }
-    uint8_t isHiddenAP() { return _file_prams.ap.hidden; }
-    uint8_t isDisableAP() { return _file_prams.ap.disable; }
-    void ipAPSet(IPAddress ip) { _file_prams.ap.ip = ip; }
-    void ipAPSet(const String &address) { _file_prams.ap.ip.fromString(address); }
-    void snAPSet(IPAddress sn) { _file_prams.ap.sn = sn; }
-    void snAPSet(const String &address) { _file_prams.ap.sn.fromString(address); }
+    IPAddress ipAP() { return _sys_prams.ap.ip; }
+    IPAddress snAP() { return _sys_prams.ap.sn; }
+    String ssidAP() { return _sys_prams.ap.ssid; }
+    String passAP() { return _sys_prams.ap.pass; }
+    String dnsNameAP() { return _sys_prams.ap.dns_name; }
+    uint8_t channelAP() { return _sys_prams.ap.channel; }
+    uint8_t isHiddenAP() { return _sys_prams.ap.hidden; }
+    uint8_t isDisableAP() { return _sys_prams.ap.disable; }
+    void ipAPSet(IPAddress ip) { _sys_prams.ap.ip = ip; }
+    void ipAPSet(const String &address) { _sys_prams.ap.ip.fromString(address); }
+    void snAPSet(IPAddress sn) { _sys_prams.ap.sn = sn; }
+    void snAPSet(const String &address) { _sys_prams.ap.sn.fromString(address); }
     void ssidAPSet(const String &ssid) { 
-        ssid.toCharArray(_file_prams.ap.ssid, SSID_LENGHT_MAX + 1);
+        ssid.toCharArray(_sys_prams.ap.ssid, SSID_LENGHT_MAX + 1);
     }
     void passAPSet(const String &pass) { 
-        pass.toCharArray(_file_prams.ap.pass, PASS_LENGHT_MAX + 1);
+        pass.toCharArray(_sys_prams.ap.pass, PASS_LENGHT_MAX + 1);
     }
     void dnsNameAPSet(const String &dnsName) { 
-        dnsName.toCharArray(_file_prams.ap.dns_name, HOSTNAME_LENGHT_MAX + 1);
+        dnsName.toCharArray(_sys_prams.ap.dns_name, HOSTNAME_LENGHT_MAX + 1);
     }
-    void channelAPSet(uint8_t channel) { _file_prams.ap.channel = channel; }
-    void hiddenAPSet(uint8_t hidden) { _file_prams.ap.hidden = hidden; }
-    void disableAPSet(uint8_t disable) { _file_prams.ap.disable = disable; }
+    void channelAPSet(uint8_t channel) { _sys_prams.ap.channel = channel; }
+    void hiddenAPSet(uint8_t hidden) { _sys_prams.ap.hidden = hidden; }
+    void disableAPSet(uint8_t disable) { _sys_prams.ap.disable = disable; }
     /* DDNS API */
-    String serviceDDNS() { return _file_prams.ddns.service; }
-    String domainDDNS() { return _file_prams.ddns.domain; }
-    String userDDNS() { return _file_prams.ddns.user; }
-    String passDDNS() { return _file_prams.ddns.pass; }
-    uint8_t syncTimeDDNS() { return _file_prams.ddns.sync_time; }
-    uint8_t disableDDNS() { return _file_prams.ddns.disable; }
+    String serviceDDNS() { return _sys_prams.ddns.service; }
+    String domainDDNS() { return _sys_prams.ddns.domain; }
+    String userDDNS() { return _sys_prams.ddns.user; }
+    String passDDNS() { return _sys_prams.ddns.pass; }
+    uint8_t syncTimeDDNS() { return _sys_prams.ddns.sync_time; }
+    uint8_t disableDDNS() { return _sys_prams.ddns.disable; }
     void serviceDDNSSet(const String &service) { 
-        service.toCharArray(_file_prams.ddns.service, DDNS_SERVICE_LENGTH_MAX + 1);
+        service.toCharArray(_sys_prams.ddns.service, DDNS_SERVICE_LENGTH_MAX + 1);
     }
     void domainDDNSSet(const String &domain) { 
-        domain.toCharArray(_file_prams.ddns.domain, DDNS_DOMAIN_LENGTH_MAX + 1);
+        domain.toCharArray(_sys_prams.ddns.domain, DDNS_DOMAIN_LENGTH_MAX + 1);
     }
     void userDDNSSet(const String &user) { 
-        user.toCharArray(_file_prams.ddns.user, DDNS_USER_LENGTH_MAX + 1);
+        user.toCharArray(_sys_prams.ddns.user, DDNS_USER_LENGTH_MAX + 1);
     }
     void passDDNSSet(const String &pass) { 
-        pass.toCharArray(_file_prams.ddns.pass, DDNS_PASS_LENGTH_MAX + 1);
+        pass.toCharArray(_sys_prams.ddns.pass, DDNS_PASS_LENGTH_MAX + 1);
     }
-    void syncTimeDDNSSet(uint8_t sync_time) { _file_prams.ddns.sync_time = sync_time; }
-    void disableDDNSSet(uint8_t disable) { _file_prams.ddns.disable = disable; }
+    void syncTimeDDNSSet(uint8_t sync_time) { _sys_prams.ddns.sync_time = sync_time; }
+    void disableDDNSSet(uint8_t disable) { _sys_prams.ddns.disable = disable; }
 };
 
-extern hth_esp_sys_params WFDataFile;
+extern ESPSysParams ESPConfig;
 
 #endif // __HTH_ESP_SYS_DATA_H

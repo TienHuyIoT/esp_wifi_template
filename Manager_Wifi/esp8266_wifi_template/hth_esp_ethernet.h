@@ -14,13 +14,13 @@
 #include <utility/enc28j60.h>
 
 // make the same Ethernet ESP32 API
-class spi_ethernet : public LwipIntfDev<ENC28J60>
+class SPIEthernet : public LwipIntfDev<ENC28J60>
 {
 private:
    /* data */
 public:
-   spi_ethernet(/* args */);
-   ~spi_ethernet();
+   SPIEthernet(/* args */);
+   ~SPIEthernet();
    bool linkUp();
    /**
     * Get the DNS ip address.
@@ -32,7 +32,7 @@ public:
    }
 };
 
-extern spi_ethernet ETH;
+extern SPIEthernet ETH;
 
 #endif
 
@@ -63,33 +63,27 @@ extern spi_ethernet ETH;
 // Pin# of the I²C IO signal for the Ethernet PHY
 #define ETH_MDIO_PIN    18
 #elif defined(ESP8266)
-   // nothing
+   // nothing setting
 #endif
-#ifdef ESP32
-class hth_esp_ethernet
-#elif defined(ESP8266)
-class hth_esp_ethernet
-#endif
+
+class ESPEthernet
 {
 private:
-#ifdef ESP8266
-   // spi_ethernet ETH;
-#endif
    bool _status;
 #ifdef ESP8266
    bool _connected;
 #endif
 public:
-   hth_esp_ethernet(/* args */);
-   ~hth_esp_ethernet();
-   bool start();
+   ESPEthernet(/* args */);
+   ~ESPEthernet();
+   bool begin();
    void enable();
    void disable();
    bool isEnable();
    void loop();
 };
 
-extern hth_esp_ethernet HTH_ethernet;
+extern ESPEthernet Ethernet;
 
 #endif // (defined ETH_ENABLE) && (ETH_ENABLE == 1)
 

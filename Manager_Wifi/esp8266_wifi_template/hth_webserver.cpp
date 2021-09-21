@@ -5,7 +5,7 @@
 #include <WiFi.h>
 #include <WiFiType.h>
 #include <Update.h>
-#include "esp_event_signal.h"
+#include "hth_esp_event_signal.h"
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>
 #include <Updater.h>
@@ -13,9 +13,9 @@
 #endif
 #include "hth_esp_config.h"
 #include "hth_esp_wifi.h"
-#include "hth_console_dbg.h"
+#include "hth_serial_trace.h"
 #include "hth_esp_sys_params.h"
-#include "hth_esp_soft_reset.h"
+#include "THIoT_ESPSoftReset.h"
 #include "hth_esp_sdcard.h"
 #include "hth_webserver.h"
 
@@ -24,7 +24,7 @@
 #define WEB_SERVER_DBG_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 #define WEB_SERVER_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WEB SERVER]", __VA_ARGS__)
 
-static serverUrlCallbacks defaultCallbacks;
+static WebserverURLHandleCallbacks defaultCallbacks;
 
 class RedirectUrlHandler : public AsyncWebHandler
 {
@@ -43,45 +43,45 @@ public:
 
     RedirectUrl += request->host();
     RedirectUrl += ":";
-    RedirectUrl += WFDataFile.tcpPort();
+    RedirectUrl += ESPConfig.tcpPort();
     RedirectUrl += request->url();
 
     request->redirect(RedirectUrl);
   }
 };
 
-hth_webserver::hth_webserver(/* args */)
+ESPWebserver::ESPWebserver(/* args */)
 {
 }
 
-hth_webserver::~hth_webserver()
+ESPWebserver::~ESPWebserver()
 {
   this->end();
 }
 
-AsyncWebServer* hth_webserver::_server = nullptr;
-AsyncWebServer* hth_webserver::_server80 = nullptr;
-hth_websocket* hth_webserver::_wsHandler = new hth_websocket("/ws", "/events");
-serverUrlCallbacks* hth_webserver::_pUrlCallbacks = &defaultCallbacks;
-asyncHttpHandler hth_webserver::_httpGetAuthHandler = nullptr;
-asyncHttpHandler hth_webserver::_httpGetHandler = nullptr;
-asyncHttpHandler hth_webserver::_httpPostAuthHandler = nullptr;
-hth_FSEditor* hth_webserver::_spiffsEditor = nullptr;
+AsyncWebServer* ESPWebserver::_server = nullptr;
+AsyncWebServer* ESPWebserver::_server80 = nullptr;
+ESPWebsocket* ESPWebserver::_wsHandler = new ESPWebsocket("/ws", "/events");
+WebserverURLHandleCallbacks* ESPWebserver::_pUrlCallbacks = &defaultCallbacks;
+asyncHttpHandler ESPWebserver::_httpGetAuthHandler = nullptr;
+asyncHttpHandler ESPWebserver::_httpGetHandler = nullptr;
+asyncHttpHandler ESPWebserver::_httpPostAuthHandler = nullptr;
+ESPFSEditor* ESPWebserver::_spiffsEditor = nullptr;
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-hth_FSEditor* hth_webserver::_sdCardEditor = nullptr;
+ESPFSEditor* ESPWebserver::_sdCardEditor = nullptr;
 #endif
-String hth_webserver::_adminAuthUser = String();
-String hth_webserver::_adminAuthPass = String();
-String hth_webserver::_userAuthUser = String();
-String hth_webserver::_userAuthPass = String();
-int hth_webserver::_flashUpdateType = 0;
+String ESPWebserver::_adminAuthUser = String();
+String ESPWebserver::_adminAuthPass = String();
+String ESPWebserver::_userAuthUser = String();
+String ESPWebserver::_userAuthPass = String();
+int ESPWebserver::_flashUpdateType = 0;
 #ifdef ESP8266
-size_t hth_webserver::_updateProgress = 0;
+size_t ESPWebserver::_updateProgress = 0;
 #endif
-uint32_t hth_webserver::_spiffsUploadPercent = 0;
-uint32_t hth_webserver::_flashUpdatePercent = 0;
+uint32_t ESPWebserver::_spiffsUploadPercent = 0;
+uint32_t ESPWebserver::_flashUpdatePercent = 0;
 
-void hth_webserver::setHandleCallbacks(serverUrlCallbacks* pCallbacks)
+void ESPWebserver::setHandleCallbacks(WebserverURLHandleCallbacks* pCallbacks)
 {
   if (pCallbacks != nullptr)
   {
@@ -89,7 +89,7 @@ void hth_webserver::setHandleCallbacks(serverUrlCallbacks* pCallbacks)
   }
 }
 
-void hth_webserver::fs_editor_status(AsyncWebServerRequest *request)
+void ESPWebserver::fs_editor_status(AsyncWebServerRequest *request)
 {
 #ifdef ESP8266
   uint64_t totalBytes, usedBytes;
@@ -159,7 +159,7 @@ void hth_webserver::fs_editor_status(AsyncWebServerRequest *request)
   output = String();
 }
 
-uint8_t hth_webserver::authentication_level(AsyncWebServerRequest *request)
+uint8_t ESPWebserver::authentication_level(AsyncWebServerRequest *request)
 {
   uint8_t level;
   if (request->authenticate("admin", "25123"))
@@ -183,7 +183,7 @@ uint8_t hth_webserver::authentication_level(AsyncWebServerRequest *request)
   return level;
 }
 
-void hth_webserver::updatePrintProgress(size_t prg, size_t sz)
+void ESPWebserver::updatePrintProgress(size_t prg, size_t sz)
 {
   uint32_t per = prg * 100 / sz;
 #ifdef ESP32
@@ -202,8 +202,8 @@ void hth_webserver::updatePrintProgress(size_t prg, size_t sz)
 }
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-uint32_t hth_webserver::_sdUploadPercent = 0;
-void hth_webserver::sdfsPrintProgress(size_t prg, size_t sz)
+uint32_t ESPWebserver::_sdUploadPercent = 0;
+void ESPWebserver::sdfsPrintProgress(size_t prg, size_t sz)
 {
   uint32_t per = prg * 100 / sz;
 #ifdef ESP32
@@ -222,7 +222,7 @@ void hth_webserver::sdfsPrintProgress(size_t prg, size_t sz)
 }
 #endif
 
-void hth_webserver::spiffsPrintProgress(size_t prg, size_t sz)
+void ESPWebserver::spiffsPrintProgress(size_t prg, size_t sz)
 {
   uint32_t per = prg * 100 / sz;
 #ifdef ESP32
@@ -240,7 +240,7 @@ void hth_webserver::spiffsPrintProgress(size_t prg, size_t sz)
   }
 }
 
-void hth_webserver::syncSsidNetworkToEvents()
+void ESPWebserver::syncSsidNetworkToEvents()
 {
   if (WiFi.scanComplete() == WIFI_SCAN_FAILED)
   {
@@ -252,7 +252,7 @@ void hth_webserver::syncSsidNetworkToEvents()
         {
           WEB_SERVER_TAG_CONSOLE("[EVENT] Completed scan for access points, found %u", scanCount);
           String json_network = "{\"status\":\"error\",\"mgs\":\"No network\"}";
-          HTH_espWifi.ssidScan(json_network);
+          ESPWifi.ssidScan(json_network);
           WEB_SERVER_TAG_CONSOLE("json_network: %s", json_network.c_str());
           _wsHandler->eventsSend(json_network.c_str(), "wifiScan");
         });
@@ -264,19 +264,19 @@ void hth_webserver::syncSsidNetworkToEvents()
   }
 }
 
-void hth_webserver::begin(void)
+void ESPWebserver::begin(void)
 {
-  _adminAuthUser = WFDataFile.authAdminUser();
-  _adminAuthPass = WFDataFile.authAdminPass();
-  _userAuthUser = WFDataFile.authUserUser();
-  _userAuthPass = WFDataFile.authUserPass();
+  _adminAuthUser = ESPConfig.authAdminUser();
+  _adminAuthPass = ESPConfig.authAdminPass();
+  _userAuthUser = ESPConfig.authUserUser();
+  _userAuthPass = ESPConfig.authUserPass();
 
   /* Protect server port don't less 80 */
-  if (WFDataFile.tcpPort() < 80) {
+  if (ESPConfig.tcpPort() < 80) {
     // set server port default
-    WFDataFile.tcpPortSet(SERVER_PORT_DEFAULT);
+    ESPConfig.tcpPortSet(SERVER_PORT_DEFAULT);
   }
-  _server = new AsyncWebServer(WFDataFile.tcpPort());
+  _server = new AsyncWebServer(ESPConfig.tcpPort());
 #ifdef ESP32
   /* Register esp32 event scan done */
   WiFi.onEvent(
@@ -284,7 +284,7 @@ void hth_webserver::begin(void)
       {
         WEB_SERVER_TAG_CONSOLE("[EVENT] Completed scan for access points");
         String json_network = "{\"status\":\"error\",\"mgs\":\"No network\"}";
-        HTH_espWifi.ssidScan(json_network);
+        ESPWifi.ssidScan(json_network);
         WEB_SERVER_TAG_CONSOLE("json_network: %s", json_network.c_str());
         _wsHandler->eventsSend(json_network.c_str(), "wifiScan");
       },
@@ -293,22 +293,22 @@ void hth_webserver::begin(void)
   /* ESP8266 must be register event scan done callback once needing */
 #endif
   /* register url callback scan network */
-  _pUrlCallbacks->onScanNetwork(std::bind(&hth_webserver::syncSsidNetworkToEvents, this));
+  _pUrlCallbacks->onScanNetwork(std::bind(&ESPWebserver::syncSsidNetworkToEvents, this));
 
   /* redirect port 80 to tcp port */
-  if (WFDataFile.tcpPort() != 80)
+  if (ESPConfig.tcpPort() != 80)
   {
     _server80 = new AsyncWebServer(80);
     _server80->addHandler(new RedirectUrlHandler());
     _server80->begin();
   }
 
-  _wsHandler->setHandleCallbacks(new hth_wsDataHandler());
+  _wsHandler->setHandleCallbacks(new ESPWsDataHandler());
   _wsHandler->begin();
   _server->addHandler(_wsHandler->_ws);
   _server->addHandler(_wsHandler->_events);
 
-  _spiffsEditor = new hth_FSEditor(NAND_FS_SYSTEM, "/edit");
+  _spiffsEditor = new ESPFSEditor(NAND_FS_SYSTEM, "/edit");
   _spiffsEditor->onAuthenticate([](AsyncWebServerRequest *request)
                                 { return (authentication_level(request) != HTTP_AUTH_FAIL); });
   _spiffsEditor->onProgress(spiffsPrintProgress);
@@ -316,7 +316,7 @@ void hth_webserver::begin(void)
   _server->addHandler(_spiffsEditor);
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-  _sdCardEditor = new hth_FSEditor(SD_FS_SYSTEM, "/edit_sdfs");
+  _sdCardEditor = new ESPFSEditor(SD_FS_SYSTEM, "/edit_sdfs");
   _sdCardEditor->onAuthenticate([](AsyncWebServerRequest *request)
                             { return (authentication_level(request) != HTTP_AUTH_FAIL); });
   _sdCardEditor->onProgress(sdfsPrintProgress);
@@ -396,7 +396,7 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
           }
           else
           {
-            WFDataFile.commitToFS();
+            ESPConfig.save();
           }
         }
         else
@@ -553,39 +553,39 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
         }
       });
 
-  WEB_SERVER_TAG_CONSOLE("Init Web Server Port: %u", WFDataFile.tcpPort());
+  WEB_SERVER_TAG_CONSOLE("Init Web Server Port: %u", ESPConfig.tcpPort());
   _server->begin();
 }
 
-void hth_webserver::loop()
+void ESPWebserver::loop()
 {
 
 }
 
-serverUrlCallbacks::serverUrlCallbacks() 
+WebserverURLHandleCallbacks::WebserverURLHandleCallbacks() 
 : _pScanNetworkCb(nullptr)
 {
 }
-serverUrlCallbacks::~serverUrlCallbacks() {}
+WebserverURLHandleCallbacks::~WebserverURLHandleCallbacks() {}
 /**
  * 
  * Handler called after once request with method GET and authenticated.
  */
-void serverUrlCallbacks::onHttpGetAuth(AsyncWebServerRequest *request)
+void WebserverURLHandleCallbacks::onHttpGetAuth(AsyncWebServerRequest *request)
 {
-  WEB_SERVER_TAG_CONSOLE("[serverUrlCallbacks] >> onHttpGetAuth: default <<");
+  WEB_SERVER_TAG_CONSOLE("[WebserverURLHandleCallbacks] >> onHttpGetAuth: default <<");
 }
 /**
  * Handler called after once request with method GET.
  */
-void serverUrlCallbacks::onHttpGet(AsyncWebServerRequest *request)
+void WebserverURLHandleCallbacks::onHttpGet(AsyncWebServerRequest *request)
 {
-  WEB_SERVER_TAG_CONSOLE("[serverUrlCallbacks] >> onHttpGet: default <<");
+  WEB_SERVER_TAG_CONSOLE("[WebserverURLHandleCallbacks] >> onHttpGet: default <<");
 }
 /**
  * Handler called after once request with method POST and authenticated.
  */
-void serverUrlCallbacks::onHttpPostAuth(AsyncWebServerRequest *request)
+void WebserverURLHandleCallbacks::onHttpPostAuth(AsyncWebServerRequest *request)
 {
-  WEB_SERVER_TAG_CONSOLE("[serverUrlCallbacks] >> onHttpPostAuth: default <<");
+  WEB_SERVER_TAG_CONSOLE("[WebserverURLHandleCallbacks] >> onHttpPostAuth: default <<");
 }

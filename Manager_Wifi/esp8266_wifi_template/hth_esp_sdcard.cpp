@@ -1,11 +1,11 @@
 #include "hth_esp_config.h"
 #include "hth_fs_handle.h"
-#include "hth_console_dbg.h"
+#include "hth_serial_trace.h"
 #include "hth_esp_sdcard.h"
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 /* Includes ------------------------------------------------------------------*/
-#if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1)
+#if (defined SD_SPI_INTERFACE) && (SD_SPI_INTERFACE == 1)
 #include <FS.h>
 #include <SD.h>
 #include <SPI.h>
@@ -22,21 +22,21 @@
 
 #ifdef ESP8266
 #if(HTH_SFDS_HANDLE)
-hth_sdfs::hth_sdfs()
+SDFSClass::SDFSClass()
 : fs::FS(FSImplPtr(new sdfs::SDFSImpl()))
 {
 }
 
-hth_sdfs::~hth_sdfs(){}
+SDFSClass::~SDFSClass(){}
 
-boolean hth_sdfs::begin(uint8_t csPin, uint32_t cfg) 
+boolean SDFSClass::begin(uint8_t csPin, uint32_t cfg) 
 {
   sdfs::SDFSImpl* sd = static_cast<sdfs::SDFSImpl*>(getImpl().get());
   sd->setConfig(SDFSConfig(csPin, cfg));
   return (boolean)sd->begin();
 }
 
-uint8_t hth_sdfs::type() {
+uint8_t SDFSClass::type() {
   if (!_impl) {
       SD_FS_PRINTFLN("[type] FS not mounted\n");
       return CARD_NONE;
@@ -45,7 +45,7 @@ uint8_t hth_sdfs::type() {
     return sd->type();
 }
 
-bool hth_sdfs::info64(FSInfo64& info)
+bool SDFSClass::info64(FSInfo64& info)
 {
   if (!_impl) {
       SD_FS_PRINTFLN("[info64] FS not mounted\n");
@@ -59,23 +59,23 @@ bool hth_sdfs::info64(FSInfo64& info)
   return true;
 }
 
-hth_sdfs HTH_sdfs;
+SDFSClass SDFSHandle;
 #endif
 #endif
 
-hth_esp_sdcard::hth_esp_sdcard(/* args */)
+ESPSdCard::ESPSdCard(/* args */)
 {
   _sdCardStatus = false;
 }
 
-hth_esp_sdcard::~hth_esp_sdcard()
+ESPSdCard::~ESPSdCard()
 {
 }
 
-#if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1) && (defined ESP32)
-void hth_esp_sdcard::begin(SPIClass &spi)
+#if (defined SD_SPI_INTERFACE) && (SD_SPI_INTERFACE == 1) && (defined ESP32)
+void ESPSdCard::begin(SPIClass &spi)
 #else
-void hth_esp_sdcard::begin()
+void ESPSdCard::begin()
 #endif
 {
   uint8_t cardType;
@@ -89,7 +89,7 @@ void hth_esp_sdcard::begin()
   SD_POWER_ON();
   delay(10); // add timeout to supply power to sd card
 #endif
-#if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 0)
+#if (defined SD_SPI_INTERFACE) && (SD_SPI_INTERFACE == 0)
   if (!SD_FS_SYSTEM.begin())
   {
     SD_FS_PRINTFLN("Card Mount Failed");
@@ -162,20 +162,20 @@ void hth_esp_sdcard::begin()
   SD_FS_PRINTF("SD_FS_SYSTEM Card Space: %lluMB\r\n", usedBytes);
 
 #if (0)
-  HTH_fsHandle.createDir(SD_FS_SYSTEM, "/mydir");
-  HTH_fsHandle.listDir(SD_FS_SYSTEM, "/", 0);
-  HTH_fsHandle.removeDir(SD_FS_SYSTEM, "/mydir");
-  HTH_fsHandle.listDir(SD_FS_SYSTEM, "/", 2);
-  HTH_fsHandle.writeFile(SD_FS_SYSTEM, "/hello.txt", "Hello ");
-  HTH_fsHandle.appendFile(SD_FS_SYSTEM, "/hello.txt", "World!\n");
-  HTH_fsHandle.readFile(SD_FS_SYSTEM, "/hello.txt");
-  HTH_fsHandle.deleteFile(SD_FS_SYSTEM, "/foo.txt");
-  HTH_fsHandle.renameFile(SD_FS_SYSTEM, "/hello.txt", "/foo.txt");
-  HTH_fsHandle.readFile(SD_FS_SYSTEM, "/foo.txt");
-  HTH_fsHandle.testFileIO(SD_FS_SYSTEM, "/test.txt");
+  FSHandle.createDir(SD_FS_SYSTEM, "/mydir");
+  FSHandle.listDir(SD_FS_SYSTEM, "/", 0);
+  FSHandle.removeDir(SD_FS_SYSTEM, "/mydir");
+  FSHandle.listDir(SD_FS_SYSTEM, "/", 2);
+  FSHandle.writeFile(SD_FS_SYSTEM, "/hello.txt", "Hello ");
+  FSHandle.appendFile(SD_FS_SYSTEM, "/hello.txt", "World!\n");
+  FSHandle.readFile(SD_FS_SYSTEM, "/hello.txt");
+  FSHandle.deleteFile(SD_FS_SYSTEM, "/foo.txt");
+  FSHandle.renameFile(SD_FS_SYSTEM, "/hello.txt", "/foo.txt");
+  FSHandle.readFile(SD_FS_SYSTEM, "/foo.txt");
+  FSHandle.testFileIO(SD_FS_SYSTEM, "/test.txt");
 #endif
 }
 
-hth_esp_sdcard HTH_sdCard;
+ESPSdCard HTH_sdCard;
 
 #endif // (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)

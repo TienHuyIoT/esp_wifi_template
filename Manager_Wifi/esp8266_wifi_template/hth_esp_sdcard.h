@@ -5,12 +5,12 @@
 #include "hth_esp_config.h"
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-#if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1) && (defined ESP32)
+#if (defined SD_SPI_INTERFACE) && (SD_SPI_INTERFACE == 1) && (defined ESP32)
 #include <SPI.h>
 #endif
 #include "board.h"
 
-#if (SD_CARD_SYSTEM == 0)
+#if (SD_SPI_INTERFACE == 0)
 #define SD_FS_SYSTEM SD_MMC
 #else
 #ifdef ESP32
@@ -30,12 +30,12 @@ typedef enum {
 
 /* Make the same API with SD class */
 #if (HTH_SFDS_HANDLE)
-class hth_sdfs : public fs::FS
+class SDFSClass : public fs::FS
 {
 
 public:
-    hth_sdfs();
-    ~hth_sdfs();
+    SDFSClass();
+    ~SDFSClass();
 
     boolean begin(uint8_t csPin, uint32_t cfg = SPI_HALF_SPEED);
     uint8_t type();
@@ -48,15 +48,15 @@ public:
 private:
 };
 
-extern hth_sdfs HTH_sdfs;
-#define SD_FS_SYSTEM HTH_sdfs
+extern SDFSClass SDFSHandle;
+#define SD_FS_SYSTEM SDFSHandle
 #else
 // using SDFS instead of SD for almost every case
 #define SD_FS_SYSTEM SDFS
 #endif // #if (0)
 
 #endif // defined(ESP8266)
-#endif // (SD_CARD_SYSTEM == 0)
+#endif // (SD_SPI_INTERFACE == 0)
 
 /*
 SD POWER
@@ -85,22 +85,22 @@ SD INTERFACE
 #define SD_MISO_PIN     		        SPI_MISO_PIN
 #define SD_MOSI_PIN     		        SPI_MOSI_PIN   
 
-class hth_esp_sdcard
+class ESPSdCard
 {
 private:
     bool _sdCardStatus;
 public:
-    hth_esp_sdcard(/* args */);
-    ~hth_esp_sdcard();
+    ESPSdCard(/* args */);
+    ~ESPSdCard();
     bool statusIsOk() { return _sdCardStatus; }
-#if (defined SD_CARD_SYSTEM) && (SD_CARD_SYSTEM == 1) && (defined ESP32)
+#if (defined SD_SPI_INTERFACE) && (SD_SPI_INTERFACE == 1) && (defined ESP32)
     void begin(SPIClass &spi);
 #else
     void begin();
 #endif
 };
 
-extern hth_esp_sdcard HTH_sdCard;
+extern ESPSdCard HTH_sdCard;
 
 #endif // (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 

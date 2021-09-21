@@ -25,21 +25,21 @@ typedef struct {
 */
 typedef std::function<void(AsyncWebSocketClient*, char*)> dataSocketHandler;
 
-class wsCallbacks {
+class WebsocketCallbacks {
 public:
-	virtual ~wsCallbacks();
+	virtual ~WebsocketCallbacks();
     /**
     * Handler called after once received data.
     */
     virtual void onDataReceived(AsyncWebSocketClient* client, char* data);
 };
 
-class hth_websocket
+class ESPWebsocket
 {
 private:
     static Ticker* _ws_ticker;
     static dataSocketHandler _dataHandler;
-    static wsCallbacks* _pCallbacks;
+    static WebsocketCallbacks* _pCallbacks;
     static ws_connection_info_t _ws_connection[NUM_WS_CONNECTION_MAX];
     static void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
     static void disconnect(uint8_t ws_index);
@@ -53,8 +53,8 @@ private:
     String _wsUrl;
     String _eventUrl;
 public:
-    hth_websocket(const String& ws, const String& event);
-    ~hth_websocket();
+    ESPWebsocket(const String& ws, const String& event);
+    ~ESPWebsocket();
     static AsyncWebSocket* _ws;
     static AsyncEventSource* _events;
     void begin();
@@ -62,7 +62,7 @@ public:
     void onDataHandler(dataSocketHandler handler);
     void sendTxt(uint8_t ws_index, char *payload);
     void sendBroadcastTxt(char *payload);
-    void setHandleCallbacks(wsCallbacks* pCallbacks);
+    void setHandleCallbacks(WebsocketCallbacks* pCallbacks);
     void eventsSend(const char *message, const char *event)
     {
         _events->send(message, event);

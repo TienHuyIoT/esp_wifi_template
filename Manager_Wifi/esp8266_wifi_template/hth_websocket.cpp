@@ -1,30 +1,30 @@
-#include "hth_console_dbg.h"
+#include "hth_serial_trace.h"
 #include "hth_websocket.h"
 
 #define WS_DBG_PORT CONSOLE_PORT
 #define WS_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WS]", __VA_ARGS__)
 
-static wsCallbacks defaultCallbacks; //null-object-pattern
+static WebsocketCallbacks defaultCallbacks; //null-object-pattern
 
-hth_websocket::hth_websocket(const String& ws, const String& event)
+ESPWebsocket::ESPWebsocket(const String& ws, const String& event)
 :_wsUrl(ws), _eventUrl(event)
 {
     memset(_ws_connection, 0, sizeof(_ws_connection));
 }
 
-hth_websocket::~hth_websocket()
+ESPWebsocket::~ESPWebsocket()
 {
     this->end();
 }
 
-Ticker* hth_websocket::_ws_ticker = nullptr;
-AsyncWebSocket* hth_websocket::_ws = nullptr;
-AsyncEventSource* hth_websocket::_events = nullptr;
-wsCallbacks* hth_websocket::_pCallbacks = nullptr;
-dataSocketHandler hth_websocket::_dataHandler = nullptr;
-ws_connection_info_t hth_websocket::_ws_connection[NUM_WS_CONNECTION_MAX] = {0};
+Ticker* ESPWebsocket::_ws_ticker = nullptr;
+AsyncWebSocket* ESPWebsocket::_ws = nullptr;
+AsyncEventSource* ESPWebsocket::_events = nullptr;
+WebsocketCallbacks* ESPWebsocket::_pCallbacks = nullptr;
+dataSocketHandler ESPWebsocket::_dataHandler = nullptr;
+ws_connection_info_t ESPWebsocket::_ws_connection[NUM_WS_CONNECTION_MAX] = {0};
 
-void hth_websocket::setHandleCallbacks(wsCallbacks* pCallbacks)
+void ESPWebsocket::setHandleCallbacks(WebsocketCallbacks* pCallbacks)
 {
     if (pCallbacks != nullptr)
     {
@@ -36,14 +36,14 @@ void hth_websocket::setHandleCallbacks(wsCallbacks* pCallbacks)
     }
 }
 
-void hth_websocket::end()
+void ESPWebsocket::end()
 {
     delete _ws;
     delete _events;
     delete _ws_ticker;
 }
 
-void hth_websocket::begin()
+void ESPWebsocket::begin()
 {
     _ws_ticker = new Ticker();
     _ws = new AsyncWebSocket(_wsUrl);
@@ -58,18 +58,18 @@ void hth_websocket::begin()
 }
 
 /* send message to client */
-void hth_websocket::sendTxt(uint8_t ws_index, char *payload)
+void ESPWebsocket::sendTxt(uint8_t ws_index, char *payload)
 {
     _ws->text(ws_index, payload);
 }
 
 /* send data to all connected clients */
-void hth_websocket::sendBroadcastTxt(char *payload)
+void ESPWebsocket::sendBroadcastTxt(char *payload)
 {
     _ws->textAll(payload);
 }
 
-void hth_websocket::intervalCleanUpClients(void)
+void ESPWebsocket::intervalCleanUpClients(void)
 {
     uint8_t ws_cnt;
 
@@ -85,12 +85,12 @@ void hth_websocket::intervalCleanUpClients(void)
 }
 
 /* Init and register callback receive message */
-void hth_websocket::onDataHandler(dataSocketHandler handler)
+void ESPWebsocket::onDataHandler(dataSocketHandler handler)
 {
     _dataHandler = handler;
 }
 
-void hth_websocket::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
+void ESPWebsocket::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len)
 {
     if (type == WS_EVT_CONNECT)
     {
@@ -209,7 +209,7 @@ void hth_websocket::onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *clie
 }
 
 /* Disconnect */
-void hth_websocket::disconnect(uint8_t ws_index)
+void ESPWebsocket::disconnect(uint8_t ws_index)
 {
     _ws->close(_ws_connection[ws_index].ws_num);
     _ws_connection[ws_index].status = ASYNC_WS_DISCONNECT;
@@ -219,7 +219,7 @@ void hth_websocket::disconnect(uint8_t ws_index)
 }
 
 /* Add connection */
-void hth_websocket::connectionEstablish(uint8_t ws_num)
+void ESPWebsocket::connectionEstablish(uint8_t ws_num)
 {
     for (uint8_t i = 0; i < NUM_WS_CONNECTION_MAX; ++i)
     {
@@ -235,7 +235,7 @@ void hth_websocket::connectionEstablish(uint8_t ws_num)
 }
 
 /* Remove connection */
-void hth_websocket::connectionRemove(uint8_t ws_num)
+void ESPWebsocket::connectionRemove(uint8_t ws_num)
 {
     for (uint8_t i = 0; i < NUM_WS_CONNECTION_MAX; ++i)
     {
@@ -253,7 +253,7 @@ void hth_websocket::connectionRemove(uint8_t ws_num)
 /* Return the number socket free 
  * 0: There are not socket index to establish
  */
-uint8_t hth_websocket::connectionAvailable(void)
+uint8_t ESPWebsocket::connectionAvailable(void)
 {
     uint8_t count = 0;
     for (uint8_t i = 0; i < NUM_WS_CONNECTION_MAX; ++i)
@@ -271,7 +271,7 @@ uint8_t hth_websocket::connectionAvailable(void)
 /* Return the number socket is connected
  * 0: There are not socket index connected
  */
-uint8_t hth_websocket::connectedNumber(void)
+uint8_t ESPWebsocket::connectedNumber(void)
 {
     uint8_t count = 0;
     for (uint8_t i = 0; i < NUM_WS_CONNECTION_MAX; ++i)
@@ -287,7 +287,7 @@ uint8_t hth_websocket::connectedNumber(void)
 }
 
 /* Brief: return websocket index in array_list has timelive max */
-uint8_t hth_websocket::connectionHasTimeLiveMax(void)
+uint8_t ESPWebsocket::connectionHasTimeLiveMax(void)
 {
     uint32_t tl_sub;
     uint32_t tl_max = 0;
@@ -309,11 +309,11 @@ uint8_t hth_websocket::connectionHasTimeLiveMax(void)
     return ws_index;
 }
 
-wsCallbacks::~wsCallbacks() {}
+WebsocketCallbacks::~WebsocketCallbacks() {}
 /**
 * Handler called after once received data.
 */
-void wsCallbacks::onDataReceived(AsyncWebSocketClient* client, char* data)
+void WebsocketCallbacks::onDataReceived(AsyncWebSocketClient* client, char* data)
 {
-    WS_TAG_CONSOLE("[wsCallbacks] >> onDataReceived: default <<");
+    WS_TAG_CONSOLE("[WebsocketCallbacks] >> onDataReceived: default <<");
 }

@@ -3,7 +3,7 @@
 #include <esp_wifi.h>
 #include <WiFiType.h>
 #include <time.h>
-#include "esp_event_signal.h"
+#include "hth_esp_event_signal.h"
 #if ESP_IDF_VERSION_MAJOR >= 4
 #include <esp_sntp.h>
 #else
@@ -45,7 +45,7 @@ uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 ()
 #endif
 
 #include "hth_esp_config.h"
-#include "hth_console_dbg.h"
+#include "hth_serial_trace.h"
 #include "hth_esp_sys_params.h"
 #include "hth_esp_sys_rtc.h"
 #include "hth_esp_wifi.h"
@@ -74,13 +74,13 @@ static void sntp_sync_time_cb(bool from_sntp /* <= this parameter is optional */
     strftime(buf, 64, "%A, %B %d %Y %H:%M:%S", tm);
     SNTP_TAG_CONSOLE("Callback Time: %s", buf);
 
-    HTH_sysTime.setSourceUpdate(hth_esp_sys_rtc::RTC_SNTP_UPDATE);
+    ESPTime.setSourceUpdate(ESPTimeSystem::RTC_SNTP_UPDATE);
 }
 
-hth_esp_sntp::hth_esp_sntp() {}
-hth_esp_sntp::~hth_esp_sntp() {}
+ESPSntpService::ESPSntpService() {}
+ESPSntpService::~ESPSntpService() {}
 
-void hth_esp_sntp::begin()
+void ESPSntpService::begin()
 {
     SNTP_TAG_CONSOLE("Configure Time Server");
 #ifdef ESP32
@@ -104,12 +104,12 @@ void hth_esp_sntp::begin()
 #endif
 }
 
-/* hth_esp_wifi class --------------------------------------------------------
+/* ESPWifiHandler class --------------------------------------------------------
  -----------------------------------------------------------------------------
  ---------------------------------------------------------------------------*/
-hth_esp_wifi::hth_esp_wifi(/* args */)
+ESPWifiHandler::ESPWifiHandler(/* args */)
 #if (defined SNTP_SERVICE_ENABLE) && (SNTP_SERVICE_ENABLE == 1)  
-    : _sntp(new hth_esp_sntp())
+    : _sntp(new ESPSntpService())
 #endif
 #if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1) 
     ,_dnsServer(new DNSServer())
@@ -117,7 +117,7 @@ hth_esp_wifi::hth_esp_wifi(/* args */)
 {
 }
 
-hth_esp_wifi::~hth_esp_wifi()
+ESPWifiHandler::~ESPWifiHandler()
 {
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
   if (ddnsClient)
@@ -136,11 +136,11 @@ hth_esp_wifi::~hth_esp_wifi()
 }
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
-hth_AsyncEasyDDNSClass* hth_esp_wifi::ddnsClient = nullptr;
+hth_AsyncEasyDDNSClass* ESPWifiHandler::ddnsClient = nullptr;
 #endif
-Ticker hth_esp_wifi::_reconnetTicker;
+Ticker ESPWifiHandler::_reconnetTicker;
 
-void hth_esp_wifi::registerEventHandler()
+void ESPWifiHandler::registerEventHandler()
 {
   ESP_WIFI_TAG_CONSOLE("registerEventHandler");
 #ifdef ESP32
@@ -149,14 +149,14 @@ void hth_esp_wifi::registerEventHandler()
     ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi connected");
     ESP_WIFI_TAG_CONSOLE("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
     /* Smart config enable */
-    if(WFDataFile.smartCfgSTA())
+    if(ESPConfig.smartCfgSTA())
     {
-      if(WFDataFile.ssidSTA() != WiFi.SSID()
-      || WFDataFile.passSTA() != WiFi.psk())
+      if(ESPConfig.ssidSTA() != WiFi.SSID()
+      || ESPConfig.passSTA() != WiFi.psk())
       {
-        WFDataFile.ssidSTASet(WiFi.SSID());
-        WFDataFile.passSTASet(WiFi.psk());
-        WFDataFile.commitToFS();
+        ESPConfig.ssidSTASet(WiFi.SSID());
+        ESPConfig.passSTASet(WiFi.psk());
+        ESPConfig.save();
       }
     }
   }
@@ -185,33 +185,33 @@ void hth_esp_wifi::registerEventHandler()
       },
       WiFiEvent_t::m_ESP32_EVENT_STA_DISCONNECTED);
 #elif defined(ESP8266)
-  // ??? To register evetn, must be declare accessPointGotIpHandler
-  accessPointGotIpHandler = WiFi.onStationModeGotIP(
+  // To register evetn, must be declare _accessPointGotIpHandler
+  _accessPointGotIpHandler = WiFi.onStationModeGotIP(
     [](const WiFiEventStationModeGotIP& evt) {
       ESP_WIFI_TAG_CONSOLE("[EVENT] got IP address: %s", evt.ip.toString().c_str());
       /* Smart config enable */
-      if(WFDataFile.smartCfgSTA())
+      if(ESPConfig.smartCfgSTA())
       {
-        if(WFDataFile.ssidSTA() != WiFi.SSID()
-        || WFDataFile.passSTA() != WiFi.psk())
+        if(ESPConfig.ssidSTA() != WiFi.SSID()
+        || ESPConfig.passSTA() != WiFi.psk())
         {
-          WFDataFile.ssidSTASet(WiFi.SSID());
-          WFDataFile.passSTASet(WiFi.psk());
-          WFDataFile.commitToFS();
+          ESPConfig.ssidSTASet(WiFi.SSID());
+          ESPConfig.passSTASet(WiFi.psk());
+          ESPConfig.save();
         }
       }
     }
   );
 
-  // ??? To register evetn, must be declare accessPointConnectedHandler
-  accessPointConnectedHandler = WiFi.onStationModeConnected(
+  // To register evetn, must be declare _accessPointConnectedHandler
+  _accessPointConnectedHandler = WiFi.onStationModeConnected(
     [](const WiFiEventStationModeConnected& evt) {
       ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi connected to %s", evt.ssid.c_str());
     }
   );
 
-  // ??? To register evetn, must be declare accessPointDisconnectedHandler
-  accessPointDisconnectedHandler = WiFi.onStationModeDisconnected(
+  // To register evetn, must be declare _accessPointDisconnectedHandler
+  _accessPointDisconnectedHandler = WiFi.onStationModeDisconnected(
     [](const WiFiEventStationModeDisconnected& evt) {
       ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi lost connection to %s. Reason: %u", 
       evt.ssid.c_str(), evt.reason);
@@ -233,9 +233,9 @@ void hth_esp_wifi::registerEventHandler()
 }
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
-void hth_esp_wifi::onDDNSclient()
+void ESPWifiHandler::onDDNSclient()
 {
-  if (WFDataFile.disableDDNS())
+  if (ESPConfig.disableDDNS())
   {
       ESP_WIFI_TAG_CONSOLE("[DDNS] client disable");
       return;
@@ -261,7 +261,7 @@ void hth_esp_wifi::onDDNSclient()
     - "freemyip"
     - "afraid.org"
   */
-  ddnsClient->service(WFDataFile.serviceDDNS());
+  ddnsClient->service(ESPConfig.serviceDDNS());
 
   // Get Notified when your IP changes
   ddnsClient->onUpdateIP([&](const char* oldIP, const char* newIP){
@@ -275,22 +275,22 @@ void hth_esp_wifi::onDDNSclient()
     For DDNS Providers where you get username and password: ( Leave the password field empty "" if not required )
       Use this: ddnsClient->begin("domain", "username", "password");
   */
-  ddnsClient->begin(WFDataFile.domainDDNS(), WFDataFile.userDDNS(), WFDataFile.passDDNS());
+  ddnsClient->begin(ESPConfig.domainDDNS(), ESPConfig.userDDNS(), ESPConfig.passDDNS());
 
   constexpr uint8_t DDNS_SYNC_TIME_MIN = 10; // should not zero
   constexpr uint8_t DDNS_SYNC_TIME_MAX = 60; // unlimited
-  if (WFDataFile.syncTimeDDNS() < DDNS_SYNC_TIME_MIN)
+  if (ESPConfig.syncTimeDDNS() < DDNS_SYNC_TIME_MIN)
   {
-    WFDataFile.syncTimeDDNSSet(DDNS_SYNC_TIME_MIN);
+    ESPConfig.syncTimeDDNSSet(DDNS_SYNC_TIME_MIN);
   }
 
-  if (WFDataFile.syncTimeDDNS() > DDNS_SYNC_TIME_MAX)
+  if (ESPConfig.syncTimeDDNS() > DDNS_SYNC_TIME_MAX)
   {
-    WFDataFile.syncTimeDDNSSet(DDNS_SYNC_TIME_MAX);
+    ESPConfig.syncTimeDDNSSet(DDNS_SYNC_TIME_MAX);
   }
 
-  _ddnsTicker.attach(WFDataFile.syncTimeDDNS(), [](){
-    if (!WFDataFile.disableDDNS())
+  _ddnsTicker.attach(ESPConfig.syncTimeDDNS(), [](){
+    if (!ESPConfig.disableDDNS())
     {
       ddnsClient->update();
     }  
@@ -300,14 +300,14 @@ void hth_esp_wifi::onDDNSclient()
 
 /* Should be called on wifi event gotIP */
 #if (defined MDNS_SERVICE_ENABLE) && (MDNS_SERVICE_ENABLE == 1)
-void hth_esp_wifi::onMDNSService()
+void ESPWifiHandler::onMDNSService()
 {
   // Set up mDNS responder:
   // - first argument is the domain name, in this example
   //   the fully-qualified domain name is "esp32.local"
   // - second argument is the IP address to advertise
   //   we send our IP address on the WiFi network
-  if (!MDNS.begin(WFDataFile.hostNameSTA().c_str()))
+  if (!MDNS.begin(ESPConfig.hostNameSTA().c_str()))
   {
     ESP_WIFI_TAG_CONSOLE("Error setting up MDNS responder!");
   }
@@ -324,26 +324,26 @@ void hth_esp_wifi::onMDNSService()
 #endif
 
 #if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)
-void hth_esp_wifi::onDNSServer()
+void ESPWifiHandler::onDNSServer()
 {
   constexpr uint16_t DNS_SERVER_PORT = 53;
   _dnsServer->setErrorReplyCode(DNSReplyCode::ServerFailure);
-  _dnsServer->start(DNS_SERVER_PORT, WFDataFile.dnsNameAP(), WiFi.softAPIP());  
+  _dnsServer->start(DNS_SERVER_PORT, ESPConfig.dnsNameAP(), WiFi.softAPIP());  
 }
 #endif
 
 /** Should be called on wifi event gotIP*/
 #if (defined NBNS_SERVICE_ENABLE) && (NBNS_SERVICE_ENABLE == 1)
-void hth_esp_wifi::onNBNSService()
+void ESPWifiHandler::onNBNSService()
 {
-  NBNS.begin(WFDataFile.hostNameSTA().c_str());
+  NBNS.begin(ESPConfig.hostNameSTA().c_str());
 }
 #endif
 
 /** Should be called after init wifi */
 #if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)
-uint32_t hth_esp_wifi::_otaArduinoPercent = 0;
-void hth_esp_wifi::onArduinoOTA()
+uint32_t ESPWifiHandler::_otaArduinoPercent = 0;
+void ESPWifiHandler::onArduinoOTA()
 {
   ArduinoOTA.onStart(
       []()
@@ -406,13 +406,13 @@ void hth_esp_wifi::onArduinoOTA()
                        }
                      });
 
-  ArduinoOTA.setHostname(WFDataFile.hostNameSTA().c_str());
+  ArduinoOTA.setHostname(ESPConfig.hostNameSTA().c_str());
   // ArduinoOTA.setPassword("1234");
   ArduinoOTA.begin();
 }
 #endif
 
-void hth_esp_wifi::loop()
+void ESPWifiHandler::loop()
 {
 #if (defined MDNS_SERVICE_ENABLE) && (MDNS_SERVICE_ENABLE == 1) && (defined ESP8266)
   MDNS.update();
@@ -423,7 +423,7 @@ void hth_esp_wifi::loop()
 #endif
 }
 
-void hth_esp_wifi::begin(bool wifiON)
+void ESPWifiHandler::begin(bool wifiON)
 {
   WiFiMode_t wf_mode = WIFI_OFF;
 
@@ -472,10 +472,10 @@ void hth_esp_wifi::begin(bool wifiON)
 #endif
 
     /* sta and ap are disable*/
-    if (WFDataFile.isDisableSTA() && WFDataFile.isDisableAP())
+    if (ESPConfig.isDisableSTA() && ESPConfig.isDisableAP())
     {
       /* smart config is enable*/
-      if (WFDataFile.smartCfgSTA())
+      if (ESPConfig.smartCfgSTA())
       {
         wf_mode = WIFI_STA;
         ESP_WIFI_TAG_CONSOLE("Wifi Mode WIFI_STA using for smart config");
@@ -487,13 +487,13 @@ void hth_esp_wifi::begin(bool wifiON)
       }
     }
     /* sta and ap are enable*/
-    else if (!WFDataFile.isDisableSTA() && !WFDataFile.isDisableAP())
+    else if (!ESPConfig.isDisableSTA() && !ESPConfig.isDisableAP())
     {
       wf_mode = WIFI_AP_STA;
       ESP_WIFI_TAG_CONSOLE("Wifi Mode WIFI_AP_STA");
     }
     /* Enable sta and Diasble ap */
-    else if (!WFDataFile.isDisableSTA() && WFDataFile.isDisableAP())
+    else if (!ESPConfig.isDisableSTA() && ESPConfig.isDisableAP())
     {
       wf_mode = WIFI_STA;
       ESP_WIFI_TAG_CONSOLE("Wifi Mode WIFI_STA");
@@ -515,27 +515,27 @@ void hth_esp_wifi::begin(bool wifiON)
     }
 
     /* STA enable */
-    if (!WFDataFile.isDisableSTA())
+    if (!ESPConfig.isDisableSTA())
     {
-      if (WFDataFile.ssidSTA().length() > 0) // not exist the access point 
+      if (ESPConfig.ssidSTA().length() > 0) // not exist the access point 
       {
-        if (!WFDataFile.dhcpSTA())
+        if (!ESPConfig.dhcpSTA())
         {
-          WiFi.config(WFDataFile.ipSTA(), WFDataFile.gwSTA(), WFDataFile.snSTA(), WFDataFile.dnsSTA());
+          WiFi.config(ESPConfig.ipSTA(), ESPConfig.gwSTA(), ESPConfig.snSTA(), ESPConfig.dnsSTA());
           ESP_WIFI_TAG_CONSOLE("static IP setup");
-          ESP_WIFI_TAG_CONSOLE("Ip: %s", WFDataFile.ipSTA().toString().c_str());
-          ESP_WIFI_TAG_CONSOLE("Gw: %s", WFDataFile.gwSTA().toString().c_str());
-          ESP_WIFI_TAG_CONSOLE("Sn: %s", WFDataFile.snSTA().toString().c_str());
-          ESP_WIFI_TAG_CONSOLE("Dns: %s\r\n", WFDataFile.dnsSTA().toString().c_str());
+          ESP_WIFI_TAG_CONSOLE("Ip: %s", ESPConfig.ipSTA().toString().c_str());
+          ESP_WIFI_TAG_CONSOLE("Gw: %s", ESPConfig.gwSTA().toString().c_str());
+          ESP_WIFI_TAG_CONSOLE("Sn: %s", ESPConfig.snSTA().toString().c_str());
+          ESP_WIFI_TAG_CONSOLE("Dns: %s\r\n", ESPConfig.dnsSTA().toString().c_str());
         }
 
-        this->connect(WFDataFile.ssidSTA().c_str(), WFDataFile.passSTA().c_str());
+        this->connect(ESPConfig.ssidSTA().c_str(), ESPConfig.passSTA().c_str());
       }
       else
       {
         /* Smart config enable */
-        ESP_WIFI_TAG_CONSOLE("[beginSmartConfig] = %u\r\n", WFDataFile.smartCfgSTA());
-        if (WFDataFile.smartCfgSTA())
+        ESP_WIFI_TAG_CONSOLE("[beginSmartConfig] = %u\r\n", ESPConfig.smartCfgSTA());
+        if (ESPConfig.smartCfgSTA())
         {
           WiFi.beginSmartConfig();
         }
@@ -543,7 +543,7 @@ void hth_esp_wifi::begin(bool wifiON)
     }
 
     /* AP enable */
-    if (!WFDataFile.isDisableAP())
+    if (!ESPConfig.isDisableAP())
     {
 #ifdef ESP8266
       String ChipID = String(ESP.getChipId(), HEX);
@@ -551,13 +551,13 @@ void hth_esp_wifi::begin(bool wifiON)
       String ChipID = String((uint32_t)(ESP.getEfuseMac() >> 16), HEX);
 #endif
       ChipID.toUpperCase();
-      String ssidAP = WFDataFile.ssidAP() + "_" + ChipID;
-      WiFi.softAPConfig(WFDataFile.ipAP(), WFDataFile.ipAP(), WFDataFile.snAP());
+      String ssidAP = ESPConfig.ssidAP() + "_" + ChipID;
+      WiFi.softAPConfig(ESPConfig.ipAP(), ESPConfig.ipAP(), ESPConfig.snAP());
       constexpr uint8_t PASSWORD_LENGTH_MIN = 8;
-      if (WFDataFile.passAP().length() >= PASSWORD_LENGTH_MIN)
+      if (ESPConfig.passAP().length() >= PASSWORD_LENGTH_MIN)
       {
         // using c_str() for esp32
-        WiFi.softAP(ssidAP.c_str(), WFDataFile.passAP().c_str(), WFDataFile.channelAP(), WFDataFile.isHiddenAP());
+        WiFi.softAP(ssidAP.c_str(), ESPConfig.passAP().c_str(), ESPConfig.channelAP(), ESPConfig.isHiddenAP());
       }
       else
       {
@@ -574,35 +574,35 @@ void hth_esp_wifi::begin(bool wifiON)
 #endif
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
-  if (!WFDataFile.isDisableSTA())
+  if (!ESPConfig.isDisableSTA())
   {
     this->onDDNSclient();
   }
 #endif
 
 #if (defined NBNS_SERVICE_ENABLE) && (NBNS_SERVICE_ENABLE == 1)
-  if (!WFDataFile.isDisableSTA())
+  if (!ESPConfig.isDisableSTA())
   {
     this->onNBNSService();
   }
 #endif
 
 #if (defined MDNS_SERVICE_ENABLE) && (MDNS_SERVICE_ENABLE == 1)
-  if (!WFDataFile.isDisableSTA())
+  if (!ESPConfig.isDisableSTA())
   {
     this->onMDNSService();
   }
 #endif
 
 #if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)
-  if (!WFDataFile.isDisableAP())
+  if (!ESPConfig.isDisableAP())
   {
     this->onDNSServer();
   }
 #endif
 }
 
-void hth_esp_wifi::end(void)
+void ESPWifiHandler::end(void)
 {
   if (WIFI_OFF != WiFi.getMode())
   {
@@ -622,7 +622,7 @@ void hth_esp_wifi::end(void)
 #endif
 }
 
-void hth_esp_wifi::connect(const char *name, const char *pass)
+void ESPWifiHandler::connect(const char *name, const char *pass)
 {
   // We start by connecting to a WiFi network
   ESP_WIFI_TAG_CONSOLE("Connecting to %s", name);
@@ -663,7 +663,7 @@ void hth_esp_wifi::connect(const char *name, const char *pass)
   ]
 }
 */
-int hth_esp_wifi::ssidScan(String &json)
+int ESPWifiHandler::ssidScan(String &json)
 {
   boolean removeDuplicateAPs = true;
   int minimumQuality = -1;
@@ -791,7 +791,7 @@ int hth_esp_wifi::ssidScan(String &json)
 }
 
 /* Convert to %*/
-int hth_esp_wifi::getRSSIasQuality(int RSSI)
+int ESPWifiHandler::getRSSIasQuality(int RSSI)
 {
   int quality = 0;
   if (RSSI <= -100)
@@ -809,4 +809,4 @@ int hth_esp_wifi::getRSSIasQuality(int RSSI)
   return quality;
 }
 
-hth_esp_wifi HTH_espWifi;
+ESPWifiHandler ESPWifi;
