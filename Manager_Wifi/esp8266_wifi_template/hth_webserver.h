@@ -20,12 +20,12 @@ typedef std::function<void(AsyncWebServerRequest *)> asyncHttpHandler;
 
 typedef std::function<void(void)> scanNetworkHandler;
 
-class serverCallbacks {
+class serverUrlCallbacks {
 private:
   scanNetworkHandler _pScanNetworkCb;
 public:
-  serverCallbacks();
-	virtual ~serverCallbacks();
+  serverUrlCallbacks();
+	virtual ~serverUrlCallbacks();
   /**
   * Handler called after once request with method GET and authenticated.
   */
@@ -63,11 +63,12 @@ public:
 class hth_webserver
 {
 private:
+  static constexpr uint16_t SERVER_PORT_DEFAULT = 25123;
   static AsyncWebServer* _server;
   static AsyncWebServer* _server80;
   static hth_FSEditor* _spiffsEditor;
   static hth_websocket* _wsHandler;
-  static serverCallbacks* _pCallbacks;
+  static serverUrlCallbacks* _pUrlCallbacks;
   static asyncHttpHandler _httpGetAuthHandler;
   static asyncHttpHandler _httpGetHandler;
   static asyncHttpHandler _httpPostAuthHandler;
@@ -122,22 +123,27 @@ public:
     _uriHttpPostAuth = uri;
   }
 
-  void setHandleCallbacks(serverCallbacks* pCallbacks);
+  void setHandleCallbacks(serverUrlCallbacks* pCallbacks);
 
   void syncSsidNetworkToEvents();
 
   void end() {
-    delete _server;
-    delete _server80;
-    if (_spiffsEditor)
-    {
+    if (_server) {
+      delete _server;
+    }
+
+    if (_server80) {
+      delete _server80;
+    }
+
+    if (_spiffsEditor) {
       delete _spiffsEditor;
     }
+
     delete _wsHandler;
-    delete _pCallbacks;
+    delete _pUrlCallbacks;
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-    if (_sdCardEditor)
-    {
+    if (_sdCardEditor) {
       delete _sdCardEditor;
     }
 #endif

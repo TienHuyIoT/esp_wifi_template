@@ -26,9 +26,9 @@
 
 typedef struct {
     struct {
-        uint16_t 	udp;
-        uint16_t 	tcp;
-        uint16_t    ws;
+        uint16_t 	udp;    /* Udp port, reserved */
+        uint16_t 	tcp;    /* tcp port for webserver */
+        uint16_t    ws;     /* websocket port, not used */
     }port;    
     struct {
         char        name[DEVICENAME_LENGHT_MAX + 1];

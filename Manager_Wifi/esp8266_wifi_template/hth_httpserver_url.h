@@ -4,7 +4,7 @@
 #include <ESPAsyncWebServer.h>
 #include "hth_webserver.h"
 
-class hth_httpserver_url : public serverCallbacks {
+class hth_httpserver_url : public serverUrlCallbacks {
 private:
     /**
      * Handler called after once request with method GET and authenticated.

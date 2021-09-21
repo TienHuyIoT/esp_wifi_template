@@ -273,11 +273,7 @@ void sta_network_get(AsyncWebServerRequest *request, hth_httpserver_url* client)
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
     if(!HTH_ethernet.isEnable())
     {
-        if(WiFi.scanComplete() == WIFI_SCAN_FAILED) {
-            /* run in async mode */
-            HTTPSERVER_URL_TAG_CONSOLE("scanNetworks async mode run");
-            WiFi.scanNetworks(true);
-        }
+        client->asyncScanNetwork();
     }
 #else
     client->asyncScanNetwork();

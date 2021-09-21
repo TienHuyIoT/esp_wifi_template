@@ -24,7 +24,7 @@
 #define WEB_SERVER_DBG_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 #define WEB_SERVER_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WEB SERVER]", __VA_ARGS__)
 
-static serverCallbacks defaultCallbacks;
+static serverUrlCallbacks defaultCallbacks;
 
 class RedirectUrlHandler : public AsyncWebHandler
 {
@@ -59,10 +59,10 @@ hth_webserver::~hth_webserver()
   this->end();
 }
 
-AsyncWebServer* hth_webserver::_server = new AsyncWebServer(25123);
-AsyncWebServer* hth_webserver::_server80 = new AsyncWebServer(80);
+AsyncWebServer* hth_webserver::_server = nullptr;
+AsyncWebServer* hth_webserver::_server80 = nullptr;
 hth_websocket* hth_webserver::_wsHandler = new hth_websocket("/ws", "/events");
-serverCallbacks* hth_webserver::_pCallbacks = &defaultCallbacks;
+serverUrlCallbacks* hth_webserver::_pUrlCallbacks = &defaultCallbacks;
 asyncHttpHandler hth_webserver::_httpGetAuthHandler = nullptr;
 asyncHttpHandler hth_webserver::_httpGetHandler = nullptr;
 asyncHttpHandler hth_webserver::_httpPostAuthHandler = nullptr;
@@ -81,11 +81,11 @@ size_t hth_webserver::_updateProgress = 0;
 uint32_t hth_webserver::_spiffsUploadPercent = 0;
 uint32_t hth_webserver::_flashUpdatePercent = 0;
 
-void hth_webserver::setHandleCallbacks(serverCallbacks* pCallbacks)
+void hth_webserver::setHandleCallbacks(serverUrlCallbacks* pCallbacks)
 {
   if (pCallbacks != nullptr)
   {
-    _pCallbacks = pCallbacks;
+    _pUrlCallbacks = pCallbacks;
   }
 }
 
@@ -242,23 +242,24 @@ void hth_webserver::spiffsPrintProgress(size_t prg, size_t sz)
 
 void hth_webserver::syncSsidNetworkToEvents()
 {
-if(WiFi.scanComplete() == WIFI_SCAN_FAILED) {
+  if (WiFi.scanComplete() == WIFI_SCAN_FAILED)
+  {
 #ifdef ESP8266
-  /* run in async mode */
-  WEB_SERVER_TAG_CONSOLE("scanNetworks async mode run");
-  WiFi.scanNetworksAsync(
-    [](int scanCount) {
-      WEB_SERVER_TAG_CONSOLE("[EVENT] Completed scan for access points, found %u", scanCount);
-      String json_network = "{\"status\":\"error\",\"mgs\":\"No network\"}";
-      HTH_espWifi.ssidScan(json_network);
-      WEB_SERVER_TAG_CONSOLE("json_network: %s", json_network.c_str());
-      _wsHandler->eventsSend(json_network.c_str(), "wifiScan");
-    }
-  );
+    /* run in async mode */
+    WEB_SERVER_TAG_CONSOLE("scanNetworks async mode run");
+    WiFi.scanNetworksAsync(
+        [](int scanCount)
+        {
+          WEB_SERVER_TAG_CONSOLE("[EVENT] Completed scan for access points, found %u", scanCount);
+          String json_network = "{\"status\":\"error\",\"mgs\":\"No network\"}";
+          HTH_espWifi.ssidScan(json_network);
+          WEB_SERVER_TAG_CONSOLE("json_network: %s", json_network.c_str());
+          _wsHandler->eventsSend(json_network.c_str(), "wifiScan");
+        });
 #elif defined(ESP32)
-  /* run in async mode */
-  WEB_SERVER_TAG_CONSOLE("scanNetworks async mode run");
-  WiFi.scanNetworks(true);
+    /* run in async mode */
+    WEB_SERVER_TAG_CONSOLE("scanNetworks async mode run");
+    WiFi.scanNetworks(true);
 #endif
   }
 }
@@ -269,7 +270,15 @@ void hth_webserver::begin(void)
   _adminAuthPass = WFDataFile.authAdminPass();
   _userAuthUser = WFDataFile.authUserUser();
   _userAuthPass = WFDataFile.authUserPass();
+
+  /* Protect server port don't less 80 */
+  if (WFDataFile.tcpPort() < 80) {
+    // set server port default
+    WFDataFile.tcpPortSet(SERVER_PORT_DEFAULT);
+  }
+  _server = new AsyncWebServer(WFDataFile.tcpPort());
 #ifdef ESP32
+  /* Register esp32 event scan done */
   WiFi.onEvent(
       [](WiFiEvent_t event, WiFiEventInfo_t info)
       {
@@ -281,12 +290,17 @@ void hth_webserver::begin(void)
       },
       WiFiEvent_t::m_ESP32_EVENT_SCAN_DONE);
 #elif defined(ESP8266)
-  _pCallbacks->onScanNetwork(std::bind(&hth_webserver::syncSsidNetworkToEvents, this));
+  /* ESP8266 must be register event scan done callback once needing */
 #endif
+  /* register url callback scan network */
+  _pUrlCallbacks->onScanNetwork(std::bind(&hth_webserver::syncSsidNetworkToEvents, this));
+
   /* redirect port 80 to tcp port */
   if (WFDataFile.tcpPort() != 80)
   {
+    _server80 = new AsyncWebServer(80);
     _server80->addHandler(new RedirectUrlHandler());
+    _server80->begin();
   }
 
   _wsHandler->setHandleCallbacks(new hth_wsDataHandler());
@@ -318,7 +332,7 @@ _server->on("/get", HTTP_GET, [](AsyncWebServerRequest *request)
               {
                 _httpGetAuthHandler(request);
               }
-              _pCallbacks->onHttpGetAuth(request);
+              _pUrlCallbacks->onHttpGetAuth(request);
             }
           });
 
@@ -329,7 +343,7 @@ _server->on("/get_open", HTTP_GET,
             {
               _httpGetHandler(request);
             }
-            _pCallbacks->onHttpGet(request);
+            _pUrlCallbacks->onHttpGet(request);
           });
 
 _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
@@ -340,7 +354,7 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
               {
                 _httpPostAuthHandler(request);
               }
-              _pCallbacks->onHttpPostAuth(request);
+              _pUrlCallbacks->onHttpPostAuth(request);
             }
           });
 
@@ -539,18 +553,8 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
         }
       });
 
-  if (WFDataFile.tcpPort() < 80)
-  {
-    WFDataFile.tcpPortSet(25123);
-  }
-
   WEB_SERVER_TAG_CONSOLE("Init Web Server Port: %u", WFDataFile.tcpPort());
-
-  _server->begin(WFDataFile.tcpPort());
-  if (WFDataFile.tcpPort() != 80)
-  {
-    _server80->begin();
-  }
+  _server->begin();
 }
 
 void hth_webserver::loop()
@@ -558,30 +562,30 @@ void hth_webserver::loop()
 
 }
 
-serverCallbacks::serverCallbacks() 
+serverUrlCallbacks::serverUrlCallbacks() 
 : _pScanNetworkCb(nullptr)
 {
 }
-serverCallbacks::~serverCallbacks() {}
+serverUrlCallbacks::~serverUrlCallbacks() {}
 /**
  * 
  * Handler called after once request with method GET and authenticated.
  */
-void serverCallbacks::onHttpGetAuth(AsyncWebServerRequest *request)
+void serverUrlCallbacks::onHttpGetAuth(AsyncWebServerRequest *request)
 {
-  WEB_SERVER_TAG_CONSOLE("[serverCallbacks] >> onHttpGetAuth: default <<");
+  WEB_SERVER_TAG_CONSOLE("[serverUrlCallbacks] >> onHttpGetAuth: default <<");
 }
 /**
  * Handler called after once request with method GET.
  */
-void serverCallbacks::onHttpGet(AsyncWebServerRequest *request)
+void serverUrlCallbacks::onHttpGet(AsyncWebServerRequest *request)
 {
-  WEB_SERVER_TAG_CONSOLE("[serverCallbacks] >> onHttpGet: default <<");
+  WEB_SERVER_TAG_CONSOLE("[serverUrlCallbacks] >> onHttpGet: default <<");
 }
 /**
  * Handler called after once request with method POST and authenticated.
  */
-void serverCallbacks::onHttpPostAuth(AsyncWebServerRequest *request)
+void serverUrlCallbacks::onHttpPostAuth(AsyncWebServerRequest *request)
 {
-  WEB_SERVER_TAG_CONSOLE("[serverCallbacks] >> onHttpPostAuth: default <<");
+  WEB_SERVER_TAG_CONSOLE("[serverUrlCallbacks] >> onHttpPostAuth: default <<");
 }
