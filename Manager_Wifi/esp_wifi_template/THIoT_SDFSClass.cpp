@@ -140,26 +140,25 @@ void ESPSdCard::begin()
     return;
   }
 
-  SD_FS_PRINTF("SD_FS_SYSTEM Card Type: ");
   if (cardType == CARD_MMC)
   {
-    SD_FS_PRINTFLN("MMC");
+    SD_FS_PRINTFLN("Type: MMC");
   }
   else if (cardType == CARD_SD)
   {
-    SD_FS_PRINTFLN("SDSC");
+    SD_FS_PRINTFLN("Type: SDSC");
   }
   else if (cardType == CARD_SDHC)
   {
-    SD_FS_PRINTFLN("SDHC");
+    SD_FS_PRINTFLN("Type: SDHC");
   }
   else
   {
-    SD_FS_PRINTFLN("UNKNOWN");
+    SD_FS_PRINTF("Type: UNKNOWN");
   }
 
-  SD_FS_PRINTF("SD_FS_SYSTEM Card Size: %lluMB\r\n", cardSize);
-  SD_FS_PRINTF("SD_FS_SYSTEM Card Space: %lluMB\r\n", usedBytes);
+  SD_FS_PRINTFLN("Card Size: %lluMB\r\n", cardSize);
+  SD_FS_PRINTFLN("Card Space: %lluMB\r\n", usedBytes);
 
 #if (0)
   FSHandle.createDir(SD_FS_SYSTEM, "/mydir");

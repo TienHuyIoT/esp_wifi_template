@@ -48,6 +48,7 @@ uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 ()
 #include "THIoT_SerialTrace.h"
 #include "THIoT_ESPSysParams.h"
 #include "THIoT_ESPTimeSystem.h"
+#include "THIoT_ESPWatchDogTimer.h"
 #include "THIoT_ESPWifiHandle.h"
 
 #define SNTP_CONSOLE_PORT CONSOLE_PORT
@@ -65,15 +66,7 @@ static void sntp_sync_time_cb(struct timeval *tv) {
 static void sntp_sync_time_cb(bool from_sntp /* <= this parameter is optional */) {
     SNTP_TAG_CONSOLE("Callback settimeofday(%s)", from_sntp ? "SNTP" : "USER");
 #endif 
-    time_t now = time(nullptr);
-    const tm* tm = localtime(&now);
-    char buf[64];
-    /** The same way using with esp32 
-     * RTC_CONSOLE_PORT.println(&tmStruct, "\r\nTime: %A, %B %d %Y %H:%M:%S");
-     * */
-    strftime(buf, 64, "%A, %B %d %Y %H:%M:%S", tm);
-    SNTP_TAG_CONSOLE("Callback Time: %s", buf);
-
+    SNTP_TAG_CONSOLE("Callback Time: %s", ESPTime.toString().c_str());
     ESPTime.setSourceUpdate(ESPTimeSystem::RTC_SNTP_UPDATE);
 }
 
@@ -86,7 +79,7 @@ void ESPSntpService::begin()
 {
     SNTP_TAG_CONSOLE("Configure Time Server");
     _server1 = ESPConfig.server1SNTP();
-    _server1 = ESPConfig.server2SNTP();
+    _server2 = ESPConfig.server2SNTP();
 #ifdef ESP32
     sntp_set_time_sync_notification_cb(sntp_sync_time_cb);
     configTime(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), _server1.c_str(), _server2.c_str());
@@ -387,10 +380,8 @@ void ESPWifiHandle::onArduinoOTA()
                             _otaArduinoPercent = per;
                             ESP_WIFI_TAG_CONSOLE("[OTA] Progress: %u%%", per);
                           }
-#ifdef ESP8266
                           /* Watch dog timer feed */
-                          ESP.wdtFeed();
-#endif
+                          wdt_reset();
                         });
 
   ArduinoOTA.onError([](ota_error_t error)

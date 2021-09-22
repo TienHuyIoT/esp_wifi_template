@@ -73,7 +73,7 @@ void ESPTimeSystem::load(void)
         }
         else
         {
-            RTC_TAG_CONSOLE("Init RTC system");
+            RTC_TAG_CONSOLE("Init build time system");
             const char *sysTime = "Tue " __DATE__ " " __TIME__ " GMT";
             GMTStringUpdate(sysTime, level_update_t::RTC_NON_UPDATE);
         }
@@ -171,9 +171,19 @@ time_t ESPTimeSystem::makeNowFromRtc(rtc_time_t *rtc)
     return t_now;
 }
 
-char *ESPTimeSystem::printTimeFromNow(time_t t_now)
+char* ESPTimeSystem::printTimeFromNow(time_t t_now)
 {
     return ctime(&t_now);
+}
+
+String ESPTimeSystem::toString()
+{
+    constexpr uint8_t BUFFER_TIME_LENGTH_MAX = 64;
+    char buf[BUFFER_TIME_LENGTH_MAX];
+    time_t now = time(nullptr);
+    const tm* tm = localtime(&now);
+    strftime(buf, BUFFER_TIME_LENGTH_MAX, "%A, %B %d %Y %H:%M:%S", tm);
+    return String(buf);
 }
 
 time_t ESPTimeSystem::toNow()

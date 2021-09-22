@@ -94,6 +94,8 @@ public:
 
   char *printTimeFromNow(time_t t_now);
 
+  String toString();
+
   /* Return time now number of rtc system */
   time_t toNow();
 

@@ -7,7 +7,7 @@
 // <o> SERIAL_NUMBER_ADDR
 
 #ifndef SERIAL_NUMBER_ADDR
-#define SERIAL_NUMBER_ADDR          0x1FDE0
+#define SERIAL_NUMBER_ADDR          0x1FDE0 // address
 #define SERIAL_NUMBER_LENGTH_MAX    32
 #endif
 
@@ -15,7 +15,7 @@
 // <o> HW_VERSION_STRING
 
 #ifndef HW_VERSION_STRING
-#define HW_VERSION_STRING "ESP8266_V1.1"
+#define HW_VERSION_STRING "ESP8266"
 #endif
 
 // </h>
@@ -41,9 +41,11 @@
 #define FW_VERSION_BUILD 0
 #endif
 
+//==========================================================
+// <o> WDT_TIMEOUT_VALUE (Only for ESP32)
 
 #ifndef WDT_TIMEOUT_VALUE
-#define WDT_TIMEOUT_VALUE  10000 /* ms */
+#define WDT_TIMEOUT_VALUE  6000 /* ms */
 #endif
 
 /* DDNS client service

@@ -4,7 +4,7 @@
 
 #define EEPROM_DATA_PORT CONSOLE_PORT
 #define EEPROM_DATA_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
-#define EEPROM_DATA_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[EEPROM] ", __VA_ARGS__)
+#define EEPROM_DATA_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[EEPROM]", __VA_ARGS__)
 
 ESPEEPromParams::ESPEEPromParams(/* args */)
 {
@@ -38,12 +38,11 @@ void ESPEEPromParams::load()
 #elif defined(ESP8266)
     chipID = ESP.getChipId();
 #endif
-    EEPROM_DATA_TAG_CONSOLE("Chip ID = %04X", (uint16_t)(chipID >> 32)); //print High 2 bytes
-    EEPROM_DATA_CONSOLE("%08X\r\n", (uint32_t)chipID);                         //print Low 4bytes.
+    EEPROM_DATA_TAG_CONSOLE("Chip ID = %04X%08X", (uint16_t)(chipID >> 32), (uint32_t)chipID);
 
     EEPROM.begin(EEPROM_BYTE_SIZE);
     EEPROM.get(0, _eepData);
-    EEPROM_DATA_TAG_CONSOLE("Eeprom Info:");
+    EEPROM_DATA_TAG_CONSOLE("Eeprom Information:");
     EEPROM_DATA_TAG_CONSOLE("- autoCfg: %u", _eepData.autoCfg);
     EEPROM_DATA_TAG_CONSOLE("- activeStatus: %u", _eepData.activeStatus);
     EEPROM_DATA_TAG_CONSOLE("- Chipid: %04X%08X", _eepData.block1_2[1], _eepData.block1_2[0]);

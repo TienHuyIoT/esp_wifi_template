@@ -4,6 +4,9 @@
 
 #include "THIoT_ESPSysParams.h"
 #include "THIoT_ESPEthernet.h"
+#if (ETH_PRINT_TIME_SYSTEM_DBG)
+#include "THIoT_ESPTimeSystem.h"
+#endif
 #include "THIoT_SerialTrace.h"
 
 #define ESP_ETH_PORT CONSOLE_PORT
@@ -82,6 +85,11 @@ void ESPEthernet::loop()
         ETH_TAG_CONSOLE("Sn: %s", ETH.subnetMask().toString().c_str());
         ETH_TAG_CONSOLE("Dns: %s\r\n", ETH.dnsIP().toString().c_str());
         _connected = true;
+#if (ETH_PRINT_TIME_SYSTEM_DBG)
+        _tickerPrintTime.attach(5, [](){
+          ETH_TAG_CONSOLE("Time: %s", ESPTime.toString().c_str());
+        });
+#endif
       }
     }
     else

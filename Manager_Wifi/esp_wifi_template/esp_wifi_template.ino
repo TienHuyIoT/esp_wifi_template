@@ -9,6 +9,8 @@
 #include "THIoT_WebserverURLHandle.h"
 #include "THIoT_ESPEEPromParams.h"
 #include "THIoT_ESPEthernet.h"
+#include "THIoT_ESPWatchDogTimer.h"
+#include "THIoT_ESPResetReason.h"
 
 /* Private macro -------------------------------------------------------------*/
 #define MAIN_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[MAIN]", __VA_ARGS__)
@@ -30,6 +32,13 @@ void setup()
                      FW_VERSION_MAJOR,
                      FW_VERSION_MINOR,
                      FW_VERSION_BUILD);
+    
+    esp_print_reset_reason();
+
+    // Enable watch dog timer         
+    // WDT_TIMEOUT_VALUE only effect for ESP32
+    // ESP8266 refer https://techtutorialsx.com/2017/01/21/esp8266-watchdog-functions/
+    wdt_enable(WDT_TIMEOUT_VALUE);
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
 #if (defined ETH_GPIO_ENABLE) && (ETH_GPIO_ENABLE != -1)
@@ -85,9 +94,6 @@ void setup()
     // Because some function of system will need params 
     // load from file system for initial.
     ESPConfig.load(&NAND_FS_SYSTEM);
-    
-    // Init system time with params option load from the file system
-    ESPTime.load();
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
     // If the ethernet is enable, the wifi will not init.
@@ -101,10 +107,16 @@ void setup()
     // register callback handle http request
     webServer.setHandleCallbacks(new WebserverURLHandle());
     webServer.begin();
+
+    // Init system time with params option load from the file system
+    // Must be start after ESPWifi.begin() Because SNTP had config
+    // when wifi init.
+    ESPTime.load();
 }
 
 void loop()
 {
+    wdt_reset();
     ESPWifi.loop();
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
     Ethernet.loop();

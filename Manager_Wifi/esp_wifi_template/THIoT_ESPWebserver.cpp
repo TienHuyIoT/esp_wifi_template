@@ -17,6 +17,7 @@
 #include "THIoT_ESPSysParams.h"
 #include "THIoT_ESPSoftReset.h"
 #include "THIoT_SDFSClass.h"
+#include "THIoT_ESPWatchDogTimer.h"
 #include "THIoT_ESPWebserver.h"
 
 
@@ -199,6 +200,9 @@ void ESPWebserver::updatePrintProgress(size_t prg, size_t sz)
     sprintf(p, "%u", _flashUpdatePercent);
     _wsHandler->eventsSend(p, "dfu");
   }
+
+  /* Watch dog timer feed */
+  wdt_reset();
 }
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
@@ -219,6 +223,8 @@ void ESPWebserver::sdfsPrintProgress(size_t prg, size_t sz)
     sprintf(p, "%u", _sdUploadPercent);
     _wsHandler->eventsSend(p, "sdfs");
   }
+  /* Watch dog timer feed */
+  wdt_reset();
 }
 #endif
 
@@ -238,6 +244,8 @@ void ESPWebserver::spiffsPrintProgress(size_t prg, size_t sz)
     sprintf(p, "%u", _spiffsUploadPercent);
     _wsHandler->eventsSend(p, "spiffs");
   }
+  /* Watch dog timer feed */
+  wdt_reset();
 }
 
 void ESPWebserver::syncSsidNetworkToEvents()
