@@ -10,10 +10,9 @@
 class ESPSntpService
 {
 private:
-    static constexpr char *_ntpServer1 = "pool.ntp.org";
-    static constexpr char *_ntpServer2 = "time.nist.gov";
-    static constexpr long _gmtOffset_sec = 3600 * 7;
-    static constexpr int _daylightOffset_sec = 0;
+    static String _server1;
+    static String _server2;
+
 public:
     ESPSntpService(/* args */);
     ~ESPSntpService();

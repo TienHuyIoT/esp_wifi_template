@@ -1,0 +1,113 @@
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>DDNS Config</title>
+    <link rel="stylesheet" href="/mystyle.css">
+    <script src="/myscripts.js"></script>
+    <script>
+        function ddns_cfg() {
+            var obj = {
+                "service": "dyndns"
+            };
+            var pass = prompt("Please Enter Password");
+            if (pass.length < 4) {
+                alert('Password Input Fail');
+                return;
+            }
+            var sync_time = Number(document.getElementById('sync_time').value);
+            if (sync_time < 10) {
+                sync_time = 10;
+            }
+            if (sync_time > 60) {
+                sync_time = 60;
+            }
+            document.getElementById('sync_time').value = sync_time;
+            obj.sync_time = sync_time;
+            obj.service = document.getElementById('service').value;
+            obj.domain = document.getElementById('domain').value;
+            obj.user = document.getElementById('user').value;
+            obj.pass = document.getElementById('pass').value;
+            obj.disable = !document.getElementById("enable").checked;
+            obj.access_code = pass;
+            var StrJSON = JSON.stringify(obj);
+            client.post('/post', "ddns_client=" + StrJSON, function(response) {
+                alert(response);
+            });
+        }
+
+        function onBodyLoad() {
+            client.get('/get?param_wifi=ddns_client', function(response) {
+                console.log(response);
+                var obj = JSON.parse(response);
+                document.getElementById('service').value = obj.service;
+                document.getElementById('domain').value = obj.domain;
+                document.getElementById('user').value = obj.user;
+                document.getElementById('pass').value = obj.pass;
+                document.getElementById('sync_time').value = obj.sync_time;
+                document.getElementById('ip_ddns').value = obj.ip_ddns;
+                document.getElementById("enable").checked = !obj.disable;
+            });
+        }
+    </script>
+</head>
+
+<body style="" onload="onBodyLoad()">
+    <div style="text-align:left;display:inline-block;min-width:260px;">
+        <br><br><br>
+        <h3>DDNS SETTING</h3>
+        <table id="ddns_table" width="100%">
+            <tr>
+                <td align="left"><b>SERVICE</b></td>
+                <td>
+                    <select id="service" name="service">
+                        <option value='duckdns'>duckdns</option>
+                        <option value='noip' selected>noip</option>
+                        <option value='dyndns' >dyndns</option>
+                        <option value='dynu' >dynu</option>
+                        <option value='enom' >enom</option>
+                        <option value='all-inkl' >all-inkl</option>
+                        <option value='selfhost.de' >selfhost.de</option>
+                        <option value='dyndns.it' >dyndns.it</option>
+                        <option value='strato' >strato</option>
+                        <option value='freemyip' >freemyip</option>
+                        <option value='afraid.org' >afraid.org</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td align="left"><b>DOMAIN</b></td>
+                <td><input type="text" id="domain"></td>
+            </tr>
+            <tr>
+                <td align="left"><b>USER</b></td>
+                <td><input type="text" id="user"></td>
+            </tr>
+            <tr>
+                <td align="left"><b>PASS</b></td>
+                <td><input type="password" id="pass"></td>
+            </tr>
+            <tr>
+                <td align="left"><b>SYNC TIME</b></td>
+                <td><input type="number" id="sync_time"></td>
+            </tr>
+            <tr>
+                <td align="left"><b>IP DDNS</b></td>
+                <td><input type="text" id="ip_ddns" readonly></td>
+            </tr>
+            <tr>
+                <td align="left"><b>ENABLE</b></td>
+                <td align="left"><label class="switch"><input type="checkbox" id="enable">
+                        <div class="slider round"></div>
+                    </label></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><input type="button" onclick="ddns_cfg()" value="Save"></td>
+            </tr>
+        </table>
+    </div>
+</body>
+
+</html>

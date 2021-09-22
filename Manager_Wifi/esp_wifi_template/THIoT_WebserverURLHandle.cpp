@@ -16,8 +16,8 @@
 #define SERVER_DATA_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 #define HTTPSERVER_URL_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[HTTP_SERVER]", __VA_ARGS__)
 
-#define DATA_GET_HANDLE_NUM     14
-#define DATA_POST_HANDLE_NUM    10
+#define DATA_GET_HANDLE_NUM     15
+#define DATA_POST_HANDLE_NUM    11
 
 #ifdef ESP32
 extern "C" {
@@ -45,6 +45,7 @@ void sta_ap_info_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
 void sta_network_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void sta_setting_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void ap_setting_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
+void sntp_setting_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void device_info_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void time_setting_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void fw_version_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
@@ -61,6 +62,7 @@ void sta_ap_info_post(AsyncWebServerRequest *request, WebserverURLHandle* client
 void sta_network_post(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void sta_setting_post(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void ap_setting_post(AsyncWebServerRequest *request, WebserverURLHandle* client);
+void sntp_setting_post(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void device_info_post(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void auth_access_post(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void time_setting_post(AsyncWebServerRequest *request, WebserverURLHandle* client);
@@ -74,16 +76,17 @@ server_get_handle_t client_get_handle[DATA_GET_HANDLE_NUM] = {
 /*01*/{(char*)"sta_network", sta_network_get},
 /*02*/{(char*)"sta_setting", sta_setting_get},
 /*03*/{(char*)"ap_setting", ap_setting_get},
-/*04*/{(char*)"device_info", device_info_get},
-/*05*/{(char*)"time_setting", time_setting_get},
-/*06*/{(char*)"fw_version", fw_version_get},
-/*07*/{(char*)"restart", restart_device_get},
-/*08*/{(char*)"heap_temperature", heap_temperature_get},
-/*09*/{(char*)"activated", activated_get},
-/*10*/{(char*)"format_sd_card", format_sd_card_get},
-/*11*/{(char*)"ddns_client", ddns_client_get},
-/*12*/{(char*)"pass_common", pass_common_get},
-/*13*/{(char*)"format_spiffs", format_spiffs_get}
+/*04*/{(char*)"sntp_setting", sntp_setting_get},
+/*05*/{(char*)"device_info", device_info_get},
+/*06*/{(char*)"time_setting", time_setting_get},
+/*07*/{(char*)"fw_version", fw_version_get},
+/*08*/{(char*)"restart", restart_device_get},
+/*09*/{(char*)"heap_temperature", heap_temperature_get},
+/*10*/{(char*)"activated", activated_get},
+/*11*/{(char*)"format_sd_card", format_sd_card_get},
+/*12*/{(char*)"ddns_client", ddns_client_get},
+/*13*/{(char*)"pass_common", pass_common_get},
+/*14*/{(char*)"format_spiffs", format_spiffs_get}
 };
 
 server_post_handle_t client_post_handle[DATA_POST_HANDLE_NUM] = {
@@ -91,12 +94,13 @@ server_post_handle_t client_post_handle[DATA_POST_HANDLE_NUM] = {
 /*01*/{(char*)"sta_network", sta_network_post},
 /*02*/{(char*)"sta_setting", sta_setting_post},
 /*03*/{(char*)"ap_setting", ap_setting_post},
-/*04*/{(char*)"device_info", device_info_post},
-/*05*/{(char*)"auth_access", auth_access_post},
-/*06*/{(char*)"time_setting", time_setting_post},
-/*07*/{(char*)"ddns_client", ddns_client_post},
-/*08*/{(char*)"auth_user_access", auth_user_access_post},
-/*09*/{(char*)"pass_common", pass_common_post}
+/*04*/{(char*)"sntp_setting", sntp_setting_post},
+/*05*/{(char*)"device_info", device_info_post},
+/*06*/{(char*)"auth_access", auth_access_post},
+/*07*/{(char*)"time_setting", time_setting_post},
+/*08*/{(char*)"ddns_client", ddns_client_post},
+/*09*/{(char*)"auth_user_access", auth_user_access_post},
+/*10*/{(char*)"pass_common", pass_common_post}
 };
 
 WebserverURLHandle::WebserverURLHandle(/* args */){}
@@ -386,6 +390,22 @@ void ap_setting_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
     request->send(200, "text/json", json_network);
 }
 
+void sntp_setting_get(AsyncWebServerRequest *request, WebserverURLHandle* client) 
+{
+    String json_network;
+    
+    DynamicJsonBuffer djbco;
+    JsonObject& root = djbco.createObject();   
+    root["server1"].set(ESPConfig.server1SNTP());
+    root["server2"].set(ESPConfig.server2SNTP());
+    root["server3"].set(ESPConfig.server3SNTP());
+    root["gmtOffset"].set(ESPConfig.gmtOffsetSNTP());
+    root["daylightOffset"].set(ESPConfig.daylightOffsetSNTP());
+
+    root.prettyPrintTo(json_network);
+    request->send(200, "text/json", json_network);
+}
+
 void device_info_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
 {
     String json_network;
@@ -614,7 +634,7 @@ void sta_setting_post(AsyncWebServerRequest *request, WebserverURLHandle* client
 
     if(ESPConfig.passConfirmIsOK(root["access_code"].as<String>(), ESPSysParams::CONFIRM_COMMON))
     {
-        request->send(200, "text/json", "Wifi Advance Setting Succeed");
+        request->send(200, "text/json", "Wifi Access Point Setting Succeed");
 
         ESPConfig.ssidSTASet(root["sta_ssid"].as<String>());
         ESPConfig.passSTASet(root["sta_pass"].as<String>());
@@ -654,7 +674,7 @@ void ap_setting_post(AsyncWebServerRequest *request, WebserverURLHandle* client)
 
     if(ESPConfig.passConfirmIsOK(root["access_code"].as<String>(), ESPSysParams::CONFIRM_COMMON))
     {
-        request->send(200, "text/json", "Wifi Advance Setting Succeed");
+        request->send(200, "text/json", "Wifi Hotspot Setting Succeed");
 
         ESPConfig.ssidAPSet(root["ap_ssid"].as<String>());
         ESPConfig.passAPSet(root["ap_pass"].as<String>());
@@ -667,6 +687,36 @@ void ap_setting_post(AsyncWebServerRequest *request, WebserverURLHandle* client)
 
         /* Reset to access new network */
         SOFTReset.enable(500);
+    }
+    else
+    {
+        request->send(200, "text/json", "Password Setting Wrong");
+    }
+}
+
+void sntp_setting_post(AsyncWebServerRequest *request, WebserverURLHandle* client) 
+{
+    AsyncWebParameter* p = request->getParam(0);
+
+    DynamicJsonBuffer djbpo;
+    JsonObject& root = djbpo.parseObject(p->value());
+    if (!root.success())
+    {
+        HTTPSERVER_URL_TAG_CONSOLE("JSON parsing failed!");
+        return;
+    }
+
+    if(ESPConfig.passConfirmIsOK(root["access_code"].as<String>(), ESPSysParams::CONFIRM_COMMON))
+    {
+        request->send(200, "text/json", "SNTP Setting Succeed");
+
+        ESPConfig.server1SNTPSet(root["server1"].as<String>());
+        ESPConfig.server2SNTPSet(root["server2"].as<String>());
+        ESPConfig.server3SNTPSet(root["server3"].as<String>());
+        ESPConfig.gmtOffsetSNTPSet(root["gmtOffset"].as<int>());
+        ESPConfig.daylightOffsetSNTPSet(root["daylightOffset"].as<int>());
+        
+        ESPConfig.save();
     }
     else
     {
@@ -688,14 +738,11 @@ void device_info_post(AsyncWebServerRequest *request, WebserverURLHandle* client
 
     if(ESPConfig.passConfirmIsOK(root["access_code"].as<String>(), ESPSysParams::CONFIRM_COMMON))
     {
-        request->send(200, "text/json", "Wifi Advance Setting Succeed");
+        request->send(200, "text/json", "Device Information Setting Succeed");
         ESPConfig.nameDeviceSet(root["name"].as<String>());
         ESPConfig.nameDeviceSet(root["addr"].as<String>());      
 
         ESPConfig.save();
-
-        /* Reset to access new network */
-        SOFTReset.enable(500);
     }
     else
     {

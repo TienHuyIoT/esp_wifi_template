@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <FS.h>
 
-#define WIFI_FILE_PATH ((const char*)"/wifi_info_file.txt")
+#define ESP_SYSTEM_PARAMS ((const char*)"/esp_system_params.txt")
 
 #define HOSTNAME_LENGHT_MAX     32
 #define SSID_LENGHT_MAX         32
@@ -17,6 +17,7 @@
 #define DDNS_DOMAIN_LENGTH_MAX  31
 #define DDNS_USER_LENGTH_MAX    15
 #define DDNS_PASS_LENGTH_MAX    15
+#define SNTP_LENGTH_MAX         31
 
 #define PASS_COMMON_DEFAULT     1234
 #define PASS_PU3_DEFAULT        1234
@@ -76,6 +77,13 @@ typedef struct {
         uint8_t     sync_time;
         uint8_t     disable : 1;
     }ddns;
+    struct {
+        char        server1[SNTP_LENGTH_MAX + 1];
+        char        server2[SNTP_LENGTH_MAX + 1];
+        char        server3[SNTP_LENGTH_MAX + 1];
+        long        gmtOffset;
+        int         daylightOffset;
+    }sntp;
 } esp_sys_params_t;
 
 class ESPSysParams
@@ -100,6 +108,7 @@ public:
 
     void load(fs::FS* fs = nullptr);
     void save() { saveToFileSystem(); }
+    void setDefault() { _fs->remove(ESP_SYSTEM_PARAMS); }
     void resetPassword();
     void resetDefault();
     bool passSupperAdminIsOK(const String &pass);
@@ -225,6 +234,23 @@ public:
     }
     void syncTimeDDNSSet(uint8_t sync_time) { _sys_prams.ddns.sync_time = sync_time; }
     void disableDDNSSet(uint8_t disable) { _sys_prams.ddns.disable = disable; }
+    /* sntp API */
+    String server1SNTP() { return _sys_prams.sntp.server1; }
+    String server2SNTP() { return _sys_prams.sntp.server2; }
+    String server3SNTP() { return _sys_prams.sntp.server3; }
+    long gmtOffsetSNTP() { return _sys_prams.sntp.gmtOffset; }
+    int daylightOffsetSNTP() { return _sys_prams.sntp.daylightOffset; }
+    void server1SNTPSet(const String &server) { 
+        server.toCharArray(_sys_prams.sntp.server1, SNTP_LENGTH_MAX + 1);
+    }
+    void server2SNTPSet(const String &server) { 
+        server.toCharArray(_sys_prams.sntp.server2, SNTP_LENGTH_MAX + 1);
+    }
+    void server3SNTPSet(const String &server) { 
+        server.toCharArray(_sys_prams.sntp.server3, SNTP_LENGTH_MAX + 1);
+    }
+    void gmtOffsetSNTPSet(long gmtOffset) { _sys_prams.sntp.gmtOffset = gmtOffset; }
+    void daylightOffsetSNTPSet(int daylightOffset) { _sys_prams.sntp.daylightOffset = daylightOffset; }
 };
 
 extern ESPSysParams ESPConfig;

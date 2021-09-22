@@ -1,0 +1,132 @@
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Upload data</title>
+    <script src="/myscripts.js"></script>
+    <script>
+        function addMessage(m) {
+            var bt_value = "Upload File ";
+            var id = 'button_sd';
+
+            if (Number(m) == 100) {
+                bt_value += "(Done)"
+            } else {
+                bt_value += m + "%";
+            }
+
+            document.getElementById(id).value = bt_value;
+        }
+
+        function startEvents() {
+            var es = new EventSource('/events');
+            es.onopen = function(e) {
+                console.log("Events Opened");
+            };
+            es.onerror = function(e) {
+                if (e.target.readyState != EventSource.OPEN) {
+                    console.log("Events Closed");
+                }
+            };
+            es.onmessage = function(e) {
+                console.log("Event: " + e.data);
+            };
+            es.addEventListener('sdfs', function(e) {
+                addMessage(e.data);
+            }, false);
+        }
+
+        function verify_pass(Pass) {
+            client.get("/get?param_wifi=pass_logfile&Pass=" + Pass, function(response) {
+                console.log(response);
+                var obj = JSON.parse(response);
+                if (obj.St && obj.St == "Error") onBodyLoad();
+                else {
+                    startEvents();
+                }
+            });
+        }
+
+        function onBodyLoad() {
+            var pass = "";
+            pass = prompt("Please enter your pass");
+            if (!pass) {
+                document.getElementById('Body').innerHTML = 'Please enter password';
+            } else {
+                verify_pass(pass);
+            }
+        }
+    </script>
+    <style>
+        div,
+        input {
+            padding: 5px;
+            font-size: 1em;
+        }
+        
+        input {
+            width: 100%;
+        }
+        
+        body {
+            text-align: center;
+            font-family: verdana;
+        }
+    </style>
+</head>
+
+<body onload="onBodyLoad()" id="Body">
+    <div style="text-align: left; display: inline-block; min-width: 260px;">
+        <br>
+        <br>
+        <br>
+        <table>
+            <tr>
+                <th align='left'>UPLOAD DATA</th>
+            </tr>
+        </table>
+        <form method="POST" action="/edit_sdfs" enctype="multipart/form-data">
+            <input type="file" id="data_sd" name="data">
+            <input type="button" id="button_sd" value="Upload File">
+        </form>
+    </div>
+
+    <script>
+        document.getElementById("button_sd").addEventListener("click", function() {
+            // Get the file the user picked
+            var files = document.getElementById("data_sd").files;
+            if (!files.length) {
+                return;
+            }
+            var file = files[0];
+            var filename = "/" + file.name;
+            // Create a new one with the data but a new name
+            var newFile = new File([file], filename, {
+                type: file.type,
+            });
+            // Build the FormData to send
+            var data = new FormData();
+            data.set("data", newFile);
+            // Send it
+            fetch("/edit_sdfs", {
+                    method: "POST",
+                    body: data
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("HTTP error " + response.status);
+                    }
+                    return response.text(); // or response.json() or whatever
+                })
+                .then(response => {
+                    // Do something with the response
+                })
+                .catch(error => {
+                    // Do something with the error
+                });
+        });
+    </script>
+</body>
+
+</html>

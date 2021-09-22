@@ -55,10 +55,6 @@ void ESPTimeSystem::load(void)
     struct tm tmStruct;
     rtc_time_t rtc;
 
-    // Set timezone to vietnam Standard Time
-    setenv("TZ", "CST-7", 1);
-    tzset();
-
     if (!getLocalTime(&tmStruct, 1))
     {
         if (_rtcFile->sync(&rtc))

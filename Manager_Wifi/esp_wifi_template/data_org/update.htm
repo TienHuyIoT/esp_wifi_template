@@ -1,0 +1,292 @@
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>Update</title>
+    <script src="/myscripts.js"></script>
+    <style>
+        div,
+        input {
+            padding: 5px;
+            font-size: 1em;
+        }
+        
+        input {
+            width: 100%;
+        }
+        
+        body {
+            text-align: center;
+            font-family: verdana;
+        }
+    </style>
+    <script>
+        function addMessage(n, m) {
+            var bt_value;
+            var id;
+            if (0 == n) {
+                bt_value = "Program ";
+                id = 'button_update';
+            } else if (1 == n) {
+                bt_value = "Upload File ";
+                id = 'button_spifs';
+            } else {
+                bt_value = "Upload File ";
+                id = 'button_sd';
+            }
+
+            if (Number(m) > 100) {
+                bt_value += "(Fail)";
+            } else if (Number(m) == 100) {
+                bt_value += "(Done)";
+            } else {
+                bt_value += m + "%";
+            }
+
+            document.getElementById(id).value = bt_value;
+        }
+
+        function startEvents() {
+            var es = new EventSource('/events');
+            es.onopen = function(e) {
+                console.log("Events Opened");
+            };
+            es.onerror = function(e) {
+                if (e.target.readyState != EventSource.OPEN) {
+                    console.log("Events Closed");
+                }
+            };
+            es.onmessage = function(e) {
+                console.log("Event: " + e.data);
+            };
+            es.addEventListener('dfu', function(e) {
+                addMessage(0, e.data);
+            }, false);
+            es.addEventListener('spiffs', function(e) {
+                addMessage(1, e.data);
+            }, false);
+            es.addEventListener('sdfs', function(e) {
+                addMessage(2, e.data);
+            }, false);
+        }
+
+        function verify_pass(Pass) {
+            client.get("/get?param_wifi=pass_common&Pass=" + Pass, function(response) {
+                console.log(response);
+                var obj = JSON.parse(response);
+                if (obj.St && obj.St == "Error") onBodyLoad();
+                else {
+                    startEvents();
+                }
+            });
+        }
+
+        function onBodyLoad() {
+            var pass = "";
+            pass = prompt("Please enter your pass");
+            if (!pass) {
+                document.getElementById('Body').innerHTML = 'Please enter password';
+            } else {
+                verify_pass(pass);
+            }
+        }
+    </script>
+</head>
+
+<body id="Body" onload="onBodyLoad()">
+    <div style="text-align: left; display: inline-block; min-width: 260px;">
+        <br>
+        <br>
+        <br>
+        <br>
+        <table>
+            <tr>
+                <th align='left'>Update Firmware</th>
+            </tr>
+        </table>
+        <form method="POST" action="/update" enctype="multipart/form-data">
+            <input type="file" id="update" onchange="return update_file_validation()">
+            <input type="button" id="button_update" value="Program">
+        </form>
+        <br>
+        <br>
+        <table>
+            <tr>
+                <th align='left'>Upload Internal Memory</th>
+            </tr>
+        </table>
+        <form method="POST" action="/edit" enctype="multipart/form-data">
+            <input type="file" id="data_spifs" onchange="return internal_mem_file_validation()">
+            <input type="button" id="button_spifs" value="Upload File">
+        </form>
+        <br>
+        <br>
+        <table>
+            <tr>
+                <th align='left'>Upload External Memory</th>
+            </tr>
+        </table>
+        <form method="POST" action="/edit_sdfs" enctype="multipart/form-data">
+            <input type="file" id="data_sd" name="data">
+            <input type="button" id="button_sd" value="Upload File">
+        </form>
+    </div>
+
+    <script>
+        function update_file_validation() {
+            var fileInput =
+                document.getElementById('update');
+
+            var filePath = fileInput.value;
+
+            // Allowing file type
+            var allowedExtensions = /(\.bin)$/i;
+
+            if (!allowedExtensions.exec(filePath)) {
+                alert('Invalid file type');
+                fileInput.value = '';
+                return false;
+            }
+
+            // Allowing file size
+            if (fileInput.files && fileInput.files[0]) {
+                var files = fileInput.files;
+                var size = files[0].size;
+                console.log(size);
+                /** 0x140000: 1.2M
+                 *  0x180000: 1.5M
+                 *  app size */
+                if (size > 0x180000) {
+                    alert('Invalid file size');
+                    fileInput.value = '';
+                    return false;
+                }
+            }
+        }
+
+        function internal_mem_file_validation() {
+            var fileInput =
+                document.getElementById('data_spifs');
+
+            var filePath = fileInput.value;
+
+            // Allowing file size
+            if (fileInput.files && fileInput.files[0]) {
+                var size = fileInput.files[0].size;
+                /** 0x170000: 1.5M
+                 *  0xF0000: 960K
+                 *  limit spiffs size */
+                if (size > 0xF0000) {
+                    alert('Invalid file size');
+                    fileInput.value = '';
+                    return false;
+                }
+            }
+        }
+
+        document.getElementById("button_update").addEventListener("click", function() {
+            // Get the file the user picked
+            var files = document.getElementById("update").files;
+            if (!files.length) {
+                return;
+            }
+            var file = files[0];
+            var filename = "/" + file.name;
+            // Create a new one with the data but a new name
+            var newFile = new File([file], filename, {
+                type: file.type,
+            });
+            // Build the FormData to send
+            var data = new FormData();
+            data.set("data", newFile);
+            // Send it
+            fetch("/update", {
+                    method: "POST",
+                    body: data
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("HTTP error " + response.status);
+                    }
+                    return response.text(); // or response.json() or whatever
+                })
+                .then(response => {
+                    // Do something with the response
+                })
+                .catch(error => {
+                    // Do something with the error
+                });
+        });
+
+        document.getElementById("button_spifs").addEventListener("click", function() {
+            // Get the file the user picked
+            var files = document.getElementById("data_spifs").files;
+            if (!files.length) {
+                return;
+            }
+            var file = files[0];
+            var filename = "/" + file.name;
+            // Create a new one with the data but a new name
+            var newFile = new File([file], filename, {
+                type: file.type,
+            });
+            // Build the FormData to send
+            var data = new FormData();
+            data.set("data", newFile);
+            // Send it
+            fetch("/edit", {
+                    method: "POST",
+                    body: data
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("HTTP error " + response.status);
+                    }
+                    return response.text(); // or response.json() or whatever
+                })
+                .then(response => {
+                    // Do something with the response
+                })
+                .catch(error => {
+                    // Do something with the error
+                });
+        });
+
+        document.getElementById("button_sd").addEventListener("click", function() {
+            // Get the file the user picked
+            var files = document.getElementById("data_sd").files;
+            if (!files.length) {
+                return;
+            }
+            var file = files[0];
+            var filename = "/" + file.name;
+            // Create a new one with the data but a new name
+            var newFile = new File([file], filename, {
+                type: file.type,
+            });
+            // Build the FormData to send
+            var data = new FormData();
+            data.set("data", newFile);
+            // Send it
+            fetch("/edit_sdfs", {
+                    method: "POST",
+                    body: data
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("HTTP error " + response.status);
+                    }
+                    return response.text(); // or response.json() or whatever
+                })
+                .then(response => {
+                    // Do something with the response
+                })
+                .catch(error => {
+                    // Do something with the error
+                });
+        });
+    </script>
+</body>
+
+</html>

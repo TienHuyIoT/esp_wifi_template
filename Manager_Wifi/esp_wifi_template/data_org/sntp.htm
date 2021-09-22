@@ -1,0 +1,80 @@
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>SNTP Config</title>
+    <link rel="stylesheet" href="/mystyle.css">
+    <script src="/myscripts.js"></script>
+    <script>
+        function sntp_cfg() {
+            var obj = {
+                "server1": "pool.ntp.org"
+            };
+            var pass = prompt("Please Enter Password");
+            if (pass.length < 4) {
+                alert('Password Input Fail');
+                return;
+            }
+
+            obj.server1 = document.getElementById('server1').value;
+            obj.server2 = document.getElementById('server2').value;
+            obj.server3 = document.getElementById('server3').value;
+            obj.gmtOffset = Number(document.getElementById('gmtOffset').value);
+            obj.daylightOffset = Number(document.getElementById('daylightOffset').value);
+            obj.access_code = pass;
+            var StrJSON = JSON.stringify(obj);
+            console.log(StrJSON);
+            client.post('/post', "sntp_setting=" + StrJSON, function(response) {
+                alert(response);
+            });
+        }
+
+        function onBodyLoad() {
+            client.get('/get?param_wifi=sntp_setting', function(response) {
+                console.log(response);
+                var obj = JSON.parse(response);
+                document.getElementById('server1').value = obj.server1;
+                document.getElementById('server2').value = obj.server2;
+                document.getElementById('server3').value = obj.server3;
+                document.getElementById('gmtOffset').value = obj.gmtOffset;
+                document.getElementById('daylightOffset').value = obj.daylightOffset;
+            });
+        }
+    </script>
+</head>
+
+<body style="" onload="onBodyLoad()">
+    <div style="text-align:left;display:inline-block;min-width:260px;">
+        <br><br><br>
+        <h3>SNTP SETTING</h3>
+        <table id="sntp_table" width="100%">
+            <tr>
+                <td align="left"><b>SERVER1</b></td>
+                <td><input type="text" id="server1"></td>
+            </tr>
+            <tr>
+                <td align="left"><b>SERVER2</b></td>
+                <td><input type="text" id="server2"></td>
+            </tr>
+            <tr>
+                <td align="left"><b>SERVER3</b></td>
+                <td><input type="text" id="server3"></td>
+            </tr>
+            <tr>
+                <td align="left"><b>GMT Offset</b></td>
+                <td><input type="number" id="gmtOffset"></td>
+            </tr>
+            <tr>
+                <td align="left"><b>Daylight Offset</b></td>
+                <td><input type="number" id="daylightOffset"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><input type="button" onclick="sntp_cfg()" value="Save"></td>
+            </tr>
+        </table>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,74 @@
+<div style="text-align:left;display:inline-block;min-width:260px;">
+    <br><br>
+    <h3>WIFI HOTSPOT</h3>
+    <table class="tableNoBorder" width="100%" style="margin-bottom: 0px;" id="TableMenu">
+        <tbody>
+            <tr>
+                <td style="text-align: left; color: #00B0F0;" onclick="sta_ap_info()">
+                    <b>Wifi Info</b>
+                </td>
+                <td style="text-align: center; color: #00B0F0;" onclick="sta_network()">
+                    <b>Wifi Network</b>
+                </td>
+                <td style="text-align: center; color: #00B0F0;" onclick="sta_setting()">
+                    <b>Wifi Setting</b>
+                </td>
+                <td style="text-align: right; color: #14AFB4;" onclick="myhttp_get('ap_setting')">
+                    <b>Wifi Hotspot</b>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <div>
+        <table width="100%" id="table_ap_setting">
+            <tbody>
+                <tr>
+                    <td colspan='2' style="text-align: left;padding-left: 0;padding-top: 20; color: #ff5722; font-size: 11px;"><b>BASIC SETTING</b></td>
+                </tr>
+                <tr>
+                    <td align="left"><b>WIFI NAME</b></td>
+                    <td align="center"><input type="text" id="ap_ssid" size="32" placeholder='wifi name'>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="left"><b>PASSWORD</b></td>
+                    <td align="center"><input type="text" id="ap_pass" size="32" placeholder='passwork'>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="left"><b>DNS NAME</b></td>
+                    <td align="center"><input type="text" id="ap_dns_name" size="32">
+                    </td>
+                </tr>
+                <tr>
+                    <td align="left"><b>ENABLE</b></td>
+                    <td align="left"><label class="switch"><input type="checkbox" id="ap_on" value=1 checked>
+                            <div class="slider round"></div>
+                        </label></td>
+                </tr>
+                <tr>
+                    <td colspan='2' style="text-align: left;padding-left: 0;padding-top: 20; color: #ff5722; font-size: 11px;"><b>ADVANCED SETING</b></td>
+                </tr>
+                <tr>
+                    <td align="left"><b>HIDDEN</b></td>
+                    <td align="left"><label class="switch"><input type="checkbox" id="ap_hidden" value=0>
+                            <div class="slider round"></div>
+                        </label></td>
+                </tr>
+                <tr>
+                    <td align="left"><b>CHANNEL (1-13)</b></td>
+                    <td align="center"><input type="text" id="ap_channel" size="32" placeholder='1-13'>
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td><input type="button" onclick="myhttp_post('ap_setting')" value="Save"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <p style="text-align: center;">
+        <font size="0" face="arial" color="gray">
+            Copyright © 2021 - Bản quyền thuộc về Công ty TNHH Kỹ Thuật Mon</font>
+    </p>
+</div>

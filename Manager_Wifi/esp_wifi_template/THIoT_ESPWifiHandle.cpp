@@ -79,24 +79,34 @@ static void sntp_sync_time_cb(bool from_sntp /* <= this parameter is optional */
 
 ESPSntpService::ESPSntpService() {}
 ESPSntpService::~ESPSntpService() {}
+String ESPSntpService::_server1 = String();
+String ESPSntpService::_server2 = String();
 
 void ESPSntpService::begin()
 {
     SNTP_TAG_CONSOLE("Configure Time Server");
+    _server1 = ESPConfig.server1SNTP();
+    _server1 = ESPConfig.server2SNTP();
 #ifdef ESP32
     sntp_set_time_sync_notification_cb(sntp_sync_time_cb);
-    configTime(_gmtOffset_sec, _daylightOffset_sec, _ntpServer1, _ntpServer2);
+    configTime(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), _server1.c_str(), _server2.c_str());
     // Using callback event instead to check sntp status
     // while (sntp_get_sync_status() != SNTP_SYNC_STATUS_COMPLETED) {};
 #elif defined(ESP8266)
     SNTP_TAG_CONSOLE("sntp_getoperatingmode = %u", sntp_getoperatingmode());
+    
     // install callback - called when settimeofday is called (by SNTP or user)
     // once enabled (by DHCP), SNTP is updated every hour by default
     // ** optional boolean in callback function is true when triggered by SNTP **
     settimeofday_cb(sntp_sync_time_cb);
     // OPTIONAL: disable obtaining SNTP servers from DHCP
-    sntp_servermode_dhcp(0);
-    configTime(_gmtOffset_sec, _daylightOffset_sec, _ntpServer1, _ntpServer2);
+    sntp_servermode_dhcp(0);    
+    SNTP_TAG_CONSOLE("gmtOffset: %u", ESPConfig.gmtOffsetSNTP());
+    SNTP_TAG_CONSOLE("daylightOffset: %u", ESPConfig.daylightOffsetSNTP());
+    SNTP_TAG_CONSOLE("server1: %s", _server1.c_str());
+    SNTP_TAG_CONSOLE("server2: %s", _server2.c_str());
+    configTime(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), _server1.c_str(), _server2.c_str());
+    // configTime(MYTZ, _server1.c_str(), _server2.c_str());
 
     // Give now a chance to the settimeofday callback,
     // because it is *always* deferred to the next yield()/loop()-call.
@@ -377,8 +387,10 @@ void ESPWifiHandle::onArduinoOTA()
                             _otaArduinoPercent = per;
                             ESP_WIFI_TAG_CONSOLE("[OTA] Progress: %u%%", per);
                           }
+#ifdef ESP8266
                           /* Watch dog timer feed */
-                          // hw_wdt_feed();
+                          ESP.wdtFeed();
+#endif
                         });
 
   ArduinoOTA.onError([](ota_error_t error)

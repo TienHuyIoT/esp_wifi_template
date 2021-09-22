@@ -53,5 +53,12 @@
     "pass": "123456789",
     "sync_time": 30,
     "disable":1
+  },
+  "sntp":{
+    "server1": "pool.ntp.org",
+    "server2": "time.nist.gov",
+    "server3": "",
+    "gmtOffset": 25200,
+    "daylightOffset": 0
   }
 }

@@ -63,6 +63,13 @@ const char wifi_data_default_json[] PROGMEM = R"=====(
         "pass": "123456789",
         "sync_time": 30,
         "disable":1
+    },
+    "sntp":{
+        "server1": "pool.ntp.org",
+        "server2": "time.nist.gov",
+        "server3": "",
+        "gmtOffset": 25200,
+        "daylightOffset": 0
     }
 }
 )=====" ;
@@ -98,7 +105,7 @@ void ESPSysParams::resetPassword()
 
 void ESPSysParams::resetDefault()
 {
-    _fs->remove(WIFI_FILE_PATH);
+    _fs->remove(ESP_SYSTEM_PARAMS);
 }
 
 bool ESPSysParams::passSupperAdminIsOK(const String &pass)
@@ -176,9 +183,16 @@ void ESPSysParams::saveToFileSystem()
     ddns["sync_time"].set(_sys_prams.ddns.sync_time); 
     ddns["disable"].set(_sys_prams.ddns.disable);
 
+    JsonObject& sntp = root.createNestedObject("sntp");
+    sntp["server1"].set(_sys_prams.sntp.server1);
+    sntp["server2"].set(_sys_prams.sntp.server2);
+    sntp["server3"].set(_sys_prams.sntp.server3);    
+    sntp["gmtOffset"].set(_sys_prams.sntp.gmtOffset); 
+    sntp["daylightOffset"].set(_sys_prams.sntp.daylightOffset);
+
     WIFI_DATA_TAG_CONSOLE("Json created:");
     // root.prettyPrintTo(WIFI_FILE_PORT);
-    fs_handle = _fs->open(WIFI_FILE_PATH, "w");
+    fs_handle = _fs->open(ESP_SYSTEM_PARAMS, "w");
     root.prettyPrintTo(fs_handle);
     fs_handle.close();    
     WIFI_DATA_TAG_CONSOLE("wifi json info updated"); 
@@ -188,14 +202,14 @@ void ESPSysParams::syncFromFileSystem()
 {
     File fs_handle;
 
-    if (!_fs->exists(WIFI_FILE_PATH))
+    if (!_fs->exists(ESP_SYSTEM_PARAMS))
     {
-        fs_handle = _fs->open(WIFI_FILE_PATH, "w");
+        fs_handle = _fs->open(ESP_SYSTEM_PARAMS, "w");
         fs_handle.printf_P(wifi_data_default_json);
         fs_handle.close();
     }
 
-    fs_handle = _fs->open(WIFI_FILE_PATH, "r");    
+    fs_handle = _fs->open(ESP_SYSTEM_PARAMS, "r");    
     
     DynamicJsonBuffer djbpo;
     JsonObject &root = djbpo.parseObject(fs_handle);
@@ -286,7 +300,17 @@ void ESPSysParams::syncFromFileSystem()
         _sys_prams.ddns.disable = ddns["disable"].as<int>();
     } 
 
-    WIFI_DATA_TAG_CONSOLE("sync data succed!");
+    JsonObject& sntp = root["sntp"];
+    if (sntp.success())
+    {
+        sntp["server1"].as<String>().toCharArray(_sys_prams.sntp.server1, SNTP_LENGTH_MAX + 1);
+        sntp["server2"].as<String>().toCharArray(_sys_prams.sntp.server2, SNTP_LENGTH_MAX + 1);
+        sntp["server3"].as<String>().toCharArray(_sys_prams.sntp.server3, SNTP_LENGTH_MAX + 1);
+        _sys_prams.sntp.gmtOffset = sntp["gmtOffset"].as<int>();
+        _sys_prams.sntp.daylightOffset = sntp["daylightOffset"].as<int>();
+    } 
+
+    WIFI_DATA_TAG_CONSOLE("sync data succeed!");
 }
 
 ESPSysParams ESPConfig(NAND_FS_SYSTEM);
