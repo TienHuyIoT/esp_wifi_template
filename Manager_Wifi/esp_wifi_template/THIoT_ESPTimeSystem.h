@@ -86,21 +86,25 @@ public:
 
   void set(rtc_time_t *rtc);
 
+  void set(time_t t_now);
+
   /* Convert now to rtc */
   rtc_time_t makeRtcFromNow(time_t t_now);
 
   /* Convert rtc to now */
   time_t makeNowFromRtc(rtc_time_t *rtc);
 
-  char *printTimeFromNow(time_t t_now);
-
   String toString();
 
+  String toString(rtc_time_t *rtc);
+
+  String toString(time_t t_now);
+
   /* Return time now number of rtc system */
-  time_t toNow();
+  time_t now();
 
   /* Get rtc */
-  bool get(rtc_time_t *rtc);
+  rtc_time_t get();
 
   uint32_t hhmmssFormat(rtc_time_t *rtc);
 

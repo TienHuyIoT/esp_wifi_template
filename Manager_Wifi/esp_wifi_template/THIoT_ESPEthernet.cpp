@@ -4,9 +4,10 @@
 
 #include "THIoT_ESPSysParams.h"
 #include "THIoT_ESPEthernet.h"
-#if (ETH_PRINT_TIME_SYSTEM_DBG)
+#if (ETH_SNTP_ENABLE)
 #include "THIoT_ESPTimeSystem.h"
 #endif
+#include "THIoT_ESPAsyncEasyNTP.h"
 #include "THIoT_SerialTrace.h"
 
 #define ESP_ETH_PORT CONSOLE_PORT
@@ -65,7 +66,11 @@ bool ESPEthernet::begin()
     ETH_TAG_CONSOLE("Dns: %s\r\n", ESPConfig.dnsSTA().toString().c_str());
   }
 #ifdef ESP8266
+  /* Config must be after config function for ESP8266 */
   ETH.begin();
+#if (ETH_SNTP_ENABLE)
+  EASYNTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str());
+#endif
 #endif
   return true;
 }
@@ -85,9 +90,11 @@ void ESPEthernet::loop()
         ETH_TAG_CONSOLE("Sn: %s", ETH.subnetMask().toString().c_str());
         ETH_TAG_CONSOLE("Dns: %s\r\n", ETH.dnsIP().toString().c_str());
         _connected = true;
-#if (ETH_PRINT_TIME_SYSTEM_DBG)
-        _tickerPrintTime.attach(5, [](){
+
+#if (ETH_SNTP_ENABLE)
+        _tickerPrintTime.attach(15, [](){
           ETH_TAG_CONSOLE("Time: %s", ESPTime.toString().c_str());
+          EASYNTP.runAsync();
         });
 #endif
       }

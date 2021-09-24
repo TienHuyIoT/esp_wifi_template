@@ -426,23 +426,17 @@ void time_setting_get(AsyncWebServerRequest *request, WebserverURLHandle* client
     DynamicJsonBuffer djbco;
     JsonObject& root = djbco.createObject();  
 
-    if (ESPTime.get(&rtc))
-    {            
-        char time[9];
-        char date[11];
+    rtc = ESPTime.get();
+        
+    char time[9];
+    char date[11];
 
-        snprintf(time, 9, "%02u:%02u:%02u", rtc.hour, rtc.min, rtc.sec);
-        snprintf(date, 11, "%04u/%02u/%02u", rtc.year, rtc.mon, rtc.mday);
-         
-        root["time"].set(time);
-        root["date"].set(date);        
-    }
-    else
-    {
-        root["time"].set("00:00:00");
-        root["date"].set("2000/01/01");
-    }
-
+    snprintf(time, 9, "%02u:%02u:%02u", rtc.hour, rtc.min, rtc.sec);
+    snprintf(date, 11, "%04u/%02u/%02u", rtc.year, rtc.mon, rtc.mday);
+        
+    root["time"].set(time);
+    root["date"].set(date);        
+    
     root.prettyPrintTo(json_network);
     request->send(200, "text/json", json_network);
 }

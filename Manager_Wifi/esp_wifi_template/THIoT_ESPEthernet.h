@@ -9,8 +9,8 @@
 #ifdef ESP32
 #include <ETH.h>
 #elif defined(ESP8266)
-#define ETH_PRINT_TIME_SYSTEM_DBG 0
-#if (ETH_PRINT_TIME_SYSTEM_DBG)
+#define ETH_SNTP_ENABLE 0
+#if (ETH_SNTP_ENABLE)
 #include <Ticker.h>
 #endif
 #include <SPI.h>
@@ -76,7 +76,7 @@ private:
    bool _status;
 #ifdef ESP8266
    bool _connected;
-#if (ETH_PRINT_TIME_SYSTEM_DBG)
+#if (ETH_SNTP_ENABLE)
    Ticker _tickerPrintTime;
 #endif
 #endif

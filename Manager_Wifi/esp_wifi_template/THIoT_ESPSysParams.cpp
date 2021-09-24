@@ -67,7 +67,7 @@ const char wifi_data_default_json[] PROGMEM = R"=====(
     "sntp":{
         "server1": "pool.ntp.org",
         "server2": "time.nist.gov",
-        "server3": "",
+        "server3": "time.windows.com",
         "gmtOffset": 25200,
         "daylightOffset": 0
     }

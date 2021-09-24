@@ -49,6 +49,7 @@ uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 ()
 #include "THIoT_ESPSysParams.h"
 #include "THIoT_ESPTimeSystem.h"
 #include "THIoT_ESPWatchDogTimer.h"
+#include "THIoT_ESPAsyncEasyNTP.h"
 #include "THIoT_ESPWifiHandle.h"
 
 #define SNTP_CONSOLE_PORT CONSOLE_PORT
@@ -66,7 +67,8 @@ static void sntp_sync_time_cb(struct timeval *tv) {
 static void sntp_sync_time_cb(bool from_sntp /* <= this parameter is optional */) {
     SNTP_TAG_CONSOLE("Callback settimeofday(%s)", from_sntp ? "SNTP" : "USER");
 #endif 
-    SNTP_TAG_CONSOLE("Callback Time: %s", ESPTime.toString().c_str());
+    SNTP_TAG_CONSOLE("Callback now = %lu", ESPTime.now());
+    SNTP_TAG_CONSOLE("Callback time: %s", ESPTime.toString().c_str());
     ESPTime.setSourceUpdate(ESPTimeSystem::RTC_SNTP_UPDATE);
 }
 

@@ -11,6 +11,7 @@
 #include "THIoT_ESPEthernet.h"
 #include "THIoT_ESPWatchDogTimer.h"
 #include "THIoT_ESPResetReason.h"
+#include "THIoT_ESPAsyncEasyNTP.h"
 
 /* Private macro -------------------------------------------------------------*/
 #define MAIN_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[MAIN]", __VA_ARGS__)

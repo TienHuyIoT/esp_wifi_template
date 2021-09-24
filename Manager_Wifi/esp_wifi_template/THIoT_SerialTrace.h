@@ -40,8 +40,10 @@ void log(const std::string_view message,
 #define CONSOLE_TAG_LOGV(x, ...) do{if(g_debugLevel >= 4) {DBG_PRINTF("V %s: ",x); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n");}}while(0)
 
 #if (g_debugLevel > 0)
-#define FUNCTION_IN(...) do{DBG_PRINTF("\r\n\r\n\t[%s] IN ", __FUNCTION__); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n");}while(0)
-#define FUNCTION_OUT(...) do{DBG_PRINTF("\r\n\t[%s] OUT ", __FUNCTION__); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n\r\n");}while(0)
+#define FUNCTION_IN(...) do{DBG_PRINTF("\r\n\r\n\tFUNCTION [%s] IN ", __FUNCTION__); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n");}while(0)
+#define FUNCTION_OUT(...) do{DBG_PRINTF("\r\n\tFUNTION [%s] OUT ", __FUNCTION__); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n\r\n");}while(0)
+#define FUNCTION_LOGI(...) do{DBG_PRINTF("\r\n\r\n\tFUNCTION [%s] ", __FUNCTION__); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n");}while(0)
+#define FUNCTION_TAG_LOGI(x, ...) do{DBG_PRINTF("I %s: \tFUNCTION [%s] ",x, __FUNCTION__); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n");}while(0)
 #endif
 
 #endif // __SERIAL_TRACE_H
