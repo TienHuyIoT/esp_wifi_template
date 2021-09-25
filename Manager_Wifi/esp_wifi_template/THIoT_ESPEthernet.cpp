@@ -10,7 +10,11 @@
 #define ESP_ETH_PORT CONSOLE_PORT
 #define ETH_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[ETH]", __VA_ARGS__)
 
-#ifdef ESP8266
+#ifdef EPS32
+#include <WiFi.h>
+#include <esp_wifi.h>
+#include <WiFiType.h>
+#elif defined(ESP8266)
 #include <lwip/apps/sntp.h>
 SPIEthernet::SPIEthernet(/* args */)
 :LwipIntfDev(ETH_NSS_PIN)
@@ -50,6 +54,51 @@ bool ESPEthernet::begin()
   }
   ETH_TAG_CONSOLE("ETH Start");
 #ifdef ESP32
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
+  {
+    ETH_TAG_CONSOLE("Ethernet started");
+    String ChipID = String((uint32_t)(ESP.getEfuseMac() >> 16), HEX);
+    ChipID.toUpperCase();
+    String hostName = "ETH_" + ESPConfig.hostNameSTA() + "_" + ChipID;
+    ETH.setHostname(hostName.c_str());
+  }
+  ,WiFiEvent_t::m_ESP32_EVENT_ETH_START);
+
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
+  {
+    ETH_TAG_CONSOLE("Ethernet stopped");
+  }
+  ,WiFiEvent_t::m_ESP32_EVENT_ETH_STOP);
+
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
+  {
+    ETH_TAG_CONSOLE("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
+    ETH_TAG_CONSOLE("MAC: %s, IPv4: %s", ETH.macAddress().c_str(), ETH.localIP().toString().c_str());
+    if (ETH.fullDuplex()) {
+        ETH_TAG_CONSOLE("FULL_DUPLEX");
+    }
+    ETH_TAG_CONSOLE("Link Speed %uMbps", ETH.linkSpeed()); 
+  }
+  ,WiFiEvent_t::m_ESP32_EVENT_ETH_GOT_IP);
+
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
+  {
+    ETH_TAG_CONSOLE("Ethernet connected");
+#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
+    EASYNTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), 15);
+#endif
+  }
+  ,WiFiEvent_t::m_ESP32_EVENT_ETH_CONNECTED);
+
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
+  {
+    ETH_TAG_CONSOLE("Ethernet disconnected");
+#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
+    EASYNTP.end();
+#endif
+  }
+  ,WiFiEvent_t::m_ESP32_EVENT_ETH_DISCONNECTED);
+
   ETH.begin(ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_TYPE, ETH_CLK_MODE);
 #endif
   if (!ESPConfig.dhcpSTA())
@@ -65,6 +114,11 @@ bool ESPEthernet::begin()
 #ifdef ESP8266
   /* Config must be after config function for ESP8266 */
   ETH.begin();
+  String ChipID = String(ESP.getChipId(), HEX);
+  ChipID.toUpperCase();
+  String hostName = "ETH_" + ESPConfig.hostNameSTA() + "_" + ChipID;
+  ETH_TAG_CONSOLE("SetHostname: %s", hostName.c_str());
+  WiFi.setHostname(hostName.c_str());
 #endif
   return true;
 }

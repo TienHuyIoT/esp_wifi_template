@@ -3,7 +3,6 @@
 #include <esp_wifi.h>
 #include <WiFiType.h>
 #include <time.h>
-#include "THIoT_ESPEventSignal.h"
 #if ESP_IDF_VERSION_MAJOR >= 4
 #include <esp_sntp.h>
 #else
@@ -151,11 +150,7 @@ void ESPWifiHandle::registerEventHandler()
 #ifdef ESP32
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
   {
-    ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi connected");
     ESP_WIFI_TAG_CONSOLE("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
-#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
-    EASYNTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), 15);
-#endif
     /* Smart config enable */
     if(ESPConfig.smartCfgSTA())
     {
@@ -169,6 +164,21 @@ void ESPWifiHandle::registerEventHandler()
     }
   }
   ,WiFiEvent_t::m_ESP32_EVENT_STA_GOT_IP);
+
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
+  {
+#if ESP_IDF_VERSION_MAJOR >= 4
+    std::string ssid((const char*)info.connected.ssid, info.wifi_sta_connected.ssid_len);
+#else
+    std::string ssid((const char*)info.connected.ssid, info.connected.ssid_len);
+#endif
+    ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi connected to %s", ssid.c_str());
+
+#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
+    EASYNTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), 15);
+#endif
+  }
+  ,WiFiEvent_t::m_ESP32_EVENT_STA_CONNECTED);
 
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
   {
@@ -219,7 +229,7 @@ void ESPWifiHandle::registerEventHandler()
     [](const WiFiEventStationModeConnected& evt) {
       ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi connected to %s", evt.ssid.c_str());
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
-        EASYNTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), 15);
+      EASYNTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), 15);
 #endif
     }
   );
@@ -534,6 +544,16 @@ void ESPWifiHandle::begin(bool wifiON)
     /* STA enable */
     if (!ESPConfig.isDisableSTA())
     {
+#ifdef ESP8266
+      String ChipID = String(ESP.getChipId(), HEX);
+#elif defined(ESP32)
+      String ChipID = String((uint32_t)(ESP.getEfuseMac() >> 16), HEX);
+#endif
+      ChipID.toUpperCase();
+      String hostName = ESPConfig.hostNameSTA() + "_" + ChipID;
+      ESP_WIFI_TAG_CONSOLE("SetHostname: %s", hostName.c_str());
+      WiFi.setHostname(hostName.c_str());
+
       if (ESPConfig.ssidSTA().length() > 0) // not exist the access point 
       {
         if (!ESPConfig.dhcpSTA())

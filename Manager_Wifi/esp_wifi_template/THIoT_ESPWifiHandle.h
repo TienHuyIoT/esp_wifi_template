@@ -6,6 +6,7 @@
 #include <DNSServer.h>
 #include "THIoT_ESPConfig.h"
 #include "THIoT_ESPAsyncEasyDDNS.h"
+#include "THIoT_ESPEventSignal.h"
 
 class ESPSntpService
 {

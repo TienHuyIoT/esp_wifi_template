@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include "THIoT_ESPConfig.h"
 #include "THIoT_ESPBoard.h"
+#include "THIoT_ESPEventSignal.h"
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
 #ifdef ESP32
