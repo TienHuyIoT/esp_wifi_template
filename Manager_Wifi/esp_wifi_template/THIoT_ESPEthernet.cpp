@@ -4,9 +4,6 @@
 
 #include "THIoT_ESPSysParams.h"
 #include "THIoT_ESPEthernet.h"
-#if (ETH_SNTP_ENABLE)
-#include "THIoT_ESPTimeSystem.h"
-#endif
 #include "THIoT_ESPAsyncEasyNTP.h"
 #include "THIoT_SerialTrace.h"
 
@@ -68,9 +65,6 @@ bool ESPEthernet::begin()
 #ifdef ESP8266
   /* Config must be after config function for ESP8266 */
   ETH.begin();
-#if (ETH_SNTP_ENABLE)
-  EASYNTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str());
-#endif
 #endif
   return true;
 }
@@ -91,11 +85,8 @@ void ESPEthernet::loop()
         ETH_TAG_CONSOLE("Dns: %s\r\n", ETH.dnsIP().toString().c_str());
         _connected = true;
 
-#if (ETH_SNTP_ENABLE)
-        _tickerPrintTime.attach(15, [](){
-          ETH_TAG_CONSOLE("Time: %s", ESPTime.toString().c_str());
-          EASYNTP.runAsync();
-        });
+#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
+        EASYNTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server2SNTP().c_str(), 15);
 #endif
       }
     }
@@ -105,6 +96,9 @@ void ESPEthernet::loop()
       {
         ETH_TAG_CONSOLE("disconnect");
         _connected = false;
+#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
+        EASYNTP.end();
+#endif
       }
     }
   }

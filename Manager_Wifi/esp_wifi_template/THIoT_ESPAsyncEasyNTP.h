@@ -2,12 +2,14 @@
 #define __ESP_ASYNC_EASY_NTP_H
 
 #include <Arduino.h>
+#include <Ticker.h>
 #ifdef ESP32
 #include "AsyncUDP.h"
 #elif defined(ESP8266)
 #include <ESPAsyncUDP.h>
 #endif
 
+// https://tf.nist.gov/tf-cgi/servers.cgi
 #define NTP_REQUEST_PORT   123
 #define NTP_PACKET_SIZE    48 // NTP timestamp is in the first 48 bytes of the message
 
@@ -20,6 +22,7 @@ private:
     String _server;
     AsyncUDP _udp;
     IPAddress _ipServer;
+    Ticker _tickerRunAsync;
     void setTimeZone(long offset, int daylight);
     void sendNTPpacket();
     void _onPacket(AsyncUDPPacket& packet);
@@ -27,12 +30,12 @@ public:
     ESPAsyncEasyNTP(/* args */);
     ~ESPAsyncEasyNTP();
 
-    void begin(long gmtOffset = (3600 * 7), int daylightOffset = 0, const char *server = "time.nist.gov");
+    void begin(long gmtOffset = (3600 * 7), int daylightOffset = 0, const char *server = "time.nist.gov", int interval = 60);
     
     void onNTPSyncEvent (onSyncEvent_t handler) {
         _onSyncEvent = handler;
     }
-
+    void start(int interval = 60);
     void runAsync();    
     void end();
 };

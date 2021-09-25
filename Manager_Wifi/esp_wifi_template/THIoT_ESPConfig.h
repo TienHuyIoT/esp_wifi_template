@@ -76,6 +76,12 @@ https://github.com/boblemaire/asyncHTTPrequest
 */
 #define SNTP_SERVICE_ENABLE  1
 
+/* EASY_SNTP
+0: Disable
+1: Enable
+*/
+#define ASYNC_EASY_SNTP      0
+
 /* DNS Server
 0: Disable
 1: Enable

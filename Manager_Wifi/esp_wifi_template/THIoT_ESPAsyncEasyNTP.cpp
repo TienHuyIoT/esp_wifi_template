@@ -1,6 +1,9 @@
 #include <time.h> // time() ctime()
 #ifdef ESP8266
+#include <ESP8266WiFi.h>
 #include <sys/time.h> // struct timeval
+#elif defined(ESP32)
+#include <WiFi.h>
 #endif
 #include "THIoT_ESPTimeSystem.h"
 #include "THIoT_ESPAsyncEasyNTP.h"
@@ -21,9 +24,18 @@ static void dumpNTPPacket (uint8_t *data, size_t length) {
     }
 }
 
+#ifdef ESP32
+static void easyNtpCallback()
+{
+    EASYNTP.runAsync();
+}
+#endif
+
 ESPAsyncEasyNTP::ESPAsyncEasyNTP(/* args */)
 {
-    _ipServer = IPAddress(132, 163,  96,  1);   // time.nist.gov
+    // _ipServer = IPAddress(132, 163,  96,  1);   // time.nist.gov
+    // _ipServer = IPAddress(129, 6,  15,  28);   // time.nist.gov
+    // _ipServer = IPAddress(192, 168,  1,  11);
 }
 
 ESPAsyncEasyNTP::~ESPAsyncEasyNTP()
@@ -31,7 +43,7 @@ ESPAsyncEasyNTP::~ESPAsyncEasyNTP()
     end();
 }
 
-void ESPAsyncEasyNTP::begin(long gmtOffset, int daylightOffset, const char *server)
+void ESPAsyncEasyNTP::begin(long gmtOffset, int daylightOffset, const char *server, int interval)
 {
     _server = server;
     ASYNC_NTP_TAG_CONSOLE("gmtOffset: %u", gmtOffset);
@@ -39,6 +51,21 @@ void ESPAsyncEasyNTP::begin(long gmtOffset, int daylightOffset, const char *serv
     ASYNC_NTP_TAG_CONSOLE("server: %s", server);
     this->setTimeZone(-gmtOffset, daylightOffset);
     _udp.onPacket([](void * arg, AsyncUDPPacket& packet){ ((ESPAsyncEasyNTP*)(arg))->_onPacket(packet); }, this);
+
+    runAsync();
+#ifdef ESP8266
+    _tickerRunAsync.attach(interval, std::bind(&ESPAsyncEasyNTP::runAsync, this));
+#endif
+}
+
+void ESPAsyncEasyNTP::start(int interval)
+{
+    runAsync();
+#ifdef ESP8266
+    _tickerRunAsync.attach(interval, std::bind(&ESPAsyncEasyNTP::runAsync, this));
+#elif defined(ESP32)
+    _tickerRunAsync.attach(interval, easyNtpCallback);
+#endif
 }
 
 void ESPAsyncEasyNTP::runAsync()
@@ -50,10 +77,17 @@ void ESPAsyncEasyNTP::runAsync()
     }
     else
     {
-        ASYNC_NTP_TAG_CONSOLE("Connect to ntp server");
-        if (_udp.connect(_ipServer, NTP_REQUEST_PORT))
+        if(WiFi.hostByName(_server.c_str(), _ipServer))
         {
-            sendNTPpacket();
+            ASYNC_NTP_TAG_CONSOLE("Connect to ntp server: %s", _ipServer.toString().c_str());
+            if (_udp.connect(_ipServer, NTP_REQUEST_PORT))
+            {
+                sendNTPpacket();
+            }
+        }
+        else
+        {
+            ASYNC_NTP_TAG_CONSOLE("[hostByName] Failed!");
         }
     }
     ASYNC_NTP_FUNCTION_CONSOLE("OUT");

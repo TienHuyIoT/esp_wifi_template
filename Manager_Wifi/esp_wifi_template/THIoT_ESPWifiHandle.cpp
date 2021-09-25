@@ -153,6 +153,9 @@ void ESPWifiHandle::registerEventHandler()
   {
     ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi connected");
     ESP_WIFI_TAG_CONSOLE("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
+#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
+    EASYNTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), 15);
+#endif
     /* Smart config enable */
     if(ESPConfig.smartCfgSTA())
     {
@@ -167,28 +170,31 @@ void ESPWifiHandle::registerEventHandler()
   }
   ,WiFiEvent_t::m_ESP32_EVENT_STA_GOT_IP);
 
-  WiFi.onEvent(
-      [](WiFiEvent_t event, WiFiEventInfo_t info)
-      {
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
+  {
 #if ESP_IDF_VERSION_MAJOR >= 4
-        ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi lost connection. Reason: %u", info.wifi_sta_disconnected.reason);
+    ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi lost connection. Reason: %u", info.wifi_sta_disconnected.reason);
 #else
-        ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi lost connection. Reason: %u", info.disconnected.reason);
+    ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi lost connection. Reason: %u", info.disconnected.reason);
 #endif
-        /* Note: running setAutoReconnect(true) when module is already disconnected 
-        will not make it reconnect to the access point. Instead reconnect() 
-        should be used. 
-          We don't need call WiFi.reconnect() once loss connection, it is self reconnect after loss connection.
-        Reconnecting will be destroy, if executing scan network.
-        */
-        constexpr uint32_t RECONNECT_SECOND_TIMEOUT = 15;
-        // manual reconnect after an expired timeout
-        _reconnetTicker.once(RECONNECT_SECOND_TIMEOUT, [](){
-          ESP_WIFI_TAG_CONSOLE("Reconnecting");
-          WiFi.reconnect();
-        });
-      },
-      WiFiEvent_t::m_ESP32_EVENT_STA_DISCONNECTED);
+#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
+    EASYNTP.end();
+#endif
+    /* Note: running setAutoReconnect(true) when module is already disconnected 
+    will not make it reconnect to the access point. Instead reconnect() 
+    should be used. 
+      We don't need call WiFi.reconnect() once loss connection, it is self reconnect after loss connection.
+    Reconnecting will be destroy, if executing scan network.
+    */
+    constexpr uint32_t RECONNECT_SECOND_TIMEOUT = 15;
+    // manual reconnect after an expired timeout
+    _reconnetTicker.once(RECONNECT_SECOND_TIMEOUT, [](){
+      ESP_WIFI_TAG_CONSOLE("Reconnecting");
+      WiFi.reconnect();
+    });
+  },
+  WiFiEvent_t::m_ESP32_EVENT_STA_DISCONNECTED);
+
 #elif defined(ESP8266)
   // To register evetn, must be declare _accessPointGotIpHandler
   _accessPointGotIpHandler = WiFi.onStationModeGotIP(
@@ -212,14 +218,20 @@ void ESPWifiHandle::registerEventHandler()
   _accessPointConnectedHandler = WiFi.onStationModeConnected(
     [](const WiFiEventStationModeConnected& evt) {
       ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi connected to %s", evt.ssid.c_str());
+#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
+        EASYNTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), 15);
+#endif
     }
   );
 
-  // To register evetn, must be declare _accessPointDisconnectedHandler
+  // To register event, must be declare _accessPointDisconnectedHandler
   _accessPointDisconnectedHandler = WiFi.onStationModeDisconnected(
     [](const WiFiEventStationModeDisconnected& evt) {
       ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi lost connection to %s. Reason: %u", 
       evt.ssid.c_str(), evt.reason);
+#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
+        EASYNTP.end();
+#endif
       /* Note: running setAutoReconnect(true) when module is already disconnected 
       will not make it reconnect to the access point. Instead reconnect() 
       should be used. 
