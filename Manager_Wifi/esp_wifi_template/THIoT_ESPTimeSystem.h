@@ -94,6 +94,8 @@ public:
   /* Convert rtc to now */
   time_t makeNowFromRtc(rtc_time_t *rtc);
 
+  String toStringLog();
+
   String toString();
 
   String toString(rtc_time_t *rtc);

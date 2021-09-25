@@ -12,6 +12,7 @@
 #include "THIoT_ESPWatchDogTimer.h"
 #include "THIoT_ESPResetReason.h"
 #include "THIoT_ESPAsyncEasyNTP.h"
+#include "THIoT_ESPLogTrace.h"
 
 /* Private macro -------------------------------------------------------------*/
 #define MAIN_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[MAIN]", __VA_ARGS__)
@@ -36,29 +37,25 @@ void setup()
     
     esp_print_reset_reason();
 
+
     // Enable watch dog timer         
     // WDT_TIMEOUT_VALUE only effect for ESP32
     // ESP8266 refer https://techtutorialsx.com/2017/01/21/esp8266-watchdog-functions/
     wdt_enable(WDT_TIMEOUT_VALUE);
 
-#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
-#if (defined ETH_GPIO_ENABLE) && (ETH_GPIO_ENABLE != -1)
-  ETH_GPIO_ENABLE_INIT();
-  if(ETH_STATUS_IS_ON())
-  {
-    Ethernet.enable();
-  }
-  else
-  {
-    Ethernet.disable();
-  }
-#else
-    Ethernet.enable();
-#endif
-#endif
 
     // Load params form eeprom memory
     EEPParams.load();
+
+
+    // Initialize and auto format nand memory file system
+#ifdef ESP32
+    NAND_FS_SYSTEM.begin(true);
+#elif defined(ESP8266)
+    NAND_FS_SYSTEM.begin();
+#endif
+    FSHandle.listDir(NAND_FS_SYSTEM, "/", 0);
+
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 #if (defined SD_SPI_INTERFACE) && (SD_SPI_INTERFACE == 1)
@@ -76,20 +73,9 @@ void setup()
     // SDMMC interface only with ESP32
     HTH_sdCard.begin();
 #endif // (defined SD_SPI_INTERFACE) && (SD_SPI_INTERFACE == 1)
+    FSHandle.listDir(SD_FS_SYSTEM, "/", 0);
 #endif // (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 
-    // Initialize and auto format nand memory file system
-#ifdef ESP32
-    NAND_FS_SYSTEM.begin(true);
-#elif defined(ESP8266)
-    NAND_FS_SYSTEM.begin();
-#endif
-
-    /* List file in nand memory file system */
-    FSHandle.listDir(NAND_FS_SYSTEM, "/", 0);
-#if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-    FSHandle.listDir(SD_FS_SYSTEM, "/", 0);
-#endif
 
     // Always initialize after NAND_FS_SYSTEM.begin();
     // Because some function of system will need params 
@@ -97,6 +83,19 @@ void setup()
     ESPConfig.load(&NAND_FS_SYSTEM);
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+#if (defined ETH_GPIO_ENABLE) && (ETH_GPIO_ENABLE != -1)
+    ETH_GPIO_ENABLE_INIT();
+    if(ETH_STATUS_IS_ON())
+    {
+        Ethernet.enable();
+    }
+    else
+    {
+        Ethernet.disable();
+    }
+#else
+    Ethernet.enable();
+#endif
     // If the ethernet is enable, the wifi will not init.
     Ethernet.begin();
     ESPWifi.begin(!Ethernet.isEnable());
@@ -104,6 +103,7 @@ void setup()
     // Init wifi and accompanied services 
     ESPWifi.begin();
 #endif
+
 
     // register callback handle http request
     webServer.setHandleCallbacks(new WebserverURLHandle());
@@ -113,6 +113,8 @@ void setup()
     // Must be start after ESPWifi.begin() Because SNTP had config
     // when wifi init.
     ESPTime.load();
+
+    ESPLOG.printf_P("Hello world");
 }
 
 void loop()

@@ -49,6 +49,7 @@ uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 ()
 #include "THIoT_ESPTimeSystem.h"
 #include "THIoT_ESPWatchDogTimer.h"
 #include "THIoT_ESPAsyncEasyNTP.h"
+#include "THIoT_ESPLogTrace.h"
 #include "THIoT_ESPWifiHandle.h"
 
 #define SNTP_CONSOLE_PORT CONSOLE_PORT

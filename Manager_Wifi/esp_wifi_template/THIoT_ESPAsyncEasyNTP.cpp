@@ -11,7 +11,7 @@
 
 #define ASYNC_NTP_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
 #define ASYNC_NTP_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[ASYNC_NTP]", __VA_ARGS__)
-#define ASYNC_NTP_FUNCTION_CONSOLE(...) FUNCTION_TAG_LOGI("[ASYNC_NTP]", __VA_ARGS__);
+#define ASYNC_NTP_FUNCTION_CONSOLE(...) FUNCTION_TAG_LOGI("[ASYNC_NTP]", __VA_ARGS__)
 
 static void dumpNTPPacket (uint8_t *data, size_t length) {
     for (size_t i = 0; i < length; i++) {

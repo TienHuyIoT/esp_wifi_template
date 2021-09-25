@@ -15,7 +15,7 @@
 #define RTC_DATA_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
 #define RTC_DATA_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[RTC DATA]", __VA_ARGS__)
 
-#define RTC_FUNCTION_TAG_CONSOLE(...) FUNCTION_TAG_LOGI("[RTC]", __VA_ARGS__);
+#define RTC_FUNCTION_TAG_CONSOLE(...) FUNCTION_TAG_LOGI("[RTC]", __VA_ARGS__)
 
 #define RTC_YEAR_BEGIN 1900
 #define RTC_FILE_PATH ((const char*)"/rtc_info_file.txt")
@@ -190,6 +190,16 @@ time_t ESPTimeSystem::makeNowFromRtc(rtc_time_t *rtc)
                    rtc->hour, rtc->min, rtc->sec);
     RTC_FUNCTION_TAG_CONSOLE("OUT %lu", t_now);
     return t_now;
+}
+
+String ESPTimeSystem::toStringLog()
+{
+    constexpr uint8_t BUFFER_TIME_LENGTH_MAX = 80;
+    char buf[BUFFER_TIME_LENGTH_MAX];
+    time_t now = time(nullptr);
+    const tm* tm = localtime(&now);
+    strftime(buf, sizeof(buf), "%Y/%m/%d, %H:%M:%S, ", tm);
+    return String(buf);
 }
 
 String ESPTimeSystem::toString()
