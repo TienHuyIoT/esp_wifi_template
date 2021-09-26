@@ -83,6 +83,7 @@ typedef struct {
         char        server3[SNTP_LENGTH_MAX + 1];
         long        gmtOffset;
         int         daylightOffset;
+        int         interval;
     }sntp;
 } esp_sys_params_t;
 
@@ -240,6 +241,7 @@ public:
     String server3SNTP() { return _sys_prams.sntp.server3; }
     long gmtOffsetSNTP() { return _sys_prams.sntp.gmtOffset; }
     int daylightOffsetSNTP() { return _sys_prams.sntp.daylightOffset; }
+    int intervalSNTP() { return _sys_prams.sntp.interval; }
     void server1SNTPSet(const String &server) { 
         server.toCharArray(_sys_prams.sntp.server1, SNTP_LENGTH_MAX + 1);
     }
@@ -251,6 +253,7 @@ public:
     }
     void gmtOffsetSNTPSet(long gmtOffset) { _sys_prams.sntp.gmtOffset = gmtOffset; }
     void daylightOffsetSNTPSet(int daylightOffset) { _sys_prams.sntp.daylightOffset = daylightOffset; }
+    void intervalSNTPSet(int interval) { _sys_prams.sntp.interval = interval; }
 };
 
 extern ESPSysParams ESPConfig;

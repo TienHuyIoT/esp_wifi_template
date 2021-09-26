@@ -23,7 +23,7 @@ public:
 class ESPWifiHandle
 {
 private:
-#if (defined SNTP_SERVICE_ENABLE) && (SNTP_SERVICE_ENABLE == 1)  
+#if (defined SNTP_SERVICE_SYSTEM) && (SNTP_SERVICE_SYSTEM == 1)  
     ESPSntpService* _sntp;
 #endif
     
@@ -59,6 +59,7 @@ private:
 
     static int getRSSIasQuality(int RSSI);
     void registerEventHandler();   // wifi event
+    static bool _wifiConnected;
 
 public:
     ESPWifiHandle(/* args */);

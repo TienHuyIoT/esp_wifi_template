@@ -4,6 +4,7 @@
 #endif
 #include <ArduinoJson.h>
 #include "THIoT_ESPConfig.h"
+#include "THIoT_ESPSysParams.h"
 #include "THIoT_SerialTrace.h"
 #include "THIoT_ESPTimeSystem.h"
 
@@ -57,6 +58,8 @@ void ESPTimeSystem::load(void)
 {
     struct tm tmStruct;
     rtc_time_t rtc;
+
+    setTimeZone(-ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP());
 
     if (!getLocalTime(&tmStruct, 1))
     {
@@ -402,6 +405,30 @@ bool RtcFileHandler::sync(rtc_time_t *rtc)
     rtc->wday = root["wday"].as<int>();
     RTC_DATA_TAG_CONSOLE("Sync succeed!");
     return true;
+}
+
+void ESPTimeSystem::setTimeZone(long offset, int daylight)
+{
+    char cst[17] = {0};
+    char cdt[17] = "DST";
+    char tz[33] = {0};
+
+    if(offset % 3600){
+        sprintf(cst, "UTC%ld:%02u:%02u", offset / 3600, abs((offset % 3600) / 60), abs(offset % 60));
+    } else {
+        sprintf(cst, "UTC%ld", offset / 3600);
+    }
+    if(daylight != 3600){
+        long tz_dst = offset - daylight;
+        if(tz_dst % 3600){
+            sprintf(cdt, "DST%ld:%02u:%02u", tz_dst / 3600, abs((tz_dst % 3600) / 60), abs(tz_dst % 60));
+        } else {
+            sprintf(cdt, "DST%ld", tz_dst / 3600);
+        }
+    }
+    sprintf(tz, "%s%s", cst, cdt);
+    setenv("TZ", tz, 1);
+    tzset();
 }
 
 void RtcFileHandler::remove(void)

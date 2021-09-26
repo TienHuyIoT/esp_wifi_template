@@ -57,8 +57,9 @@
   "sntp":{
     "server1": "pool.ntp.org",
     "server2": "time.nist.gov",
-    "server3": "",
-    "gmtOffset": 25200,
-    "daylightOffset": 0
+    "server3": "time.windows.com",
+    "gmtOffset": 7,
+    "daylightOffset": 0,
+    "interval": 3600
   }
 }

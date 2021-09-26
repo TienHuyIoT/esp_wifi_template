@@ -114,6 +114,8 @@ public:
 
   // "Tue" __DATE__ " " __TIME__ " GMT";
   bool GMTStringUpdate(const char *rtc_web, level_update_t level);
+
+  void setTimeZone(long offset, int daylight);
 };
 
 extern ESPTimeSystem ESPTime;

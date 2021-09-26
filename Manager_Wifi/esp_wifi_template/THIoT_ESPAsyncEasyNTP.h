@@ -9,7 +9,6 @@
 #include <ESPAsyncUDP.h>
 #endif
 
-// https://tf.nist.gov/tf-cgi/servers.cgi
 #define NTP_REQUEST_PORT   123
 #define NTP_PACKET_SIZE    48 // NTP timestamp is in the first 48 bytes of the message
 
@@ -21,23 +20,24 @@ private:
     onSyncEvent_t _onSyncEvent;
     String _server;
     AsyncUDP _udp;
-    IPAddress _ipServer;
+    IPAddress _ipServer; // https://tf.nist.gov/tf-cgi/servers.cgi
     Ticker _tickerRunAsync;
-    void setTimeZone(long offset, int daylight);
+    int _interval;
     void sendNTPpacket();
-    void _onPacket(AsyncUDPPacket& packet);
+    void _onPacket(AsyncUDPPacket& packet);    
+    void requestTime();
 public:
     ESPAsyncEasyNTP(/* args */);
     ~ESPAsyncEasyNTP();
 
-    void begin(long gmtOffset = (3600 * 7), int daylightOffset = 0, const char *server = "time.nist.gov", int interval = 60);
+    void begin(long gmtOffset = (3600 * 7), int daylightOffset = 0, const char *server = "time.nist.gov", int interval = 3600);
     
     void onNTPSyncEvent (onSyncEvent_t handler) {
         _onSyncEvent = handler;
     }
-    void start(int interval = 60);
-    void runAsync();    
+    
     void end();
+    void runAsync(int interval = 0);
 };
 
 #if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_EASYNTP)

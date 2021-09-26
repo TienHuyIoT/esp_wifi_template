@@ -15,8 +15,9 @@
 #include "THIoT_ESPLogTrace.h"
 
 /* Private macro -------------------------------------------------------------*/
-#define MAIN_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[MAIN]", __VA_ARGS__)
 #define MAIN_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
+#define MAIN_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[MAIN]", __VA_ARGS__)
+#define MAIN_TAG_LOG(f_, ...) ESPLOG.printf_P(PSTR("[MAIN] " f_), ##__VA_ARGS__)
 
 /* Private variables ---------------------------------------------------------*/
 const char *build_time = __DATE__ " " __TIME__ " GMT";
@@ -81,6 +82,14 @@ void setup()
     // load from file system for initial.
     ESPConfig.load(&NAND_FS_SYSTEM);
 
+    // Must be load after ESPConfig.load()
+    // Because it needs some parameters to configure time zone.
+    ESPTime.load();
+
+    // Save reset reason into log file.
+    MAIN_TAG_LOG("reset reason %s", esp_reset_reason_str().c_str());
+
+    // Check starting condition for ethernet.
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
 #if (defined ETH_GPIO_ENABLE) && (ETH_GPIO_ENABLE != -1)
     ETH_GPIO_ENABLE_INIT();
@@ -95,7 +104,7 @@ void setup()
 #else
     Ethernet.enable();
 #endif
-    // If the ethernet is enable, the wifi will not init.
+    // If the ethernet is enabled, the Wifi will not be allowed to initialize .
     Ethernet.begin();
     ESPWifi.begin(!Ethernet.isEnable());
 #else
@@ -103,18 +112,9 @@ void setup()
     ESPWifi.begin();
 #endif
 
-
     // register callback handle http request
     webServer.setHandleCallbacks(new WebserverURLHandle());
     webServer.begin();
-
-    // Init system time with params option load from the file system
-    // Must be start after ESPWifi.begin() Because SNTP service had config
-    // when wifi init.
-    ESPTime.load();
-
-    // write log into file system
-    ESPLOG.printf_P("Reset reason %s", esp_reset_reason_str().c_str());
 }
 
 void loop()

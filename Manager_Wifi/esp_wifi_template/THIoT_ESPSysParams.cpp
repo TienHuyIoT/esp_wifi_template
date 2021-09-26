@@ -68,8 +68,9 @@ const char wifi_data_default_json[] PROGMEM = R"=====(
         "server1": "pool.ntp.org",
         "server2": "time.nist.gov",
         "server3": "time.windows.com",
-        "gmtOffset": 25200,
-        "daylightOffset": 0
+        "gmtOffset": 7,
+        "daylightOffset": 0,
+        "interval": 3600
     }
 }
 )=====" ;
@@ -189,6 +190,7 @@ void ESPSysParams::saveToFileSystem()
     sntp["server3"].set(_sys_prams.sntp.server3);    
     sntp["gmtOffset"].set(_sys_prams.sntp.gmtOffset); 
     sntp["daylightOffset"].set(_sys_prams.sntp.daylightOffset);
+    sntp["interval"].set(_sys_prams.sntp.interval);
 
     WIFI_DATA_TAG_CONSOLE("Json created:");
     // root.prettyPrintTo(WIFI_FILE_PORT);
@@ -308,6 +310,7 @@ void ESPSysParams::syncFromFileSystem()
         sntp["server3"].as<String>().toCharArray(_sys_prams.sntp.server3, SNTP_LENGTH_MAX + 1);
         _sys_prams.sntp.gmtOffset = sntp["gmtOffset"].as<int>();
         _sys_prams.sntp.daylightOffset = sntp["daylightOffset"].as<int>();
+        _sys_prams.sntp.interval = sntp["interval"].as<int>();
     } 
 
     WIFI_DATA_TAG_CONSOLE("sync data succeed!");

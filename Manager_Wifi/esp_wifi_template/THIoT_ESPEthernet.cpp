@@ -5,10 +5,12 @@
 #include "THIoT_ESPSysParams.h"
 #include "THIoT_ESPEthernet.h"
 #include "THIoT_ESPAsyncEasyNTP.h"
+#include "THIoT_ESPLogTrace.h"
 #include "THIoT_SerialTrace.h"
 
 #define ESP_ETH_PORT CONSOLE_PORT
 #define ETH_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[ETH]", __VA_ARGS__)
+#define ETH_TAG_LOG(f_, ...) ESPLOG.printf_P(PSTR("[ETH] " f_), ##__VA_ARGS__)
 
 #ifdef EPS32
 #include <WiFi.h>
@@ -56,7 +58,8 @@ bool ESPEthernet::begin()
 #ifdef ESP32
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
   {
-    ETH_TAG_CONSOLE("Ethernet started");
+    ETH_TAG_CONSOLE("started");
+    ETH_TAG_LOG("started");
     String ChipID = String((uint32_t)(ESP.getEfuseMac() >> 16), HEX);
     ChipID.toUpperCase();
     String hostName = "ETH_" + ESPConfig.hostNameSTA() + "_" + ChipID;
@@ -66,33 +69,39 @@ bool ESPEthernet::begin()
 
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
   {
-    ETH_TAG_CONSOLE("Ethernet stopped");
+    ETH_TAG_CONSOLE("stopped");
+    ETH_TAG_LOG("stopped");
   }
   ,WiFiEvent_t::m_ESP32_EVENT_ETH_STOP);
 
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
   {
     ETH_TAG_CONSOLE("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
-    ETH_TAG_CONSOLE("MAC: %s, IPv4: %s", ETH.macAddress().c_str(), ETH.localIP().toString().c_str());
+    ETH_TAG_CONSOLE("MAC: %s, got IPv4: %s", ETH.macAddress().c_str(), ETH.localIP().toString().c_str());
+    ETH_TAG_LOG("MAC: %s, got IPv4: %s", ETH.macAddress().c_str(), ETH.localIP().toString().c_str());
     if (ETH.fullDuplex()) {
         ETH_TAG_CONSOLE("FULL_DUPLEX");
     }
     ETH_TAG_CONSOLE("Link Speed %uMbps", ETH.linkSpeed()); 
+#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
+    ETH_TAG_LOG("[EASYNTP] begin(%ld, %d, %s, %u)"
+          , ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
+    EASYNTP.begin(ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
+#endif
   }
   ,WiFiEvent_t::m_ESP32_EVENT_ETH_GOT_IP);
 
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
   {
-    ETH_TAG_CONSOLE("Ethernet connected");
-#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
-    EASYNTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), 15);
-#endif
+    ETH_TAG_CONSOLE("connected");
+    ETH_TAG_LOG("connected");
   }
   ,WiFiEvent_t::m_ESP32_EVENT_ETH_CONNECTED);
 
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
   {
-    ETH_TAG_CONSOLE("Ethernet disconnected");
+    ETH_TAG_CONSOLE("disconnected");
+    ETH_TAG_LOG("disconnected");
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
     EASYNTP.end();
 #endif
@@ -132,7 +141,8 @@ void ESPEthernet::loop()
     {
       if (!_connected)
       {
-        ETH_TAG_CONSOLE("Connected");
+        ETH_TAG_CONSOLE("connected");
+        ETH_TAG_LOG("connected, got IP is %s", ETH.localIP().toString().c_str());
         ETH_TAG_CONSOLE("Ip: %s", ETH.localIP().toString().c_str());
         ETH_TAG_CONSOLE("Gw: %s", ETH.gatewayIP().toString().c_str());
         ETH_TAG_CONSOLE("Sn: %s", ETH.subnetMask().toString().c_str());
@@ -140,7 +150,9 @@ void ESPEthernet::loop()
         _connected = true;
 
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
-        EASYNTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server2SNTP().c_str(), 15);
+        ETH_TAG_LOG("[EASYNTP] begin(%ld, %d, %s, %u)"
+          , ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
+        EASYNTP.begin(ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
 #endif
       }
     }
@@ -149,6 +161,7 @@ void ESPEthernet::loop()
       if (_connected)
       {
         ETH_TAG_CONSOLE("disconnect");
+        ETH_TAG_LOG("disconnect");
         _connected = false;
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
         EASYNTP.end();

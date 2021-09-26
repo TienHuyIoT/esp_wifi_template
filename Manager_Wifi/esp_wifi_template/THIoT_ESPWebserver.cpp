@@ -18,12 +18,14 @@
 #include "THIoT_ESPSoftReset.h"
 #include "THIoT_SDFSClass.h"
 #include "THIoT_ESPWatchDogTimer.h"
+#include "THIoT_ESPLogTrace.h"
 #include "THIoT_ESPWebserver.h"
 
 
 #define WEB_SERVER_DBG_PORT CONSOLE_PORT
 #define WEB_SERVER_DBG_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
-#define WEB_SERVER_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WEB SERVER]", __VA_ARGS__)
+#define WEB_SERVER_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WEB]", __VA_ARGS__)
+#define WEB_TAG_LOG(f_, ...) ESPLOG.printf_P(PSTR("[WEB] " f_), ##__VA_ARGS__)
 
 static WebserverURLHandleCallbacks defaultCallbacks;
 
@@ -398,6 +400,7 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
         if (!Update.hasError())
         {
           updatePrintProgress(100, 100); // 100% --> Done
+          WEB_TAG_LOG("[OTA] End");
           if (U_FLASH == _flashUpdateType)
           {
             SOFTReset.enable(500);
@@ -410,6 +413,7 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
         else
         {
           updatePrintProgress(101, 100); // 101% --> Fail
+          WEB_TAG_LOG("[OTA] Failed");
         }
       },
       [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
@@ -418,7 +422,8 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
 
         if (!index)
         {
-          WEB_SERVER_TAG_CONSOLE("Update Start: %s, size=%u", filename.c_str(), length);
+          WEB_SERVER_TAG_CONSOLE("[OTA] file: %s, size=%u", filename.c_str(), length);
+          WEB_TAG_LOG("[OTA] file: %s, size = %u", filename.c_str(), length);
 #ifdef ESP8266
           _updateProgress = 0;
           // if filename includes spiffs, update the spiffs partition
