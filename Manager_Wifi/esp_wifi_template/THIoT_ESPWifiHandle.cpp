@@ -174,6 +174,7 @@ void ESPWifiHandle::registerEventHandler()
     std::string ssid((const char*)info.connected.ssid, info.connected.ssid_len);
 #endif
     ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi connected to %s", ssid.c_str());
+    ESPLOG.printf_P("[EVENT] WiFi connected to %s", ssid.c_str());
 
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
     EASYNTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), 15);
@@ -229,6 +230,7 @@ void ESPWifiHandle::registerEventHandler()
   _accessPointConnectedHandler = WiFi.onStationModeConnected(
     [](const WiFiEventStationModeConnected& evt) {
       ESP_WIFI_TAG_CONSOLE("[EVENT] WiFi connected to %s", evt.ssid.c_str());
+      ESPLOG.printf_P("[EVENT] WiFi connected to %s", evt.ssid.c_str());
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
       EASYNTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), 15);
 #endif

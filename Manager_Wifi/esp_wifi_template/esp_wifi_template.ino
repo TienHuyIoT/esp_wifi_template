@@ -35,8 +35,7 @@ void setup()
                      FW_VERSION_MINOR,
                      FW_VERSION_BUILD);
     
-    esp_print_reset_reason();
-
+    MAIN_TAG_CONSOLE("Reset reason %s", esp_reset_reason_str().c_str());
 
     // Enable watch dog timer         
     // WDT_TIMEOUT_VALUE only effect for ESP32
@@ -110,11 +109,12 @@ void setup()
     webServer.begin();
 
     // Init system time with params option load from the file system
-    // Must be start after ESPWifi.begin() Because SNTP had config
+    // Must be start after ESPWifi.begin() Because SNTP service had config
     // when wifi init.
     ESPTime.load();
 
-    ESPLOG.printf_P("Hello world");
+    // write log into file system
+    ESPLOG.printf_P("Reset reason %s", esp_reset_reason_str().c_str());
 }
 
 void loop()

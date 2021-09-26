@@ -21,6 +21,11 @@
 #include <ESP.h>
 #endif
 
-void esp_print_reset_reason();
+#ifdef ESP32
+uint32_t esp_reset_reason(int cpu_no);
+#elif defined(ESP8266)
+uint32_t esp_reset_reason();
+#endif
+String esp_reset_reason_str();
 
 #endif // __ESP_RESET_REASON_H
