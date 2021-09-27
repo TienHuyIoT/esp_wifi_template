@@ -4,7 +4,7 @@
 #include "THIoT_ESPTimeSystem.h"
 #include "THIoT_SerialTrace.h"
 
-#define APP_WS_DBG_PRINT(...) CONSOLE_TAG_LOGI("[APP_WS]", __VA_ARGS__)
+#define APP_WS_DBG_PRINT(...) SERIAL_TAG_LOGI("[APP_WS]", __VA_ARGS__)
 
 ESPWsDataHandle::ESPWsDataHandle(/* args */)
 {

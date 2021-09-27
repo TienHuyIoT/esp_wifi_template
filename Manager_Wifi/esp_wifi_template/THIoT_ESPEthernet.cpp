@@ -8,8 +8,8 @@
 #include "THIoT_ESPLogTrace.h"
 #include "THIoT_SerialTrace.h"
 
-#define ESP_ETH_PORT CONSOLE_PORT
-#define ETH_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[ETH]", __VA_ARGS__)
+#define ESP_ETH_PORT SERIAL_PORT
+#define ETH_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[ETH]", __VA_ARGS__)
 #define ETH_TAG_LOG(...) FS_TAG_LOGI("[ETH]", __VA_ARGS__)
 
 #ifdef EPS32

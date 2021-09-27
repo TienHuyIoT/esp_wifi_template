@@ -52,13 +52,13 @@ uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 ()
 #include "THIoT_ESPLogTrace.h"
 #include "THIoT_ESPWifiHandle.h"
 
-#define SNTP_CONSOLE_PORT CONSOLE_PORT
-#define SNTP_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
-#define SNTP_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[SNTP]", __VA_ARGS__)
+#define SNTP_CONSOLE_PORT SERIAL_PORT
+#define SNTP_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)
+#define SNTP_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[SNTP]", __VA_ARGS__)
 
-#define ESP_WIFI_PORT CONSOLE_PORT
-#define ESP_WIFI_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
-#define ESP_WIFI_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WIFI]", __VA_ARGS__)
+#define ESP_WIFI_PORT SERIAL_PORT
+#define ESP_WIFI_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)
+#define ESP_WIFI_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[WIFI]", __VA_ARGS__)
 
 #define WIFI_TAG_LOG(...) FS_TAG_LOGI("[WIFI]", __VA_ARGS__)
 #define SNTP_TAG_LOG(...) FS_TAG_LOGI("[SNTP]", __VA_ARGS__)

@@ -3,8 +3,8 @@
 #include "THIoT_SerialTrace.h"
 #include "THIoT_ESPLogTrace.h"
 
-#define LOG_TRACE_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[LOG_TRACE]", __VA_ARGS__)
-#define LOG_TRACE_FUNCTION_CONSOLE(...) FUNCTION_TAG_LOGI("[LOG_TRACE]", __VA_ARGS__)
+#define LOG_TRACE_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[LOG_TRACE]", __VA_ARGS__)
+#define LOG_TRACE_FUNCTION_CONSOLE(...) SERIAL_FUNCTION_TAG_LOGI("[LOG_TRACE]", __VA_ARGS__)
 
 ESPLogTrace::ESPLogTrace(fs::FS &fs, const char* fileName, size_t limitSize)
 :_fs(&fs),_fileName(fileName), _limitSize(limitSize) {

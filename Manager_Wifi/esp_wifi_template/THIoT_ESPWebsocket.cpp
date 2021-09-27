@@ -1,8 +1,8 @@
 #include "THIoT_SerialTrace.h"
 #include "THIoT_ESPWebsocket.h"
 
-#define WS_DBG_PORT CONSOLE_PORT
-#define WS_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WS]", __VA_ARGS__)
+#define WS_DBG_PORT SERIAL_PORT
+#define WS_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[WS]", __VA_ARGS__)
 
 static WebsocketCallbacks defaultCallbacks; //null-object-pattern
 

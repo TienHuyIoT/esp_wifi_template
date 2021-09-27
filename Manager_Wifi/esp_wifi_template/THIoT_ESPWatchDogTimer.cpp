@@ -3,7 +3,7 @@
 
 #ifdef ESP32
 #include "esp_system.h"
-#define WTD_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WDT]", __VA_ARGS__)
+#define WTD_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[WDT]", __VA_ARGS__)
 
 static void IRAM_ATTR hw_resetModule(void)
 {

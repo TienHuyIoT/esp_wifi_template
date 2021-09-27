@@ -14,9 +14,9 @@
 /* Private define ------------------------------------------------------------*/
 
 /* Private macro -------------------------------------------------------------*/
-#define FS_HANDLE_PORT CONSOLE_PORT
-#define FS_HANDLE_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
-#define FS_HANDLE_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[FS]", __VA_ARGS__)
+#define FS_HANDLE_PORT SERIAL_PORT
+#define FS_HANDLE_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)
+#define FS_HANDLE_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[FS]", __VA_ARGS__)
 
 ESPFSHandle::ESPFSHandle(/* args */)
 {

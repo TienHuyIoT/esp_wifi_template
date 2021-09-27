@@ -16,9 +16,9 @@
 /* Private define ------------------------------------------------------------*/
 
 /* Private macro -------------------------------------------------------------*/
-#define SD_FS_PORT CONSOLE_PORT
-#define SD_FS_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
-#define SD_FS_PRINTFLN(...) CONSOLE_TAG_LOGI("[SD]", __VA_ARGS__)
+#define SD_FS_PORT SERIAL_PORT
+#define SD_FS_PRINTF(...) SERIAL_LOGI(__VA_ARGS__)
+#define SD_FS_PRINTFLN(...) SERIAL_TAG_LOGI("[SD]", __VA_ARGS__)
 
 #ifdef ESP8266
 #if(HTH_SFDS_HANDLE)

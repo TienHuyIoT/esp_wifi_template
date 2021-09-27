@@ -15,8 +15,8 @@
 #include "THIoT_ESPLogTrace.h"
 
 /* Private macro -------------------------------------------------------------*/
-#define MAIN_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
-#define MAIN_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[MAIN]", __VA_ARGS__)
+#define MAIN_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)
+#define MAIN_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[MAIN]", __VA_ARGS__)
 #define MAIN_FUNCTION_LOG(...) FS_FUNCTION_TAG_LOGI("[MAIN]", __VA_ARGS__)
 
 /* Private variables ---------------------------------------------------------*/
@@ -25,9 +25,9 @@ ESPWebserver webServer;
 void setup()
 {
 #ifdef ESP32
-    CONSOLE_PORT.begin(CONSOLE_BAUDRATE, SERIAL_8N1, -1, 1);
+    SERIAL_PORT.begin(SERIAL_BAUDRATE, SERIAL_8N1, -1, 1);
 #elif defined(ESP8266)
-    CONSOLE_PORT.begin(CONSOLE_BAUDRATE, SERIAL_8N1);
+    SERIAL_PORT.begin(SERIAL_BAUDRATE, SERIAL_8N1);
 #endif
     const char *build_time = __DATE__ " " __TIME__ " GMT";
     MAIN_TAG_CONSOLE("\r\n\r\nbuild_time: %s", build_time);

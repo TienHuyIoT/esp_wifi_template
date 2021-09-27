@@ -22,9 +22,9 @@
 #include "THIoT_ESPWebserver.h"
 
 
-#define WEB_SERVER_DBG_PORT CONSOLE_PORT
-#define WEB_SERVER_DBG_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
-#define WEB_SERVER_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WEB]", __VA_ARGS__)
+#define WEB_SERVER_DBG_PORT SERIAL_PORT
+#define WEB_SERVER_DBG_PRINTF(...) SERIAL_LOGI(__VA_ARGS__)
+#define WEB_SERVER_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[WEB]", __VA_ARGS__)
 #define WEB_TAG_LOG(...) FS_TAG_LOGI("[WEB]", __VA_ARGS__)
 
 static WebserverURLHandleCallbacks defaultCallbacks;

@@ -7,7 +7,7 @@ extern "C" {
 }
 #endif
 
-#define WTD_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[RESET REASON]", __VA_ARGS__)
+#define WTD_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[RESET REASON]", __VA_ARGS__)
 
 #ifdef ESP32
 static String get_reset_reason(RESET_REASON reason)

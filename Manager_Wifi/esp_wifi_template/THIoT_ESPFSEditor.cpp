@@ -4,9 +4,9 @@
 #include "THIoT_SDFSClass.h"
 #include "THIoT_SerialTrace.h"
 
-#define FSEDITOR_DBG_PORT CONSOLE_PORT
+#define FSEDITOR_DBG_PORT SERIAL_PORT
 #if (defined FS_EDITOR_DEBUG) && (FS_EDITOR_DEBUG == 1)
-#define FSEDITOR_DBG_PRINTF(...) CONSOLE_TAG_LOGI("[FS_EDITOR]", __VA_ARGS__)
+#define FSEDITOR_DBG_PRINTF(...) SERIAL_TAG_LOGI("[FS_EDITOR]", __VA_ARGS__)
 #else
 #define FSEDITOR_DBG_PRINTF(...)
 #endif

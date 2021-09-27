@@ -2,9 +2,9 @@
 #include "THIoT_ESPEEPromParams.h"
 #include "THIoT_SerialTrace.h"
 
-#define EEPROM_DATA_PORT CONSOLE_PORT
-#define EEPROM_DATA_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
-#define EEPROM_DATA_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[EEPROM]", __VA_ARGS__)
+#define EEPROM_DATA_PORT SERIAL_PORT
+#define EEPROM_DATA_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)
+#define EEPROM_DATA_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[EEPROM]", __VA_ARGS__)
 
 ESPEEPromParams::ESPEEPromParams(/* args */)
 {

@@ -3,9 +3,9 @@
 #include "THIoT_ESPSysParams.h"
 #include "THIoT_SerialTrace.h"
 
-#define WIFI_FILE_PORT CONSOLE_PORT
-#define WIFI_DATA_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
-#define WIFI_DATA_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WIFI DATA]", __VA_ARGS__)
+#define WIFI_FILE_PORT SERIAL_PORT
+#define WIFI_DATA_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)
+#define WIFI_DATA_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[WIFI DATA]", __VA_ARGS__)
 
 const char wifi_data_default_json[] PROGMEM = R"=====(
 {
