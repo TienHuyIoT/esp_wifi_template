@@ -17,10 +17,9 @@
 /* Private macro -------------------------------------------------------------*/
 #define MAIN_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
 #define MAIN_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[MAIN]", __VA_ARGS__)
-#define MAIN_TAG_LOG(f_, ...) ESPLOG.printf_P(PSTR("[MAIN] " f_), ##__VA_ARGS__)
+#define MAIN_FUNCTION_LOG(...) FS_FUNCTION_TAG_LOGI("[MAIN]", __VA_ARGS__)
 
 /* Private variables ---------------------------------------------------------*/
-const char *build_time = __DATE__ " " __TIME__ " GMT";
 ESPWebserver webServer;
 
 void setup()
@@ -30,6 +29,7 @@ void setup()
 #elif defined(ESP8266)
     CONSOLE_PORT.begin(CONSOLE_BAUDRATE, SERIAL_8N1);
 #endif
+    const char *build_time = __DATE__ " " __TIME__ " GMT";
     MAIN_TAG_CONSOLE("\r\n\r\nbuild_time: %s", build_time);
     MAIN_TAG_CONSOLE("==== Firmware version %u.%u.%u ====\r\n",
                      FW_VERSION_MAJOR,
@@ -78,8 +78,8 @@ void setup()
 
 
     // Always initialize after NAND_FS_SYSTEM.begin();
-    // Because some function of system will need params 
-    // load from file system for initial.
+    // Because some function of system will need some params 
+    // load from a file system to initial.
     ESPConfig.load(&NAND_FS_SYSTEM);
 
     // Must be load after ESPConfig.load()
@@ -87,7 +87,7 @@ void setup()
     ESPTime.load();
 
     // Save reset reason into log file.
-    MAIN_TAG_LOG("reset reason %s", esp_reset_reason_str().c_str());
+    MAIN_FUNCTION_LOG("reset reason %s", esp_reset_reason_str().c_str());
 
     // Check starting condition for ethernet.
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)

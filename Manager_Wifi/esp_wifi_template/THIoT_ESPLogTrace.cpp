@@ -35,7 +35,7 @@ size_t ESPLogTrace::write(const uint8_t *buffer, size_t size) {
         File fs_handle = _fs->open(_fileName, "a");
         fs_handle.print(time);
         fs_handle.write(buffer, size);
-        fs_handle.println();
+        // fs_handle.println();
         fs_handle.close();
         LOG_TRACE_FUNCTION_CONSOLE("succeed!");
     }

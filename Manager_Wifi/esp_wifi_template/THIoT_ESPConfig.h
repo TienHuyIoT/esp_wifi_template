@@ -74,7 +74,7 @@ https://github.com/boblemaire/asyncHTTPrequest
 0: Disable
 1: Enable
 */
-#define SNTP_SERVICE_SYSTEM  1
+#define SNTP_SERVICE_SYSTEM  0
 
 /* EASY_SNTP
 0: Disable

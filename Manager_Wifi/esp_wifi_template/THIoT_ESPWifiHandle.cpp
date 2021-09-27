@@ -60,8 +60,8 @@ uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 ()
 #define ESP_WIFI_CONSOLE(...) CONSOLE_LOGI(__VA_ARGS__)
 #define ESP_WIFI_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WIFI]", __VA_ARGS__)
 
-#define WIFI_TAG_LOG(f_, ...) ESPLOG.printf_P(PSTR("[WIFI] " f_), ##__VA_ARGS__)
-#define SNTP_TAG_LOG(f_, ...) ESPLOG.printf_P(PSTR("[SNTP] " f_), ##__VA_ARGS__)
+#define WIFI_TAG_LOG(...) FS_TAG_LOGI("[WIFI]", __VA_ARGS__)
+#define SNTP_TAG_LOG(...) FS_TAG_LOGI("[SNTP]", __VA_ARGS__)
 
 #ifdef ESP32
 static void sntp_sync_time_cb(struct timeval *tv) {

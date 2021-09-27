@@ -10,7 +10,7 @@
 
 #define ESP_ETH_PORT CONSOLE_PORT
 #define ETH_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[ETH]", __VA_ARGS__)
-#define ETH_TAG_LOG(f_, ...) ESPLOG.printf_P(PSTR("[ETH] " f_), ##__VA_ARGS__)
+#define ETH_TAG_LOG(...) FS_TAG_LOGI("[ETH]", __VA_ARGS__)
 
 #ifdef EPS32
 #include <WiFi.h>

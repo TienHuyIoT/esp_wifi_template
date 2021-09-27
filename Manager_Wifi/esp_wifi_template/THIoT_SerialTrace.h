@@ -23,27 +23,35 @@ void log(const std::string_view message,
 #define CONSOLE_PORT Serial
 #define CONSOLE_BAUDRATE 921600
 #define CONSOLE_FLUSH() (CONSOLE_PORT.flush())
-#define DBG_PRINTF(f_, ...)           CONSOLE_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+#define DBG_PRINTF(f_, ...) CONSOLE_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+#define DBG_PRINTFLF(f_, ...) CONSOLE_PORT.printf_P(PSTR(f_ "\r\n"), ##__VA_ARGS__)
+#define DBG_TAG_PRINTF(tag, f_, ...)  CONSOLE_PORT.printf_P(PSTR(tag f_), ##__VA_ARGS__)
+#define DBG_FUNCTION_PRINTFLF(f_, ...)  CONSOLE_PORT.printf_P(PSTR(f_ "\r\n"), __FUNCTION__, ##__VA_ARGS__)
 
 #define g_debugLevel 4
 
-#define CONSOLE_LOGE(...) do{if(g_debugLevel >= 0) {DBG_PRINTF(__VA_ARGS__);}}while(0)
-#define CONSOLE_LOGW(...) do{if(g_debugLevel >= 1) {DBG_PRINTF(__VA_ARGS__);}}while(0)
-#define CONSOLE_LOGI(...) do{if(g_debugLevel >= 2) {DBG_PRINTF(__VA_ARGS__);}}while(0)
-#define CONSOLE_LOGD(...) do{if(g_debugLevel >= 3) {DBG_PRINTF(__VA_ARGS__);}}while(0)
-#define CONSOLE_LOGV(...) do{if(g_debugLevel >= 4) {DBG_PRINTF(__VA_ARGS__);}}while(0)
+#define CONSOLE_LOGE(...) do{if(g_debugLevel > 0) {DBG_PRINTF(__VA_ARGS__);}}while(0)
+#define CONSOLE_LOGW(...) do{if(g_debugLevel > 1) {DBG_PRINTF(__VA_ARGS__);}}while(0)
+#define CONSOLE_LOGI(...) do{if(g_debugLevel > 2) {DBG_PRINTF(__VA_ARGS__);}}while(0)
+#define CONSOLE_LOGD(...) do{if(g_debugLevel > 3) {DBG_PRINTF(__VA_ARGS__);}}while(0)
+#define CONSOLE_LOGV(...) do{if(g_debugLevel > 4) {DBG_PRINTF(__VA_ARGS__);}}while(0)
 
-#define CONSOLE_TAG_LOGE(x, ...) do{if(g_debugLevel >= 0) {DBG_PRINTF("E %s: ",x); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n");}}while(0)
-#define CONSOLE_TAG_LOGW(x, ...) do{if(g_debugLevel >= 1) {DBG_PRINTF("W %s: ",x); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n");}}while(0)
-#define CONSOLE_TAG_LOGI(x, ...) do{if(g_debugLevel >= 2) {DBG_PRINTF("I %s: ",x); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n");}}while(0)
-#define CONSOLE_TAG_LOGD(x, ...) do{if(g_debugLevel >= 3) {DBG_PRINTF("D %s: ",x); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n");}}while(0)
-#define CONSOLE_TAG_LOGV(x, ...) do{if(g_debugLevel >= 4) {DBG_PRINTF("V %s: ",x); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n");}}while(0)
+#define CONSOLE_TAG_LOGE(x, ...) do{if(g_debugLevel > 0) {DBG_PRINTFLF("E " x ": " __VA_ARGS__);}}while(0)
+#define CONSOLE_TAG_LOGW(x, ...) do{if(g_debugLevel > 1) {DBG_PRINTFLF("W " x ": " __VA_ARGS__);}}while(0)
+#define CONSOLE_TAG_LOGI(x, ...) do{if(g_debugLevel > 2) {DBG_PRINTFLF("I " x ": " __VA_ARGS__);}}while(0)
+#define CONSOLE_TAG_LOGD(x, ...) do{if(g_debugLevel > 3) {DBG_PRINTFLF("D " x ": " __VA_ARGS__);}}while(0)
+#define CONSOLE_TAG_LOGV(x, ...) do{if(g_debugLevel > 4) {DBG_PRINTFLF("V " x ": " __VA_ARGS__);}}while(0)
 
 #if (g_debugLevel > 0)
-#define FUNCTION_IN(...) do{DBG_PRINTF("\r\n\r\n\tFUNCTION [%s] IN ", __FUNCTION__); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n");}while(0)
-#define FUNCTION_OUT(...) do{DBG_PRINTF("\r\n\tFUNTION [%s] OUT ", __FUNCTION__); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n\r\n");}while(0)
-#define FUNCTION_LOGI(...) do{DBG_PRINTF("\r\n\r\n\tFUNCTION [%s] ", __FUNCTION__); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n");}while(0)
-#define FUNCTION_TAG_LOGI(x, ...) do{DBG_PRINTF("I %s: \tFUNCTION [%s] ",x, __FUNCTION__); DBG_PRINTF(__VA_ARGS__); DBG_PRINTF("\r\n");}while(0)
+#define FUNCTION_IN(...) do{DBG_FUNCTION_PRINTFLF("\r\n\r\nFUNCTION [%s] IN " __VA_ARGS__);}while(0)
+#define FUNCTION_OUT(...) do{DBG_FUNCTION_PRINTFLF("\r\nFUNCTION [%s] OUT " __VA_ARGS__);}while(0)
+#define FUNCTION_LOGI(...) do{DBG_FUNCTION_PRINTFLF("\r\n\r\nI: FUNCTION [%s] " __VA_ARGS__);}while(0)
+#define FUNCTION_TAG_LOGI(x, ...) do{DBG_FUNCTION_PRINTFLF("I " x ": FUNCTION [%s] " __VA_ARGS__);}while(0)
+#else
+#define FUNCTION_IN(...)
+#define FUNCTION_OUT(...)
+#define FUNCTION_LOGI(...)
+#define FUNCTION_TAG_LOGI(x, ...)
 #endif
 
 #endif // __SERIAL_TRACE_H

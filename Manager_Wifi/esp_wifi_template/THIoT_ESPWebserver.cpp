@@ -25,7 +25,7 @@
 #define WEB_SERVER_DBG_PORT CONSOLE_PORT
 #define WEB_SERVER_DBG_PRINTF(...) CONSOLE_LOGI(__VA_ARGS__)
 #define WEB_SERVER_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WEB]", __VA_ARGS__)
-#define WEB_TAG_LOG(f_, ...) ESPLOG.printf_P(PSTR("[WEB] " f_), ##__VA_ARGS__)
+#define WEB_TAG_LOG(...) FS_TAG_LOGI("[WEB]", __VA_ARGS__)
 
 static WebserverURLHandleCallbacks defaultCallbacks;
 

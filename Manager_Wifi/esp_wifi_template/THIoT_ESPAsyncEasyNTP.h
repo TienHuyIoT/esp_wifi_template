@@ -25,7 +25,6 @@ private:
     int _interval;
     void sendNTPpacket();
     void _onPacket(AsyncUDPPacket& packet);    
-    void requestTime();
 public:
     ESPAsyncEasyNTP(/* args */);
     ~ESPAsyncEasyNTP();
@@ -38,6 +37,7 @@ public:
     
     void end();
     void runAsync(int interval = 0);
+    void requestTime();
 };
 
 #if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_EASYNTP)

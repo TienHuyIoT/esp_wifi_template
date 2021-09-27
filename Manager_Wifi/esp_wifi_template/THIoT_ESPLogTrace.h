@@ -39,4 +39,38 @@ public:
 
 extern ESPLogTrace ESPLOG;
 
+#define FS_PORT ESPLOG
+#define FS_FLUSH() (FS_PORT.flush())
+#define FS_PRINTF(f_, ...)  FS_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
+#define FS_PRINTFLF(f_, ...)  FS_PORT.printf_P(PSTR(f_ "\r\n"), ##__VA_ARGS__)
+#define FS_TAG_PRINTF(tag, f_, ...)  FS_PORT.printf_P(PSTR(tag f_), ##__VA_ARGS__)
+#define FS_FUNCTION_PRINTF(f_, ...)  FS_PORT.printf_P(PSTR(f_), __FUNCTION__, ##__VA_ARGS__)
+#define FS_FUNCTION_PRINTFLF(f_, ...)  FS_PORT.printf_P(PSTR(f_ "\r\n"), __FUNCTION__, ##__VA_ARGS__)
+
+#define g_fsLevel 4
+
+#define FS_LOGE(...) do{if(g_fsLevel > 0) {FS_PRINTFLF("E: " __VA_ARGS__);}}while(0)
+#define FS_LOGW(...) do{if(g_fsLevel > 1) {FS_PRINTFLF("W: " __VA_ARGS__);}}while(0)
+#define FS_LOGI(...) do{if(g_fsLevel > 2) {FS_PRINTFLF("I: " __VA_ARGS__);}}while(0)
+#define FS_LOGD(...) do{if(g_fsLevel > 3) {FS_PRINTFLF("D: " __VA_ARGS__);}}while(0)
+#define FS_LOGV(...) do{if(g_fsLevel > 4) {FS_PRINTFLF("V: " __VA_ARGS__);}}while(0)
+
+#define FS_TAG_LOGE(x, ...) do{if(g_fsLevel > 0) {FS_PRINTFLF("E " x ": " __VA_ARGS__);}}while(0)
+#define FS_TAG_LOGW(x, ...) do{if(g_fsLevel > 1) {FS_PRINTFLF("W " x ": " __VA_ARGS__);}}while(0)
+#define FS_TAG_LOGI(x, ...) do{if(g_fsLevel > 2) {FS_PRINTFLF("I " x ": " __VA_ARGS__);}}while(0)
+#define FS_TAG_LOGD(x, ...) do{if(g_fsLevel > 3) {FS_PRINTFLF("D " x ": " __VA_ARGS__);}}while(0)
+#define FS_TAG_LOGV(x, ...) do{if(g_fsLevel > 4) {FS_PRINTFLF("V " x ": " __VA_ARGS__);}}while(0)
+
+#if (g_fsLevel > 0)
+#define FS_FUNCTION_IN(...) do{FS_FUNCTION_PRINTFLF("FUNCTION [%s] IN " __VA_ARGS__);}while(0)
+#define FS_FUNCTION_OUT(...) do{FS_FUNCTION_PRINTFLF("FUNCTION [%s] OUT " __VA_ARGS__);}while(0)
+#define FS_FUNCTION_LOGI(...) do{FS_FUNCTION_PRINTFLF("I: FUNCTION [%s] " __VA_ARGS__);}while(0)
+#define FS_FUNCTION_TAG_LOGI(x, ...) do{FS_FUNCTION_PRINTFLF("I " x ": FUNCTION [%s] " __VA_ARGS__);}while(0)
+#else
+#define FS_FUNCTION_IN(...)
+#define FS_FUNCTION_OUT(...)
+#define FS_FUNCTION_LOGI(...)
+#define FS_FUNCTION_TAG_LOGI(x, ...)
+#endif
+
 #endif // __ESP_LOG_TRACE_H
