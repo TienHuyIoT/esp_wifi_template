@@ -111,7 +111,6 @@ public:
     void save() { saveToFileSystem(); }
     void setDefault() { _fs->remove(ESP_SYSTEM_PARAMS); }
     void resetPassword();
-    void resetDefault();
     bool passSupperAdminIsOK(const String &pass);
     /* Port API */
     uint16_t udpPort() const { return _sys_prams.port.udp; }

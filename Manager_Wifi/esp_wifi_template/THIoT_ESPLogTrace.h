@@ -40,7 +40,8 @@ public:
 extern ESPLogTrace ESPLOG;
 
 #define FS_PORT ESPLOG
-#define FS_FLUSH() (FS_PORT.flush())
+#define FS_LOG_CLEAN() FS_PORT.clean()
+#define FS_FLUSH() FS_PORT.flush()
 #define FS_PRINTF(f_, ...)  FS_PORT.printf_P(PSTR(f_), ##__VA_ARGS__)
 #define FS_PRINTFLF(f_, ...)  FS_PORT.printf_P(PSTR(f_ "\r\n"), ##__VA_ARGS__)
 #define FS_TAG_PRINTF(tag, f_, ...)  FS_PORT.printf_P(PSTR(tag f_), ##__VA_ARGS__)

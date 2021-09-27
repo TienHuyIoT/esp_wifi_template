@@ -11,12 +11,13 @@
 #include "THIoT_ESPEthernet.h"
 #include "THIoT_SerialTrace.h"
 #include "THIoT_WebserverURLHandle.h"
+#include "THIoT_ESPLogTrace.h"
 
 #define SERVER_DATA_PORT SERIAL_PORT
 #define SERVER_DATA_PRINTF(...) SERIAL_LOGI(__VA_ARGS__)
 #define HTTPSERVER_URL_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[HTTP_SERVER]", __VA_ARGS__)
 
-#define DATA_GET_HANDLE_NUM     15
+#define DATA_GET_HANDLE_NUM     18
 #define DATA_POST_HANDLE_NUM    11
 
 #ifdef ESP32
@@ -56,6 +57,9 @@ void format_sd_card_get(AsyncWebServerRequest *request, WebserverURLHandle* clie
 void ddns_client_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void pass_common_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void format_spiffs_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
+void reset_all_password_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
+void reset_system_params_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
+void clean_log_trace_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
 
 /* Post */
 void sta_ap_info_post(AsyncWebServerRequest *request, WebserverURLHandle* client);
@@ -86,7 +90,10 @@ server_get_handle_t client_get_handle[DATA_GET_HANDLE_NUM] = {
 /*11*/{(char*)"format_sd_card", format_sd_card_get},
 /*12*/{(char*)"ddns_client", ddns_client_get},
 /*13*/{(char*)"pass_common", pass_common_get},
-/*14*/{(char*)"format_spiffs", format_spiffs_get}
+/*14*/{(char*)"format_spiffs", format_spiffs_get},
+/*15*/{(char*)"reset_all_password", reset_all_password_get},
+/*16*/{(char*)"reset_system_params", reset_system_params_get},
+/*17*/{(char*)"clean_log_trace", clean_log_trace_get}
 };
 
 server_post_handle_t client_post_handle[DATA_POST_HANDLE_NUM] = {
@@ -531,6 +538,24 @@ void format_spiffs_get(AsyncWebServerRequest *request, WebserverURLHandle* clien
     {
         request->send(200, "text/json", "Password Setting Wrong");
     } 
+}
+
+void reset_all_password_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
+{
+    request->send(200, "text/json", "Reset all password succeed!");
+    ESPConfig.resetPassword();
+}
+
+void reset_system_params_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
+{
+    request->send(200, "text/json", "Reset system params succeed!");
+    ESPConfig.setDefault();
+}
+
+void clean_log_trace_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
+{
+    request->send(200, "text/json", "Clean log trace succeed!");
+    FS_LOG_CLEAN();
 }
 
 void ddns_client_get(AsyncWebServerRequest *request, WebserverURLHandle* client)

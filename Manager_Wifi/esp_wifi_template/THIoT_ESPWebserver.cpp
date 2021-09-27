@@ -165,7 +165,7 @@ void ESPWebserver::fs_editor_status(AsyncWebServerRequest *request)
 uint8_t ESPWebserver::authentication_level(AsyncWebServerRequest *request)
 {
   uint8_t level;
-  if (request->authenticate("admin", "25123"))
+  if (request->authenticate("admin", "20210927"))
   {
     level = HTTP_AUTH_LV0;
   }
@@ -199,7 +199,7 @@ void ESPWebserver::updatePrintProgress(size_t prg, size_t sz)
     char p[5];
     _flashUpdatePercent = per;
     WEB_SERVER_TAG_CONSOLE("Progress: %u%%", _flashUpdatePercent);
-    sprintf(p, "%u", _flashUpdatePercent);
+    snprintf(p, 5, "%u", _flashUpdatePercent);
     _wsHandler->eventsSend(p, "dfu");
   }
 
@@ -222,7 +222,7 @@ void ESPWebserver::sdfsPrintProgress(size_t prg, size_t sz)
     char p[5];
     _sdUploadPercent = per;
     WEB_SERVER_TAG_CONSOLE("Progress: %u%%", _sdUploadPercent);
-    sprintf(p, "%u", _sdUploadPercent);
+    snprintf(p, 5, "%u", _sdUploadPercent);
     _wsHandler->eventsSend(p, "sdfs");
   }
   /* Watch dog timer feed */
@@ -243,7 +243,7 @@ void ESPWebserver::spiffsPrintProgress(size_t prg, size_t sz)
     char p[5];
     _spiffsUploadPercent = per;
     WEB_SERVER_TAG_CONSOLE("Progress: %u%%", _spiffsUploadPercent);
-    sprintf(p, "%u", _spiffsUploadPercent);
+    snprintf(p, 5, "%u", _spiffsUploadPercent);
     _wsHandler->eventsSend(p, "spiffs");
   }
   /* Watch dog timer feed */
@@ -286,6 +286,8 @@ void ESPWebserver::begin(void)
     // set server port default
     ESPConfig.tcpPortSet(SERVER_PORT_DEFAULT);
   }
+  
+  WEB_SERVER_TAG_CONSOLE("Init Web Server Port: %u", ESPConfig.tcpPort());
   _server = new AsyncWebServer(ESPConfig.tcpPort());
 #ifdef ESP32
   /* Register esp32 event scan done */
@@ -565,8 +567,6 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
           WEB_SERVER_TAG_CONSOLE("BodyEnd: %u", total);
         }
       });
-
-  WEB_SERVER_TAG_CONSOLE("Init Web Server Port: %u", ESPConfig.tcpPort());
   _server->begin();
 }
 

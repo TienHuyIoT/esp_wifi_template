@@ -7,7 +7,7 @@
 #define WIFI_DATA_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)
 #define WIFI_DATA_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[WIFI DATA]", __VA_ARGS__)
 
-const char wifi_data_default_json[] PROGMEM = R"=====(
+const char espSysParamsDefault[] PROGMEM = R"=====(
 {
     "port":{
         "udp": 25130,
@@ -95,8 +95,10 @@ void ESPSysParams::load(fs::FS* fs)
 
 void ESPSysParams::resetPassword()
 {
+    strncpy(_sys_prams.auth_admin.user, (const char *)"admin", AUTH_LENGHT_MAX);
     strncpy(_sys_prams.auth_admin.pass, (const char *)"admin", AUTH_LENGHT_MAX);
-    strncpy(_sys_prams.auth_user.pass, (const char *)"admin", AUTH_LENGHT_MAX);
+    strncpy(_sys_prams.auth_user.user, (const char *)"admin", AUTH_LENGHT_MAX);
+    strncpy(_sys_prams.auth_user.pass, (const char *)"12345", AUTH_LENGHT_MAX);
     _sys_prams.confirm[CONFIRM_COMMON] = PASS_COMMON_DEFAULT;
     _sys_prams.confirm[CONFIRM_PU3] = PASS_PU3_DEFAULT;
     _sys_prams.confirm[CONFIRM_COST] = PASS_COST_DEFAULT;
@@ -104,14 +106,9 @@ void ESPSysParams::resetPassword()
     saveToFileSystem();
 }
 
-void ESPSysParams::resetDefault()
-{
-    _fs->remove(ESP_SYSTEM_PARAMS);
-}
-
 bool ESPSysParams::passSupperAdminIsOK(const String &pass)
 {
-    return (pass == "25251325");
+    return (pass == "20210927");
 }
 
 bool ESPSysParams::passConfirmIsOK(const String &pass, passConfirm_t type)
@@ -207,7 +204,7 @@ void ESPSysParams::syncFromFileSystem()
     if (!_fs->exists(ESP_SYSTEM_PARAMS))
     {
         fs_handle = _fs->open(ESP_SYSTEM_PARAMS, "w");
-        fs_handle.printf_P(wifi_data_default_json);
+        fs_handle.printf_P(espSysParamsDefault);
         fs_handle.close();
     }
 
