@@ -2,6 +2,7 @@
 #define __ESP_WEBSOCKET_H
 
 #include <Arduino.h>
+#include <functional>
 #include <ESPAsyncWebServer.h>
 #include <Ticker.h>
 

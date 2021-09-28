@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <functional> // std::function
 #include "THIoT_ESPConfig.h"
 #include "THIoT_SDFSClass.h"
 #include "THIoT_SerialTrace.h"
@@ -13,6 +14,7 @@
 #include "THIoT_ESPResetReason.h"
 #include "THIoT_ESPAsyncEasyNTP.h"
 #include "THIoT_ESPLogTrace.h"
+#include "THIoT_FactoryButton.h"
 
 /* Private macro -------------------------------------------------------------*/
 #define MAIN_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)

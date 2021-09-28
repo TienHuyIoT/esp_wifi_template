@@ -1,6 +1,8 @@
 #ifndef __ESP_FS_EDITOR_H
 #define __ESP_FS_EDITOR_H
 
+#include <Arduino.h>
+#include <functional>
 #include <FS.h>
 #include <SD.h>
 #include <ESPAsyncWebServer.h>

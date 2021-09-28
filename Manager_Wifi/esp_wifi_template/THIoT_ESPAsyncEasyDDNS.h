@@ -22,7 +22,7 @@ Some Library references:
 #define __ESP_ASYNC_EASY_DDNS_H
 
 #include <Arduino.h>
-
+#include <functional>
 #include <asyncHTTPrequest.h>
 
 #define ASYNC_EASYDDNS_DEBUG    1

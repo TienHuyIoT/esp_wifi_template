@@ -8,7 +8,7 @@
 #elif defined(ESP8266)
 #include <ESPAsyncUDP.h>
 #endif
-
+#include <functional>
 #define NTP_REQUEST_PORT   123
 #define NTP_PACKET_SIZE    48 // NTP timestamp is in the first 48 bytes of the message
 

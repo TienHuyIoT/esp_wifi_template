@@ -2,6 +2,7 @@
 #define __ESP_WEBSERVER_H
 
 #include <Arduino.h>
+#include <functional>
 #include <ESPAsyncWebServer.h>
 #include "THIoT_ESPConfig.h"
 #include "THIoT_ESPFSEditor.h"
