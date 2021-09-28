@@ -76,38 +76,38 @@ void pass_common_post(AsyncWebServerRequest *request, WebserverURLHandle* client
 
 /* /get?param_wifi=[param] */
 server_get_handle_t client_get_handle[DATA_GET_HANDLE_NUM] = {
-/*00*/{(char*)"sta_ap_info", sta_ap_info_get},
-/*01*/{(char*)"sta_network", sta_network_get},
-/*02*/{(char*)"sta_setting", sta_setting_get},
-/*03*/{(char*)"ap_setting", ap_setting_get},
-/*04*/{(char*)"sntp_setting", sntp_setting_get},
-/*05*/{(char*)"device_info", device_info_get},
-/*06*/{(char*)"time_setting", time_setting_get},
-/*07*/{(char*)"fw_version", fw_version_get},
-/*08*/{(char*)"restart", restart_device_get},
-/*09*/{(char*)"heap_temperature", heap_temperature_get},
-/*10*/{(char*)"activated", activated_get},
-/*11*/{(char*)"format_sd_card", format_sd_card_get},
-/*12*/{(char*)"ddns_client", ddns_client_get},
-/*13*/{(char*)"pass_common", pass_common_get},
-/*14*/{(char*)"format_spiffs", format_spiffs_get},
-/*15*/{(char*)"reset_all_password", reset_all_password_get},
-/*16*/{(char*)"reset_system_params", reset_system_params_get},
-/*17*/{(char*)"clean_log_trace", clean_log_trace_get}
+/*00*/{(const char*)"sta_ap_info", sta_ap_info_get},
+/*01*/{(const char*)"sta_network", sta_network_get},
+/*02*/{(const char*)"sta_setting", sta_setting_get},
+/*03*/{(const char*)"ap_setting", ap_setting_get},
+/*04*/{(const char*)"sntp_setting", sntp_setting_get},
+/*05*/{(const char*)"device_info", device_info_get},
+/*06*/{(const char*)"time_setting", time_setting_get},
+/*07*/{(const char*)"fw_version", fw_version_get},
+/*08*/{(const char*)"restart", restart_device_get},
+/*09*/{(const char*)"heap_temperature", heap_temperature_get},
+/*10*/{(const char*)"activated", activated_get},
+/*11*/{(const char*)"format_sd_card", format_sd_card_get},
+/*12*/{(const char*)"ddns_client", ddns_client_get},
+/*13*/{(const char*)"pass_common", pass_common_get},
+/*14*/{(const char*)"format_spiffs", format_spiffs_get},
+/*15*/{(const char*)"reset_all_password", reset_all_password_get},
+/*16*/{(const char*)"reset_system_params", reset_system_params_get},
+/*17*/{(const char*)"clean_log_trace", clean_log_trace_get}
 };
 
 server_post_handle_t client_post_handle[DATA_POST_HANDLE_NUM] = {
-/*00*/{(char*)"sta_ap_info", sta_ap_info_post},
-/*01*/{(char*)"sta_network", sta_network_post},
-/*02*/{(char*)"sta_setting", sta_setting_post},
-/*03*/{(char*)"ap_setting", ap_setting_post},
-/*04*/{(char*)"sntp_setting", sntp_setting_post},
-/*05*/{(char*)"device_info", device_info_post},
-/*06*/{(char*)"auth_access", auth_access_post},
-/*07*/{(char*)"time_setting", time_setting_post},
-/*08*/{(char*)"ddns_client", ddns_client_post},
-/*09*/{(char*)"auth_user_access", auth_user_access_post},
-/*10*/{(char*)"pass_common", pass_common_post}
+/*00*/{(const char*)"sta_ap_info", sta_ap_info_post},
+/*01*/{(const char*)"sta_network", sta_network_post},
+/*02*/{(const char*)"sta_setting", sta_setting_post},
+/*03*/{(const char*)"ap_setting", ap_setting_post},
+/*04*/{(const char*)"sntp_setting", sntp_setting_post},
+/*05*/{(const char*)"device_info", device_info_post},
+/*06*/{(const char*)"auth_access", auth_access_post},
+/*07*/{(const char*)"time_setting", time_setting_post},
+/*08*/{(const char*)"ddns_client", ddns_client_post},
+/*09*/{(const char*)"auth_user_access", auth_user_access_post},
+/*10*/{(const char*)"pass_common", pass_common_post}
 };
 
 WebserverURLHandle::WebserverURLHandle(/* args */){}
