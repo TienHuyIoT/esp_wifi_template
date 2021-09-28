@@ -23,6 +23,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 ESPWebserver webServer;
+FactoryButton factorySysParams(FACTORY_INPUT_PIN);
 
 void setup()
 {
@@ -117,6 +118,10 @@ void setup()
     // register callback handle http request
     webServer.setHandleCallbacks(new WebserverURLHandle());
     webServer.begin();
+
+    // handle factory system params
+    factorySysParams.onFactory(std::bind(&ESPSysParams::setDefault, ESPConfig));
+    factorySysParams.begin();
 }
 
 void loop()
