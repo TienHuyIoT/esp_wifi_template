@@ -8,6 +8,8 @@
 #include <ESPAsyncWebServer.h>
 
 #define FS_EDITOR_DEBUG    0
+#define FS_EDITOR_NAND_TYPE 0
+#define FS_EDITOR_SD_TYPE   1
 
 typedef std::function<bool(AsyncWebServerRequest *request)> fs_ArRequestAuthenticateFunction;
 
@@ -16,7 +18,7 @@ class ESPFSEditor: public AsyncWebHandler {
     typedef std::function<void(size_t, size_t)> THandlerFunction_Progress;
     typedef std::function<void(AsyncWebServerRequest*)> fs_status;
 
-    ESPFSEditor(const fs::FS& fs, const String& uri=String("edit"), const String& username=String(), const String& password=String());
+    ESPFSEditor(const fs::FS& fs, const int fsType, const String& username=String(), const String& password=String());
     /*
       This callback will be called when Update is receiving data
     */

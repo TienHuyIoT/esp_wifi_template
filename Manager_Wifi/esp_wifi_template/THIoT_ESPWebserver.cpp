@@ -78,9 +78,7 @@ String ESPWebserver::_adminAuthPass = String();
 String ESPWebserver::_userAuthUser = String();
 String ESPWebserver::_userAuthPass = String();
 int ESPWebserver::_flashUpdateType = 0;
-#ifdef ESP8266
 size_t ESPWebserver::_updateProgress = 0;
-#endif
 uint32_t ESPWebserver::_spiffsUploadPercent = 0;
 uint32_t ESPWebserver::_flashUpdatePercent = 0;
 
@@ -320,18 +318,16 @@ void ESPWebserver::begin(void)
   _server->addHandler(_wsHandler->_ws);
   _server->addHandler(_wsHandler->_events);
 
-  _spiffsEditor = new ESPFSEditor(NAND_FS_SYSTEM, "/edit");
-  _spiffsEditor->onAuthenticate([](AsyncWebServerRequest *request)
-                                { return (authentication_level(request) != HTTP_AUTH_FAIL); });
-  _spiffsEditor->onProgress(spiffsPrintProgress);
+  // uri handle = "/edit"
+  _spiffsEditor = new ESPFSEditor(NAND_FS_SYSTEM, FS_EDITOR_NAND_TYPE);
+  _spiffsEditor->onProgress(spiffsPrintProgress).setAuthentication(_adminAuthUser.c_str(), _adminAuthPass.c_str());
   _spiffsEditor->onStatus(fs_editor_status);
   _server->addHandler(_spiffsEditor);
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-  _sdCardEditor = new ESPFSEditor(SD_FS_SYSTEM, "/edit_sdfs");
-  _sdCardEditor->onAuthenticate([](AsyncWebServerRequest *request)
-                            { return (authentication_level(request) != HTTP_AUTH_FAIL); });
-  _sdCardEditor->onProgress(sdfsPrintProgress);
+  // uri handle = "/edit_sdfs"
+  _sdCardEditor = new ESPFSEditor(SD_FS_SYSTEM, FS_EDITOR_SD_TYPE);
+  _sdCardEditor->onProgress(sdfsPrintProgress).setAuthentication(_adminAuthUser.c_str(), _adminAuthPass.c_str());
   _sdCardEditor->onStatus(fs_editor_status);
   _server->addHandler(_sdCardEditor);
 #endif
@@ -371,20 +367,12 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
           });
 
   /* Serving files in directory. Serving static files with authentication */
-  // _server->serveStatic("/", NAND_FS_SYSTEM, "/").setAuthentication(_adminAuthUser, _adminAuthPass);
-  _server->serveStatic("/", NAND_FS_SYSTEM, "/").setDefaultFile("index.htm").onAuthenticate([](AsyncWebServerRequest *request)
-                                                                                           { return (authentication_level(request) != HTTP_AUTH_FAIL); });
+  _server->serveStatic("/", NAND_FS_SYSTEM, "/").setDefaultFile("index.htm").setAuthentication(_adminAuthUser.c_str(), _adminAuthPass.c_str());
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-  _server->serveStatic("/onsd", SD_FS_SYSTEM, "/").onAuthenticate([](AsyncWebServerRequest *request)
-                                                                 { return (authentication_level(request) != HTTP_AUTH_FAIL); });
+  _server->serveStatic("/onsd", SD_FS_SYSTEM, "/").setAuthentication(_adminAuthUser.c_str(), _adminAuthPass.c_str());
 #endif
 
-#ifdef ESP32
-  Update.onProgress(updatePrintProgress);
-#elif defined(ESP8266)
-  // useless
-#endif
   // Simple Firmware Update Form
   _server->on("/update", HTTP_GET, [](AsyncWebServerRequest *request)
              {
@@ -437,11 +425,12 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
           else
           {
             _flashUpdateType = U_FLASH;
-            length = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
+            // length = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
           }
           Update.runAsync(true);
           if (!Update.begin(length, _flashUpdateType))
 #else
+          _updateProgress = 0;
           // if filename includes spiffs, update the spiffs partition
           if ((filename.indexOf("spiffs") > -1) || (filename.indexOf("littlefs") > -1))
           {
@@ -465,10 +454,8 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
           {
             Update.printError(WEB_SERVER_DBG_PORT);
           }
-#ifdef ESP8266
           _updateProgress += len;
           updatePrintProgress(_updateProgress, length);
-#endif
         }
         if (final)
         {

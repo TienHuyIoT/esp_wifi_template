@@ -32,8 +32,9 @@ ESP32 and ESP8266 Arduino wifi template
   - Updater file system
 
 ### Libraries
-- [ESPAsyncWebServer](https://github.com/TienHuyIoT/ESPAsyncWebServer/tree/feature/update_webserver_port) - C++
-- [AsyncTCP](https://github.com/TienHuyIoT/AsyncTCP/tree/feature/update_tcp_port) - C++
+- [ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) - C++
+- [AsyncTCP ESP32](https://github.com/me-no-dev/AsyncTCP) - C++
+- [AsyncTCP ESP8266](https://github.com/me-no-dev/ESPAsyncTCP) - C++
 - [asyncHTTPrequest](https://github.com/boblemaire/asyncHTTPrequest) - C++
 - [SyncEasyDDNS](https://github.com/ayushsharma82/EasyDDNS) - C++
 - [ArduinoJson](https://github.com/bblanchon/ArduinoJson/tree/5.x) - C++

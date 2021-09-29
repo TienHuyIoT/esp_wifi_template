@@ -84,9 +84,7 @@ private:
   static int _flashUpdateType;
   static uint32_t _spiffsUploadPercent;
   static uint32_t _flashUpdatePercent;
-#ifdef ESP8266
   static size_t _updateProgress;
-#endif
   String _uriHttpGetAuth;
   String _uriHttpGet;
   String _uriHttpPostAuth;

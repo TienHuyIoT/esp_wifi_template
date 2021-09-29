@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <functional> // std::function
 #include "THIoT_ESPConfig.h"
+#include "THIoT_ESPBlinkGPIO.h"
 #include "THIoT_SDFSClass.h"
 #include "THIoT_SerialTrace.h"
 #include "THIoT_ESPTimeSystem.h"
@@ -15,6 +16,7 @@
 #include "THIoT_ESPAsyncEasyNTP.h"
 #include "THIoT_ESPLogTrace.h"
 #include "THIoT_FactoryButton.h"
+#include "esp_led_status.h"
 
 /* Private macro -------------------------------------------------------------*/
 #define MAIN_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)
@@ -24,6 +26,7 @@
 /* Private variables ---------------------------------------------------------*/
 ESPWebserver webServer;
 FactoryButton factorySysParams(FACTORY_INPUT_PIN);
+ESPBlinkGPIO LEDStatus(LED_STATUS_GPIO, HIGH);
 
 void setup()
 {
@@ -42,10 +45,15 @@ void setup()
     MAIN_TAG_CONSOLE("Reset reason %s", esp_reset_reason_str().c_str());
 
     // Enable watch dog timer         
-    // WDT_TIMEOUT_VALUE only effect for ESP32
+    // WDT_TIMEOUT_VALUE only effected for ESP32
     // ESP8266 refer https://techtutorialsx.com/2017/01/21/esp8266-watchdog-functions/
     wdt_enable(WDT_TIMEOUT_VALUE);
 
+    
+    // Make updating led status by wifi status
+    LEDStatus.setCycleCallbacks(new ESPLedCycleBlinkCallbacks());
+    ESPWifi.onLedStatus(std::bind(&ESPBlinkGPIO::statusUpdate, &LEDStatus, std::placeholders::_1));    
+    LEDStatus.statusUpdate(ESPLedCycleBlinkCallbacks::BLINK_NORMAL);
 
     // Load params form eeprom memory
     EEPParams.load();
@@ -114,13 +122,17 @@ void setup()
     // Init wifi and accompanied services 
     ESPWifi.begin();
 #endif
-
+    
     // register callback handle http request
     webServer.setHandleCallbacks(new WebserverURLHandle());
     webServer.begin();
 
-    // handle factory system params
-    factorySysParams.onFactory(std::bind(&ESPSysParams::setDefault, ESPConfig));
+    // handle factory system params by hold button over 2s
+    // factorySysParams.onFactory(std::bind(&ESPSysParams::setDefault, &ESPConfig));
+    factorySysParams.onFactory([](){
+        ESPConfig.setDefault();
+        LEDStatus.statusUpdate(ESPLedCycleBlinkCallbacks::BLINK_FACTORY_SYSTEM_PARAMS);
+    });
     factorySysParams.begin();
 }
 

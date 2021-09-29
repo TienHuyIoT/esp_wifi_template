@@ -920,7 +920,7 @@ static bool isExcluded(fs::FS &_fs, const char *filename) {
 
 // WEB HANDLER IMPLEMENTATION
 
-ESPFSEditor::ESPFSEditor(const fs::FS& fs, const String& uri, const String& username, const String& password)
+ESPFSEditor::ESPFSEditor(const fs::FS& fs, const int fsType, const String& username, const String& password)
 :_fs(fs)
 ,_username(username)
 ,_password(password)
@@ -929,17 +929,17 @@ ESPFSEditor::ESPFSEditor(const fs::FS& fs, const String& uri, const String& user
 ,_filesize(0)
 ,_progress(0)
 ,_progress_callback(NULL)
-,_uri(uri)
 ,_status_callback(NULL)
 {
-  if(_uri == "/edit_sdfs")
+  if(FS_EDITOR_SD_TYPE == fsType)
   {
+    _uri = "/edit_sdfs";
     _edit_htm = (uint8_t*)edit_sd_htm_gz;
     _size_htm = edit_sd_htm_gz_len;
   }
   else
   {
-    _uri == "/edit";
+    _uri = "/edit";
     _edit_htm = (uint8_t*)edit_htm_gz;
     _size_htm = edit_htm_gz_len;
   }

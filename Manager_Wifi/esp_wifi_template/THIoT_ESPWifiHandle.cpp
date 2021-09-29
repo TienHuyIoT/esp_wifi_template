@@ -51,6 +51,7 @@ uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 ()
 #include "THIoT_ESPAsyncEasyNTP.h"
 #include "THIoT_ESPLogTrace.h"
 #include "THIoT_ESPWifiHandle.h"
+#include "esp_led_status.h"
 
 #define SNTP_CONSOLE_PORT SERIAL_PORT
 #define SNTP_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)
@@ -155,6 +156,7 @@ ESPAsyncEasyDDNS* ESPWifiHandle::ddnsClient = nullptr;
 #endif
 Ticker ESPWifiHandle::_reconnetTicker;
 bool ESPWifiHandle::_wifiConnected = false;
+LedStatusHandler ESPWifiHandle::_ledStatusFunc = nullptr;
 
 void ESPWifiHandle::registerEventHandler()
 {
@@ -165,6 +167,10 @@ void ESPWifiHandle::registerEventHandler()
     _wifiConnected = true;
     ESP_WIFI_TAG_CONSOLE("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
     WIFI_TAG_LOG("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
+    if (_ledStatusFunc)
+    {
+      _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_WIFI_GOT_IP);
+    }
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
     WIFI_TAG_LOG("[EASYNTP] begin(%ld, %d, %s, %u)"
           , ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
@@ -209,6 +215,10 @@ void ESPWifiHandle::registerEventHandler()
       _wifiConnected = false;
       ESP_WIFI_TAG_CONSOLE("[EVENT] lost connection. Reason: %u", reason);
       WIFI_TAG_LOG("[EVENT] lost connection. Reason: %u", reason);
+      if (_ledStatusFunc)
+      {
+        _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_WIFI_DISCONNECTED);
+      }
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
       EASYNTP.end();
 #endif
@@ -235,6 +245,10 @@ void ESPWifiHandle::registerEventHandler()
       _wifiConnected = true;
       ESP_WIFI_TAG_CONSOLE("[EVENT] got IP address: %s", evt.ip.toString().c_str());
       WIFI_TAG_LOG("[EVENT] got IP address: %s", evt.ip.toString().c_str());
+      if (_ledStatusFunc)
+      {
+        _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_WIFI_GOT_IP);
+      }
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
       WIFI_TAG_LOG("[EASYNTP] begin(%ld, %d, %s, %u)"
           , ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
@@ -272,6 +286,10 @@ void ESPWifiHandle::registerEventHandler()
                              evt.ssid.c_str(), evt.reason);
         WIFI_TAG_LOG("[EVENT] lost connection to %s. Reason: %u",
                              evt.ssid.c_str(), evt.reason);
+        if (_ledStatusFunc)
+        {
+          _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_WIFI_DISCONNECTED);
+        }
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
         EASYNTP.end();
 #endif
@@ -517,7 +535,7 @@ void ESPWifiHandle::begin(bool wifiON)
   this->registerEventHandler();
 
   if (wifiON)
-  {
+  {  
     ESP_WIFI_TAG_CONSOLE("Wifi start");
     /* Once WiFi.persistent(false) is called, WiFi.begin, 
      WiFi.disconnect, WiFi.softAP, or WiFi.softAPdisconnect 
