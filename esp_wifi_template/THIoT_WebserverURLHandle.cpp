@@ -52,7 +52,7 @@ void time_setting_get(AsyncWebServerRequest *request, WebserverURLHandle* client
 void fw_version_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void restart_device_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void heap_temperature_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
-void activated_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
+void active_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void format_sd_card_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void ddns_client_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
 void pass_common_get(AsyncWebServerRequest *request, WebserverURLHandle* client);
@@ -86,7 +86,7 @@ server_get_handle_t client_get_handle[DATA_GET_HANDLE_NUM] = {
 /*07*/{(const char*)"fw_version", fw_version_get},
 /*08*/{(const char*)"restart", restart_device_get},
 /*09*/{(const char*)"heap_temperature", heap_temperature_get},
-/*10*/{(const char*)"activated", activated_get},
+/*10*/{(const char*)"active", active_get},
 /*11*/{(const char*)"format_sd_card", format_sd_card_get},
 /*12*/{(const char*)"ddns_client", ddns_client_get},
 /*13*/{(const char*)"pass_common", pass_common_get},
@@ -482,7 +482,7 @@ void heap_temperature_get(AsyncWebServerRequest *request, WebserverURLHandle* cl
  * [X] = 1: Active
  * [X] > 1: Read status
  */
-void activated_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
+void active_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
 {    
     if (request->argName(1) == "cmd")
     {

@@ -32,7 +32,7 @@
     "ssid":"work_room",
     "psk":"12345679",
     "hostname": "tienhuyiot",
-    "dhcp": 0,
+    "dhcp": 1,
     "disable": 0,
     "smart_cfg": 0
   },
