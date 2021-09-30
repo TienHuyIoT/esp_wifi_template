@@ -43,7 +43,7 @@ ESP32 and ESP8266 Arduino wifi template
   - Updater file system
 
 ### THIoT_ESPConfig.h
-| Link | Description |
+| Define | Description |
 | ------ | ------ |
 | ETH_ENABLE | Enable/disable Ethernet |
 | SD_CARD_ENABLE | Enable/disable SD card |
@@ -52,7 +52,7 @@ ESP32 and ESP8266 Arduino wifi template
 | ... | Some another configures |
 
 ### THIoT_ESPBoard.h
-| Link | Description |
+| Define | Description |
 | ------ | ------ |
 | LED_STATUS_GPIO | LED Pin |
 | FACTORY_INPUT_PIN | Factory button (hold 2s) |

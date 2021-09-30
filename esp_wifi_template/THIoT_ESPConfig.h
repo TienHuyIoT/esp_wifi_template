@@ -98,19 +98,31 @@ https://github.com/boblemaire/asyncHTTPrequest
 0: Disable
 1: Enable
 */
-#define ETH_ENABLE    1
+#define ETH_ENABLE    0
+#ifdef ESP32
+#define LAN_LAN8720   1
+#define LAN_TLK110    0
+#elif defined(ESP8266)
+#define LAN_ENC28J60  1
+#define LAN_W5100     0
+#define LAN_W5500     0
+#endif
 
 /* Enable sd card
 0: Disable
 1: Enable
 */
-#define SD_CARD_ENABLE  1
+#define SD_CARD_ENABLE  0
 
 /* Select sd card interface
 0: SD_MMC with ESP32 only
 1: SD interface over SPI
 */
+#ifdef ESP32
 #define SD_SPI_INTERFACE  0
+#elif defined(ESP8266)
+#define SD_SPI_INTERFACE  1
+#endif
 
 /* Enable control power sd card 
 0: not use
