@@ -49,7 +49,7 @@ ESP32 and ESP8266 Arduino wifi template
 | SD_CARD_ENABLE | Enable/disable SD card |
 | SD_SPI_INTERFACE | SPI/MMC interface |
 | USE_NAND_FS_SYSTEM | SPIFFS/LittleFS/FATFS system |
-| ... | Some another configure |
+| ... | Some another configures |
 
 ### THIoT_ESPBoard.h
 | Link | Description |
@@ -57,7 +57,7 @@ ESP32 and ESP8266 Arduino wifi template
 | LED_STATUS_GPIO | LED Pin |
 | FACTORY_INPUT_PIN | Factory button (hold 2s) |
 | ETH_GPIO_ENABLE | Input select WIFI/ETH mode |
-| ... | Some another configure |
+| ... | Some another configures |
 
 ### Libraries
 - [ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) - C++
