@@ -42,18 +42,19 @@ ESPEthernet::ESPEthernet(/* args */)
 #ifdef ESP8266
   _connected = false;
 #endif
-  _ledStatusFunc = nullptr;
 }
 
 ESPEthernet::~ESPEthernet()
 {
 }
 
+ETHLedStatusHandler ESPEthernet::_ledStatusFunc = nullptr;
+
 bool ESPEthernet::begin()
 { 
   if (!_status) 
   {
-    ETH_TAG_CONSOLE("ETH disable");
+    ETH_TAG_CONSOLE("ETH was disable");
     return false;
   }
   ETH_TAG_CONSOLE("ETH Start");
@@ -83,8 +84,8 @@ bool ESPEthernet::begin()
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
   {
     ETH_TAG_CONSOLE("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
-    ETH_TAG_CONSOLE("MAC: %s, got IPv4: %s", ETH.macAddress().c_str(), ETH.localIP().toString().c_str());
-    ETH_TAG_LOG("MAC: %s, got IPv4: %s", ETH.macAddress().c_str(), ETH.localIP().toString().c_str());
+    ETH_TAG_CONSOLE("MAC: %s, IPv4: %s", ETH.macAddress().c_str(), ETH.localIP().toString().c_str());
+    ETH_TAG_LOG("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
     if (ETH.fullDuplex()) {
         ETH_TAG_CONSOLE("FULL_DUPLEX");
     }
@@ -182,7 +183,7 @@ void ESPEthernet::loop()
         _connected = false;
         if (_ledStatusFunc)
         {
-          _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_ETH_DISCONNETED);
+          _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_ETH_DISCONNECTED);
         }
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
         EASYNTP.end();
@@ -195,13 +196,13 @@ void ESPEthernet::loop()
 
 void ESPEthernet::enable(void)
 {
-  ETH_TAG_CONSOLE("ETH Enable");
+  ETH_TAG_CONSOLE("ETH set Enable");
   _status = 1;
 }
 
 void ESPEthernet::disable(void)
 {
-  ETH_TAG_CONSOLE("ETH Disable");
+  ETH_TAG_CONSOLE("ETH set Disable");
   _status = 0;
 }
 

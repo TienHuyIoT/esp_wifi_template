@@ -74,13 +74,13 @@ https://github.com/boblemaire/asyncHTTPrequest
 0: Disable
 1: Enable
 */
-#define SNTP_SERVICE_SYSTEM  0
+#define SNTP_SERVICE_SYSTEM  1
 
 /* EASY_SNTP
 0: Disable
 1: Enable
 */
-#define ASYNC_EASY_SNTP      1
+#define ASYNC_EASY_SNTP      0
 
 /* DNS Server
 0: Disable
@@ -110,7 +110,7 @@ https://github.com/boblemaire/asyncHTTPrequest
 0: SD_MMC
 1: SD interface over SPI
 */
-#define SD_SPI_INTERFACE  1
+#define SD_SPI_INTERFACE  0
 
 /* Enable control power sd card 
 0: not use

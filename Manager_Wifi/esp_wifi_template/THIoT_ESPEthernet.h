@@ -7,6 +7,8 @@
 #include "THIoT_ESPBoard.h"
 #include "THIoT_ESPEventSignal.h"
 
+typedef std::function<void(int type)> ETHLedStatusHandler;
+
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
 #ifdef ESP32
 #include <ETH.h>
@@ -14,8 +16,6 @@
 #include <SPI.h>
 #include <LwipIntfDev.h>
 #include <utility/enc28j60.h>
-
-typedef std::function<void(int type)> ETHLedStatusHandler;
 
 // make the same Ethernet ESP32 API
 class SPIEthernet : public LwipIntfDev<ENC28J60>
@@ -78,7 +78,7 @@ private:
 #ifdef ESP8266
     bool _connected;
 #endif
-    ETHLedStatusHandler _ledStatusFunc;
+    static ETHLedStatusHandler _ledStatusFunc;
 
 public:
     ESPEthernet(/* args */);

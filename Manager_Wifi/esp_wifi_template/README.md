@@ -38,6 +38,7 @@ ESP32 and ESP8266 Arduino wifi template
 - [asyncHTTPrequest](https://github.com/boblemaire/asyncHTTPrequest) - C++
 - [SyncEasyDDNS](https://github.com/ayushsharma82/EasyDDNS) - C++
 - [ArduinoJson](https://github.com/bblanchon/ArduinoJson/tree/5.x) - C++
+- [oneButton](https://github.com/mathertel/OneButton) - C++
 
 ### HttpServer page
 | Link | Description |

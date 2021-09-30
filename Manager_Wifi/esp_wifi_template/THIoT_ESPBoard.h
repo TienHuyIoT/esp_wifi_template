@@ -1,11 +1,7 @@
 #ifndef	__ESP_BOARD_H
 #define __ESP_BOARD_H
 
-#define LED_STATUS_GPIO         2 /* 3(web485), 23(ken_sos) */
-#define led_status_init()       pinMode(LED_STATUS_GPIO, OUTPUT)
-#define led_status_toggle()     {digitalWrite(LED_STATUS_GPIO, !digitalRead(LED_STATUS_GPIO));}
-#define led_status_on()         digitalWrite(LED_STATUS_GPIO, LOW)
-#define led_status_off()        digitalWrite(LED_STATUS_GPIO, HIGH)
+#define LED_STATUS_GPIO         3 /* 3(web485), 23(ken_sos), 2(esp8266) */
 
 /*
 SPI BUS
@@ -28,13 +24,13 @@ SPI BUS
 // GPIO SDcard SPI Chip select
 #define SD_NSS_PIN				16 
 // GPIO control power of SD card
-#define SD_POWER_PIN     		5
+#define SD_POWER_PIN     		-1
 
 /* GPIO to reset factory */
-#define FACTORY_INPUT_PIN       0 /* Button1 36(web485), -1(ken_sos) */
+#define FACTORY_INPUT_PIN       36 /* Button1 36(web485), -1(ken_sos), 0(esp8266) */
 
 /* GPIO to enable ethernet */
-#define ETH_GPIO_ENABLE         4 /* Button2 */
+#define ETH_GPIO_ENABLE         39 /* Button2 39(web485), 4(esp8266)*/
 #if (ETH_GPIO_ENABLE != -1)
 #define ETH_GPIO_ENABLE_INIT()  pinMode(ETH_GPIO_ENABLE, INPUT_PULLUP)
 #define ETH_STATUS_IS_ON()      (digitalRead(ETH_GPIO_ENABLE) == 0)

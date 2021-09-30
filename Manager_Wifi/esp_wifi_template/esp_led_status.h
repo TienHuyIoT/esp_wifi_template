@@ -14,7 +14,7 @@ public:
         BLINK_WIFI_GOT_IP,
         BLINK_WIFI_DISCONNECTED,
         BLINK_ETH_GOT_IP,
-        BLINK_ETH_DISCONNETED,
+        BLINK_ETH_DISCONNECTED,
         BLINK_FACTORY_SYSTEM_PARAMS
     };
 
@@ -24,7 +24,7 @@ public:
         switch (type)
         {
         case BLINK_NORMAL:
-        case BLINK_ETH_DISCONNETED:
+        case BLINK_ETH_DISCONNECTED:
         case BLINK_WIFI_DISCONNECTED:
             cycleTime = cycleTimeMs(100, 100);
             break;

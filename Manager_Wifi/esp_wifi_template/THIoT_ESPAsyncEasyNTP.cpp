@@ -64,6 +64,7 @@ void ESPAsyncEasyNTP::runAsync(int interval)
     ASYNC_NTP_FUNCTION_CONSOLE("interval %us", INTERVAL_MINIMUM);
     // The first time running always is failed. So should be run here to reduce waiting time.
     WiFi.hostByName(_server.c_str(), _ipServer);
+    _tickerRunAsync.detach();
     _tickerRunAsync.attach<void*>(INTERVAL_MINIMUM, [](void* arg){((ESPAsyncEasyNTP*)(arg))->requestTime();}, this);
 }
 
