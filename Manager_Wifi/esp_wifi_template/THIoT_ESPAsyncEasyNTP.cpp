@@ -69,19 +69,26 @@ void ESPAsyncEasyNTP::runAsync(int interval)
 
 void ESPAsyncEasyNTP::requestTime()
 {
-    ASYNC_NTP_FUNCTION_CONSOLE("run hostByName %s", _server.c_str());
-    if(WiFi.hostByName(_server.c_str(), _ipServer))
+    if (_udp.connected())
     {
-        ASYNC_NTP_FUNCTION_CONSOLE("got ntp server IP: %s", _ipServer.toString().c_str());
-        if (_udp.connect(_ipServer, NTP_REQUEST_PORT))
-        {
-            ASYNC_NTP_TAG_CONSOLE("udp socket connected");
-            sendNTPpacket();
-        }
+        sendNTPpacket();
     }
     else
     {
-        ASYNC_NTP_FUNCTION_CONSOLE("hostByName IP Failed!");
+        ASYNC_NTP_FUNCTION_CONSOLE("run hostByName %s", _server.c_str());
+        if (WiFi.hostByName(_server.c_str(), _ipServer))
+        {
+            ASYNC_NTP_FUNCTION_CONSOLE("got ntp server IP: %s", _ipServer.toString().c_str());
+            if (_udp.connect(_ipServer, NTP_REQUEST_PORT))
+            {
+                ASYNC_NTP_TAG_CONSOLE("udp socket connected");
+                sendNTPpacket();
+            }
+        }
+        else
+        {
+            ASYNC_NTP_FUNCTION_CONSOLE("hostByName IP Failed!");
+        }
     }
 }
 

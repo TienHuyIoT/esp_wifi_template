@@ -9,7 +9,7 @@
 #include "THIoT_ESPAsyncEasyDDNS.h"
 #include "THIoT_ESPEventSignal.h"
 
-typedef std::function<void(int type)> LedStatusHandler;
+typedef std::function<void(int type)> WiFiLedStatusHandler;
 
 class ESPSntpService
 {
@@ -63,7 +63,7 @@ private:
     static int getRSSIasQuality(int RSSI);
     void registerEventHandler();   // wifi event
     static bool _wifiConnected;
-    static LedStatusHandler _ledStatusFunc;
+    static WiFiLedStatusHandler _ledStatusFunc;
 public:
     ESPWifiHandle(/* args */);
     ~ESPWifiHandle();
@@ -77,7 +77,7 @@ public:
     void connect(const char* name, const char* pass);
     void loop();
     int ssidScan(String &json);
-    void onLedStatus(LedStatusHandler handler)
+    void onLedStatus(WiFiLedStatusHandler handler)
     {
         _ledStatusFunc = handler;
     }

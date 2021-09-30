@@ -156,7 +156,7 @@ ESPAsyncEasyDDNS* ESPWifiHandle::ddnsClient = nullptr;
 #endif
 Ticker ESPWifiHandle::_reconnetTicker;
 bool ESPWifiHandle::_wifiConnected = false;
-LedStatusHandler ESPWifiHandle::_ledStatusFunc = nullptr;
+WiFiLedStatusHandler ESPWifiHandle::_ledStatusFunc = nullptr;
 
 void ESPWifiHandle::registerEventHandler()
 {

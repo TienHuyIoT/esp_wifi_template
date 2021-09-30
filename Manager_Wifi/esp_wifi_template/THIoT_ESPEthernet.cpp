@@ -7,6 +7,7 @@
 #include "THIoT_ESPAsyncEasyNTP.h"
 #include "THIoT_ESPLogTrace.h"
 #include "THIoT_SerialTrace.h"
+#include "esp_led_status.h"
 
 #define ESP_ETH_PORT SERIAL_PORT
 #define ETH_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[ETH]", __VA_ARGS__)
@@ -41,6 +42,7 @@ ESPEthernet::ESPEthernet(/* args */)
 #ifdef ESP8266
   _connected = false;
 #endif
+  _ledStatusFunc = nullptr;
 }
 
 ESPEthernet::~ESPEthernet()
@@ -71,6 +73,10 @@ bool ESPEthernet::begin()
   {
     ETH_TAG_CONSOLE("stopped");
     ETH_TAG_LOG("stopped");
+    if (_ledStatusFunc)
+    {
+      _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_ETH_DISCONNECTED);
+    }
   }
   ,WiFiEvent_t::m_ESP32_EVENT_ETH_STOP);
 
@@ -83,6 +89,10 @@ bool ESPEthernet::begin()
         ETH_TAG_CONSOLE("FULL_DUPLEX");
     }
     ETH_TAG_CONSOLE("Link Speed %uMbps", ETH.linkSpeed()); 
+    if (_ledStatusFunc)
+    {
+      _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_ETH_GOT_IP);
+    }
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
     ETH_TAG_LOG("[EASYNTP] begin(%ld, %d, %s, %u)"
           , ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
@@ -102,6 +112,10 @@ bool ESPEthernet::begin()
   {
     ETH_TAG_CONSOLE("disconnected");
     ETH_TAG_LOG("disconnected");
+    if (_ledStatusFunc)
+    {
+      _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_ETH_DISCONNECTED);
+    }
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
     EASYNTP.end();
 #endif
@@ -148,7 +162,10 @@ void ESPEthernet::loop()
         ETH_TAG_CONSOLE("Sn: %s", ETH.subnetMask().toString().c_str());
         ETH_TAG_CONSOLE("Dns: %s\r\n", ETH.dnsIP().toString().c_str());
         _connected = true;
-
+        if (_ledStatusFunc)
+        {
+          _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_ETH_GOT_IP);
+        }
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
         ETH_TAG_LOG("[EASYNTP] begin(%ld, %d, %s, %u)"
           , ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
@@ -163,6 +180,10 @@ void ESPEthernet::loop()
         ETH_TAG_CONSOLE("disconnect");
         ETH_TAG_LOG("disconnect");
         _connected = false;
+        if (_ledStatusFunc)
+        {
+          _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_ETH_DISCONNETED);
+        }
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
         EASYNTP.end();
 #endif

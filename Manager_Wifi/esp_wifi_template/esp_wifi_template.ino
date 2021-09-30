@@ -52,8 +52,12 @@ void setup()
     
     // Make updating led status by wifi status
     LEDStatus.setCycleCallbacks(new ESPLedCycleBlinkCallbacks());
-    ESPWifi.onLedStatus(std::bind(&ESPBlinkGPIO::statusUpdate, &LEDStatus, std::placeholders::_1));    
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+    Ethernet.onLedStatus(std::bind(&ESPBlinkGPIO::statusUpdate, &LEDStatus, std::placeholders::_1));    
+#endif
+    ESPWifi.onLedStatus(std::bind(&ESPBlinkGPIO::statusUpdate, &LEDStatus, std::placeholders::_1));
     LEDStatus.statusUpdate(ESPLedCycleBlinkCallbacks::BLINK_NORMAL);
+
 
     // Load params form eeprom memory
     EEPParams.load();
@@ -128,7 +132,6 @@ void setup()
     webServer.begin();
 
     // handle factory system params by hold button over 2s
-    // factorySysParams.onFactory(std::bind(&ESPSysParams::setDefault, &ESPConfig));
     factorySysParams.onFactory([](){
         ESPConfig.setDefault();
         LEDStatus.statusUpdate(ESPLedCycleBlinkCallbacks::BLINK_FACTORY_SYSTEM_PARAMS);

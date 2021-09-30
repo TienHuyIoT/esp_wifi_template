@@ -2,6 +2,7 @@
 #define _HTH_ESP_ETHERNET_H
 
 #include <Arduino.h>
+#include <functional> // std::function
 #include "THIoT_ESPConfig.h"
 #include "THIoT_ESPBoard.h"
 #include "THIoT_ESPEventSignal.h"
@@ -14,23 +15,26 @@
 #include <LwipIntfDev.h>
 #include <utility/enc28j60.h>
 
+typedef std::function<void(int type)> ETHLedStatusHandler;
+
 // make the same Ethernet ESP32 API
 class SPIEthernet : public LwipIntfDev<ENC28J60>
 {
 private:
-   /* data */
+    /* data */
 public:
-   SPIEthernet(/* args */);
-   ~SPIEthernet();
-   bool linkUp();
-   /**
+    SPIEthernet(/* args */);
+    ~SPIEthernet();
+    bool linkUp();
+    /**
     * Get the DNS ip address.
     * @param dns_no
     * @return IPAddress DNS Server IP
     */
-   IPAddress dnsIP(uint8_t dns_no = 0) {
-      return IPAddress(dns_getserver(dns_no));
-   }
+    IPAddress dnsIP(uint8_t dns_no = 0)
+    {
+        return IPAddress(dns_getserver(dns_no));
+    }
 };
 
 extern SPIEthernet ETH;
@@ -47,41 +51,47 @@ extern SPIEthernet ETH;
 #ifdef ETH_CLK_MODE
 #undef ETH_CLK_MODE
 #endif
-#define ETH_CLK_MODE    ETH_CLOCK_GPIO17_OUT
+#define ETH_CLK_MODE ETH_CLOCK_GPIO17_OUT
 
 // Pin# of the enable signal for the external crystal oscillator (-1 to disable for internal APLL source)
-#define ETH_POWER_PIN   -1
+#define ETH_POWER_PIN -1
 
 // Type of the Ethernet PHY (LAN8720 or TLK110)
-#define ETH_TYPE        ETH_PHY_LAN8720
+#define ETH_TYPE ETH_PHY_LAN8720
 
 // I²C-address of Ethernet PHY (0 or 1 for LAN8720, 31 for TLK110)
-#define ETH_ADDR        1
+#define ETH_ADDR 1
 
 // Pin# of the I²C clock signal for the Ethernet PHY
-#define ETH_MDC_PIN     5
+#define ETH_MDC_PIN 5
 
 // Pin# of the I²C IO signal for the Ethernet PHY
-#define ETH_MDIO_PIN    18
+#define ETH_MDIO_PIN 18
 #elif defined(ESP8266)
-   // nothing setting
+// nothing setting
 #endif
 
 class ESPEthernet
 {
 private:
-   bool _status;
+    bool _status;
 #ifdef ESP8266
-   bool _connected;
+    bool _connected;
 #endif
+    ETHLedStatusHandler _ledStatusFunc;
+
 public:
-   ESPEthernet(/* args */);
-   ~ESPEthernet();
-   bool begin();
-   void enable();
-   void disable();
-   bool isEnable();
-   void loop();
+    ESPEthernet(/* args */);
+    ~ESPEthernet();
+    bool begin();
+    void enable();
+    void disable();
+    bool isEnable();
+    void loop();
+    void onLedStatus(ETHLedStatusHandler handler)
+    {
+        _ledStatusFunc = handler;
+    }
 };
 
 extern ESPEthernet Ethernet;
