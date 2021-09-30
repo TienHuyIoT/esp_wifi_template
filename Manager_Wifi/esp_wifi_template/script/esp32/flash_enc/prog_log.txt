@@ -1,0 +1,114 @@
+ets Jun  8 2016 00:22:57
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:1
+load:0x3fff0018,len:4
+load:0x3fff001c,len:8016
+ho 0 tail 12 room 4
+load:0x40078000,len:15300
+load:0x40080400,len:7332
+entry 0x40080790
+I (71) boot: Chip Revision: 1
+I (72) boot_comm: chip revision: 1, min. bootloader chip revision: 0
+I (39) boot: ESP-IDF v3.3.5-14-g7c86027531-dirty 2nd stage bootloader
+I (39) boot: compile time 18:31:49
+I (39) boot: Enabling RNG early entropy source...
+I (42) qio_mode: Enabling default flash chip QIO
+I (47) boot: SPI Speed      : 80MHz
+I (50) boot: SPI Mode       : QIO
+I (53) boot: SPI Flash Size : 4MB
+I (56) boot: Partition Table:
+I (59) boot: ## Label            Usage          Type ST Offset   Length
+I (65) boot:  0 nvs              WiFi data        01 02 0000a000 00004000
+I (71) boot:  1 otadata          OTA data         01 00 0000e000 00002000
+I (78) boot:  2 app0             OTA app          00 10 00010000 00180000
+I (84) boot:  3 app1             OTA app          00 11 00190000 00180000
+I (91) boot:  4 spiffs           Unknown data     01 82 00310000 000f0000
+I (97) boot: End of partition table
+I (101) boot_comm: chip revision: 1, min. application chip revision: 0
+I (107) esp_image: segment 0: paddr=0x00010020 vaddr=0x3f400020 size=0x39300 (234240) map
+I (177) esp_image: segment 1: paddr=0x00049328 vaddr=0x3ffbdb60 size=0x03dd0 ( 15824) load
+I (182) esp_image: segment 2: paddr=0x0004d100 vaddr=0x40080000 size=0x00400 (  1024) load
+I (183) esp_image: segment 3: paddr=0x0004d508 vaddr=0x40080400 size=0x02b08 ( 11016) load
+I (193) esp_image: segment 4: paddr=0x00050018 vaddr=0x400d0018 size=0xaa83c (698428) map
+I (382) esp_image: segment 5: paddr=0x000fa85c vaddr=0x40082f08 size=0x0d330 ( 54064) load
+I (401) esp_image: segment 6: paddr=0x00107b94 vaddr=0x400c0000 size=0x00068 (   104) load
+I (411) boot: Loaded app from partition at offset 0x10000
+I (411) boot: Checking flash encryption...
+W (411) flash_encrypt: Using pre-loaded flash encryption key in EFUSE block 1
+I (415) flash_encrypt: Setting CRYPT_CONFIG efuse to 0xF
+W (432) flash_encrypt: Not disabling UART bootloader encryption
+I (432) flash_encrypt: Disable UART bootloader decryption...
+I (432) flash_encrypt: Disable UART bootloader MMU cache...
+I (439) flash_encrypt: Disable JTAG...
+I (442) flash_encrypt: Disable ROM BASIC interpreter fallback...
+I (459) boot_comm: chip revision: 1, min. application chip revision: 0
+I (460) esp_image: segment 0: paddr=0x00001020 vaddr=0x3fff0018 size=0x00004 (     4)
+I (464) esp_image: segment 1: paddr=0x0000102c vaddr=0x3fff001c size=0x01f50 (  8016)
+I (474) esp_image: segment 2: paddr=0x00002f84 vaddr=0x40078000 size=0x03bc4 ( 15300)
+I (484) esp_image: segment 3: paddr=0x00006b50 vaddr=0x40080400 size=0x01ca4 (  7332)
+I (984) flash_encrypt: Encrypting partition 1 at offset 0xe000...
+I (1095) boot_comm: chip revision: 1, min. application chip revision: 0
+I (1096) esp_image: segment 0: paddr=0x00010020 vaddr=0x3f400020 size=0x39300 (234240) map
+I (1161) esp_image: segment 1: paddr=0x00049328 vaddr=0x3ffbdb60 size=0x03dd0 ( 15824)
+I (1165) esp_image: segment 2: paddr=0x0004d100 vaddr=0x40080000 size=0x00400 (  1024)
+I (1166) esp_image: segment 3: paddr=0x0004d508 vaddr=0x40080400 size=0x02b08 ( 11016)
+I (1176) esp_image: segment 4: paddr=0x00050018 vaddr=0x400d0018 size=0xaa83c (698428) map
+I (1365) esp_image: segment 5: paddr=0x000fa85c vaddr=0x40082f08 size=0x0d330 ( 54064)
+I (1380) esp_image: segment 6: paddr=0x00107b94 vaddr=0x400c0000 size=0x00068 (   104)
+I (1380) flash_encrypt: Encrypting partition 2 at offset 0x10000...
+I (23286) boot_comm: chip revision: 1, min. application chip revision: 0
+I (23286) esp_image: segment 0: paddr=0x00190020 vaddr=0x3f400020 size=0x39f3c (237372) map
+I (23352) esp_image: segment 1: paddr=0x001c9f64 vaddr=0x3ffbdb60 size=0x03e20 ( 15904)
+I (23357) esp_image: segment 2: paddr=0x001cdd8c vaddr=0x40080000 size=0x00400 (  1024)
+I (23357) esp_image: segment 3: paddr=0x001ce194 vaddr=0x40080400 size=0x01e7c (  7804)
+I (23367) esp_image: segment 4: paddr=0x001d0018 vaddr=0x400d0018 size=0xaa6d8 (698072) map
+I (23557) esp_image: segment 5: paddr=0x0027a6f8 vaddr=0x4008227c size=0x0e2c8 ( 58056)
+I (23573) esp_image: segment 6: paddr=0x002889c8 vaddr=0x400c0000 size=0x0006c (   108)
+I (23573) flash_encrypt: Encrypting partition 3 at offset 0x190000...
+W (43942) flash_encrypt: Not disabling FLASH_CRYPT_CNT - plaintext flashing is still possible
+I (43954) flash_encrypt: Flash encryption completed
+I (43954) boot: Resetting with flash encryption enabled...
+ets Jun  8 2016 00:22:57
+
+rst:0x3 (SW_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:1
+load:0x3fff0018,len:4
+load:0x3fff001c,len:8016
+ho 0 tail 12 room 4
+load:0x40078000,len:15300
+load:0x40080400,len:7332
+entry 0x40080790
+I (118) boot: Chip Revision: 1
+I (132) boot_comm: chip revision: 1, min. bootloader chip revision: 0
+I (78) boot: ESP-IDF v3.3.5-14-g7c86027531-dirty 2nd stage bootloader
+I (78) boot: compile time 18:31:49
+I (78) boot: Enabling RNG early entropy source...
+I (82) qio_mode: Enabling default flash chip QIO
+I (86) boot: SPI Speed      : 80MHz
+I (90) boot: SPI Mode       : QIO
+I (93) boot: SPI Flash Size : 4MB
+I (96) boot: Partition Table:
+I (98) boot: ## Label            Usage          Type ST Offset   Length
+I (105) boot:  0 nvs              WiFi data        01 02 0000a000 00004000
+I (111) boot:  1 otadata          OTA data         01 00 0000e000 00002000
+I (118) boot:  2 app0             OTA app          00 10 00010000 00180000
+I (125) boot:  3 app1             OTA app          00 11 00190000 00180000
+I (131) boot:  4 spiffs           Unknown data     01 82 00310000 000f0000
+I (138) boot: End of partition table
+I (141) boot_comm: chip revision: 1, min. application chip revision: 0
+I (147) esp_image: segment 0: paddr=0x00010020 vaddr=0x3f400020 size=0x39300 (234240) map
+I (220) esp_image: segment 1: paddr=0x00049328 vaddr=0x3ffbdb60 size=0x03dd0 ( 15824) load
+I (226) esp_image: segment 2: paddr=0x0004d100 vaddr=0x40080000 size=0x00400 (  1024) load
+I (226) esp_image: segment 3: paddr=0x0004d508 vaddr=0x40080400 size=0x02b08 ( 11016) load
+I (237) esp_image: segment 4: paddr=0x00050018 vaddr=0x400d0018 size=0xaa83c (698428) map
+I (434) esp_image: segment 5: paddr=0x000fa85c vaddr=0x40082f08 size=0x0d330 ( 54064) load
+I (453) esp_image: segment 6: paddr=0x00107b94 vaddr=0x400c0000 size=0x00068 (   104) load
+I (463) boot: Loaded app from partition at offset 0x10000
+I (463) boot: Checking flash encryption...
+I (463) flash_encrypt: flash encryption is enabled (3 plaintext flashes left)
+I (468) boot: Disabling RNG early entropy source...

@@ -159,8 +159,8 @@ void ESPAsyncEasyNTP::sendNTPpacket() {
     _udp.write(ntpPacketBuffer, NTP_PACKET_SIZE);
 }
 
-void ESPAsyncEasyNTP::end(){
-    if(_udp.connected()){
+void ESPAsyncEasyNTP::end() {
+    if(_udp.connected()) {
         _udp.close();
     }
     _tickerRunAsync.detach();

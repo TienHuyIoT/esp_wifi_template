@@ -1,0 +1,18 @@
+* Flash encryption
+1. *Only run once*  Gen key if it hasn't been exist yet with command .\key\gen_flash_encryption_key.bat
+2. Burn Flash encryption Key to esp32 with command .\01_flash_esp32_efuse_burn_fek.bat
+3. Flash esp32 the firt with command .\02_flash_esp32_qio_first.bat
+4. Wait for bootloader encryption finish and application run mormal
+5. Fuse release "Securing Flash Encryption" with command .\03_flash_esp32_efuse_fe_release.bat
+
+* Secure boot enable
+6. *Only run once*  Gen secure boot key if it hasn't been exist yet with command .\key\gen_secure_bootloader_key.bat
+7. Burn Secure boot Key to esp32 with command .\01_flash_esp32_efuse_burn_sbk.bat
+8. Enable Secure boot with command .\03_flash_esp32_efuse_sb_release.bat
+9. Flash digest and boot are encrypted with command .\04_flash_esp32_boot_digest_enc.bat
+
+* Option
+- Reflashing application with command .\04_flash_esp32_app_enc.bat
+- Reflashing data with command .\04_flash_esp32_data.bat
+- Reflashing boot (none secure boot option) with command .\04_flash_esp32_boot_enc.bat
+- Reflashing all (none secure boot option) with command .\05_flash_esp32_qio_enc.bat
