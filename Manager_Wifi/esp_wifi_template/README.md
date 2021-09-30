@@ -2,15 +2,26 @@
 ESP32 and ESP8266 Arduino wifi template 
 
 ### Features
-**WIFI**
-  - AP mode
-  - STA mode
+**Popular**
+  - WiFI AP mode
+  - WiFI STA mode
+  - ETH mode
   - DNS server for AP mode
   - Async DDNS client
-  - mDNS service for STA mode
-  - NBNS service for STA mode
-  - OTA Arduino
-  - SNTP
+  - mDNS service for WiFI  STA mode
+  - NBNS service for WiFI  STA mode
+  - OTA Arduino with PIN option
+  - Web update application
+  - Web update spiffs/littleFS
+  - Web monitor system params
+  - Web configure WiFi AP and STA mode
+  - SNTP run Async or impl by system
+  - SPIFFS/LittleFS web Editor
+  - SD Card web Editor
+  - System params configure loaded from SPIFFS/LittleFS
+  - LED display WiFi/ETH status
+  - Button set factory default system params
+  - Log File operating system into SPIFFS/LittleFS
 
 **Ethernet IC supported**
   - ENC28J60 for ESP8266
@@ -31,12 +42,29 @@ ESP32 and ESP8266 Arduino wifi template
   - Updater application
   - Updater file system
 
+### THIoT_ESPConfig.h
+| Link | Description |
+| ------ | ------ |
+| ETH_ENABLE | Enable/disable Ethernet |
+| SD_CARD_ENABLE | Enable/disable SD card |
+| SD_SPI_INTERFACE | SPI/MMC interface |
+| USE_NAND_FS_SYSTEM | SPIFFS/LittleFS/FATFS system |
+| ... | Some another configure |
+
+### THIoT_ESPBoard.h
+| Link | Description |
+| ------ | ------ |
+| LED_STATUS_GPIO | LED Pin |
+| FACTORY_INPUT_PIN | Factory button (hold 2s) |
+| ETH_GPIO_ENABLE | Input select WIFI/ETH mode |
+| ... | Some another configure |
+
 ### Libraries
 - [ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) - C++
 - [AsyncTCP ESP32](https://github.com/me-no-dev/AsyncTCP) - C++
 - [AsyncTCP ESP8266](https://github.com/me-no-dev/ESPAsyncTCP) - C++
 - [asyncHTTPrequest](https://github.com/boblemaire/asyncHTTPrequest) - C++
-- [SyncEasyDDNS](https://github.com/ayushsharma82/EasyDDNS) - C++
+- [EasyDDNS](https://github.com/ayushsharma82/EasyDDNS) - C++
 - [ArduinoJson](https://github.com/bblanchon/ArduinoJson/tree/5.x) - C++
 - [oneButton](https://github.com/mathertel/OneButton) - C++
 
@@ -46,7 +74,9 @@ ESP32 and ESP8266 Arduino wifi template
 | /wifi.htm | setting wifi access point and station |
 | /index.htm | Monitor some information system as Heap memory, temperature |
 | /edit | web editor internal file system |
-| /edit | web editor internal file system |
+| /edit_sdfs | web editor SD card file system |
+| Authorize default | pass: admin, user" admin |
+| Pin default | 1234 |
 
 ### Http request API
 | Link | Description |

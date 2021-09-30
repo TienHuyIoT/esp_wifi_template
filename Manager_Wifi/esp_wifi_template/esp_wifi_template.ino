@@ -25,8 +25,12 @@
 
 /* Private variables ---------------------------------------------------------*/
 ESPWebserver webServer;
+#if (defined FACTORY_INPUT_PIN) && (FACTORY_INPUT_PIN != -1)
 FactoryButton factorySysParams(FACTORY_INPUT_PIN);
+#endif
+#if (defined LED_STATUS_GPIO) && (LED_STATUS_GPIO != -1)
 ESPBlinkGPIO LEDStatus(LED_STATUS_GPIO, HIGH);
+#endif
 
 void setup()
 {
@@ -51,13 +55,14 @@ void setup()
 
     
     // Make updating led status by wifi status
+#if (defined LED_STATUS_GPIO) && (LED_STATUS_GPIO != -1)
     LEDStatus.setCycleCallbacks(new ESPLedCycleBlinkCallbacks());
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
     Ethernet.onLedStatus(std::bind(&ESPBlinkGPIO::statusUpdate, &LEDStatus, std::placeholders::_1));    
 #endif
     ESPWifi.onLedStatus(std::bind(&ESPBlinkGPIO::statusUpdate, &LEDStatus, std::placeholders::_1));
     LEDStatus.statusUpdate(ESPLedCycleBlinkCallbacks::BLINK_NORMAL);
-
+#endif
 
     // Load params form eeprom memory
     EEPParams.load();
@@ -132,11 +137,15 @@ void setup()
     webServer.begin();
 
     // handle factory system params by hold button over 2s
+#if (defined FACTORY_INPUT_PIN) && (FACTORY_INPUT_PIN != -1)
     factorySysParams.onFactory([](){
         ESPConfig.setDefault();
+#if (defined LED_STATUS_GPIO) && (LED_STATUS_GPIO != -1)
         LEDStatus.statusUpdate(ESPLedCycleBlinkCallbacks::BLINK_FACTORY_SYSTEM_PARAMS);
+#endif
     });
     factorySysParams.begin();
+#endif
 }
 
 void loop()

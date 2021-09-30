@@ -20,7 +20,7 @@ public:
 
     cycleTimeMs_t getCycle(int type) override {
         LED_STATUS_TAG_CONSOLE("callback");
-        cycleTimeMs_t cycleTime(100, 1900);
+        cycleTimeMs_t cycleTime(100 /* On 100ms */, 1900 /* Off 1900ms */);
         switch (type)
         {
         case BLINK_NORMAL:

@@ -27,7 +27,7 @@ esptool.py --chip esp32 --port COM%ComPort% --baud 921600 --before default_reset
 :: Program encrypt image
 echo Program encrypt image
 
-esptool.py --chip esp32 --port COM%ComPort% --baud 921600 --before no_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect --encrypt 0x1000 %bootloader% 0x10000 %app% 0x9000 %partition%
+esptool.py --chip esp32 --port COM%ComPort% --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect --encrypt 0x1000 %bootloader% 0x10000 %app% 0x9000 %partition%
 :: End Development Mode
 :: ========================================================
 

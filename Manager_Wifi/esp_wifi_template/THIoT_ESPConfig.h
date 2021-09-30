@@ -6,7 +6,7 @@
 //==========================================================
 // <o> SERIAL_NUMBER_ADDR
 
-#ifndef SERIAL_NUMBER_ADDR
+#ifndef SERIAL_NUMBER_ADDR          // option
 #define SERIAL_NUMBER_ADDR          0x1FDE0 // address
 #define SERIAL_NUMBER_LENGTH_MAX    32
 #endif
@@ -107,7 +107,7 @@ https://github.com/boblemaire/asyncHTTPrequest
 #define SD_CARD_ENABLE  1
 
 /* Select sd card interface
-0: SD_MMC
+0: SD_MMC with ESP32 only
 1: SD interface over SPI
 */
 #define SD_SPI_INTERFACE  0
