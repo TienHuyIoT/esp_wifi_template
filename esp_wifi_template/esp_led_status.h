@@ -9,7 +9,7 @@ class ESPLedCycleBlinkCallbacks : public ESPBlinkCycleCallbacks
 {
 public:
     ~ESPLedCycleBlinkCallbacks(){}
-    typedef enum : uint8_t {
+    enum : uint8_t {
         BLINK_NORMAL = 0,
         BLINK_WIFI_GOT_IP,
         BLINK_WIFI_DISCONNECTED,

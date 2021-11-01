@@ -1,4 +1,5 @@
 #ifdef ESP32
+#include <esp_idf_version.h>
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include <WiFiType.h>
@@ -193,7 +194,7 @@ void ESPWifiHandle::registerEventHandler()
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
   {
 #if ESP_IDF_VERSION_MAJOR >= 4
-    std::string ssid((const char*)info.connected.ssid, info.wifi_sta_connected.ssid_len);
+    std::string ssid((const char*)info.wifi_sta_connected.ssid, info.wifi_sta_connected.ssid_len);
 #else
     std::string ssid((const char*)info.connected.ssid, info.connected.ssid_len);
 #endif
