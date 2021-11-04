@@ -65,7 +65,7 @@ ESPWebserver::~ESPWebserver()
 AsyncWebServer* ESPWebserver::_server = nullptr;
 AsyncWebServer* ESPWebserver::_server80 = nullptr;
 ESPWebsocket* ESPWebserver::_wsHandler = new ESPWebsocket("/ws", "/events");
-WebserverURLHandleCallbacks* ESPWebserver::_pUrlCallbacks = &defaultCallbacks;
+std::vector<WebserverURLHandleCallbacks*> ESPWebserver::_pUrlCallbacks = {};
 asyncHttpHandler ESPWebserver::_httpGetAuthHandler = nullptr;
 asyncHttpHandler ESPWebserver::_httpGetHandler = nullptr;
 asyncHttpHandler ESPWebserver::_httpPostAuthHandler = nullptr;
@@ -82,11 +82,11 @@ size_t ESPWebserver::_updateProgress = 0;
 uint32_t ESPWebserver::_spiffsUploadPercent = 0;
 uint32_t ESPWebserver::_flashUpdatePercent = 0;
 
-void ESPWebserver::setHandleCallbacks(WebserverURLHandleCallbacks* pCallbacks)
+void ESPWebserver::onUrlHandle(WebserverURLHandleCallbacks* pCallbacks)
 {
   if (pCallbacks != nullptr)
   {
-    _pUrlCallbacks = pCallbacks;
+    _pUrlCallbacks.push_back(pCallbacks);
   }
 }
 
@@ -272,6 +272,26 @@ void ESPWebserver::syncSsidNetworkToEvents()
   }
 }
 
+void ESPWebserver::printHandleRequest(AsyncWebServerRequest *request)
+{
+  String message = "";
+  message = "";
+  message += "\r\nURI: ";
+  message += request->url();
+  message += "\nMethod: ";
+  message += (HTTP_GET == request->method()) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += request->params();
+  message += "\n";
+  for (uint8_t i = 0; i < request->params(); i++)
+  {
+    AsyncWebParameter* p = request->getParam(i);
+    message += " NAME:" + p->name() + "\n VALUE:" + p->value() + "\n";
+  }
+  request->send(200, "text/html", message);
+  WEB_SERVER_TAG_CONSOLE("[handlerequest] %s", message.c_str());
+}
+
 void ESPWebserver::begin(void)
 {
   _adminAuthUser = ESPConfig.authAdminUser();
@@ -303,7 +323,15 @@ void ESPWebserver::begin(void)
   /* ESP8266 must be register event scan done callback once needing */
 #endif
   /* register url callback scan network */
-  _pUrlCallbacks->onScanNetwork(std::bind(&ESPWebserver::syncSsidNetworkToEvents, this));
+  if (!_pUrlCallbacks.empty())
+  {
+    for (auto elem : _pUrlCallbacks)
+    {
+      elem->onScanNetwork(std::bind(&ESPWebserver::syncSsidNetworkToEvents, this));
+      using namespace std::placeholders;
+      elem->onEventSocket(std::bind(&ESPWebsocket::eventsSend, _wsHandler, _1, _2));
+    }
+  }
 
   /* redirect port 80 to tcp port */
   if (ESPConfig.tcpPort() != 80)
@@ -340,7 +368,24 @@ _server->on("/get", HTTP_GET, [](AsyncWebServerRequest *request)
               {
                 _httpGetAuthHandler(request);
               }
-              _pUrlCallbacks->onHttpGetAuth(request);
+              
+              if (!_pUrlCallbacks.empty())
+              {
+                bool hasHandler = false;
+                for (auto elem : _pUrlCallbacks)
+                {
+                  if (elem->onHttpGetAuth(request) != -1)
+                  {
+                    hasHandler = true;
+                    break;
+                  }
+                }
+
+                if (!hasHandler)
+                {
+                  printHandleRequest(request);
+                }
+              }
             }
           });
 
@@ -351,7 +396,23 @@ _server->on("/get_open", HTTP_GET,
             {
               _httpGetHandler(request);
             }
-            _pUrlCallbacks->onHttpGet(request);
+
+            if (!_pUrlCallbacks.empty())
+            {
+              bool hasHandler = false;
+              for (auto elem : _pUrlCallbacks)
+              {
+                if (elem->onHttpGet(request) != -1)
+                {
+                  break;
+                }
+              }
+
+              if (!hasHandler)
+              {
+                printHandleRequest(request);
+              }
+            }
           });
 
 _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
@@ -362,7 +423,24 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
               {
                 _httpPostAuthHandler(request);
               }
-              _pUrlCallbacks->onHttpPostAuth(request);
+
+              if (!_pUrlCallbacks.empty())
+              {
+                bool hasHandler = false;
+                for (auto elem : _pUrlCallbacks)
+                {
+                  if (elem->onHttpPostAuth(request) != -1)
+                  {
+                    hasHandler = true;
+                    break;
+                  }
+                }
+
+                if (!hasHandler)
+                {
+                  printHandleRequest(request);
+                }
+              }
             }
           });
 
@@ -571,21 +649,24 @@ WebserverURLHandleCallbacks::~WebserverURLHandleCallbacks() {}
  * 
  * Handler called after once request with method GET and authenticated.
  */
-void WebserverURLHandleCallbacks::onHttpGetAuth(AsyncWebServerRequest *request)
+int WebserverURLHandleCallbacks::onHttpGetAuth(AsyncWebServerRequest *request)
 {
   WEB_SERVER_TAG_CONSOLE("[WebserverURLHandleCallbacks] >> onHttpGetAuth: default <<");
+  return -1;
 }
 /**
  * Handler called after once request with method GET.
  */
-void WebserverURLHandleCallbacks::onHttpGet(AsyncWebServerRequest *request)
+int WebserverURLHandleCallbacks::onHttpGet(AsyncWebServerRequest *request)
 {
   WEB_SERVER_TAG_CONSOLE("[WebserverURLHandleCallbacks] >> onHttpGet: default <<");
+  return -1;
 }
 /**
  * Handler called after once request with method POST and authenticated.
  */
-void WebserverURLHandleCallbacks::onHttpPostAuth(AsyncWebServerRequest *request)
+int WebserverURLHandleCallbacks::onHttpPostAuth(AsyncWebServerRequest *request)
 {
   WEB_SERVER_TAG_CONSOLE("[WebserverURLHandleCallbacks] >> onHttpPostAuth: default <<");
+  return -1;
 }

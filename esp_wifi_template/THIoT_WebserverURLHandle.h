@@ -6,20 +6,21 @@
 
 class WebserverURLHandle : public WebserverURLHandleCallbacks {
 private:
+    String _argName;
     /**
      * Handler called after once request with method GET and authenticated.
      */
-    void onHttpGetAuth(AsyncWebServerRequest* request);
+    int onHttpGetAuth(AsyncWebServerRequest* request);
     /**
      * Handler called after once request with method GET.
      */
-    void onHttpGet(AsyncWebServerRequest* request);
+    int onHttpGet(AsyncWebServerRequest* request);
     /**
      * Handler called after once request with method POST and authenticated.
      */
-    void onHttpPostAuth(AsyncWebServerRequest* request);
+    int onHttpPostAuth(AsyncWebServerRequest* request);
 public:
-    WebserverURLHandle(/* args */);
+    WebserverURLHandle(const char *argName);
     ~WebserverURLHandle();
 };
 

@@ -75,7 +75,7 @@ void auth_user_access_post(AsyncWebServerRequest *request, WebserverURLHandle* c
 void pass_common_post(AsyncWebServerRequest *request, WebserverURLHandle* client);
 
 /* /get?param_wifi=[param] */
-server_get_handle_t client_get_handle[DATA_GET_HANDLE_NUM] = {
+static server_get_handle_t client_get_handle[DATA_GET_HANDLE_NUM] = {
 /*00*/{(const char*)"sta_ap_info", sta_ap_info_get},
 /*01*/{(const char*)"sta_network", sta_network_get},
 /*02*/{(const char*)"sta_setting", sta_setting_get},
@@ -96,7 +96,7 @@ server_get_handle_t client_get_handle[DATA_GET_HANDLE_NUM] = {
 /*17*/{(const char*)"clean_log_trace", clean_log_trace_get}
 };
 
-server_post_handle_t client_post_handle[DATA_POST_HANDLE_NUM] = {
+static server_post_handle_t client_post_handle[DATA_POST_HANDLE_NUM] = {
 /*00*/{(const char*)"sta_ap_info", sta_ap_info_post},
 /*01*/{(const char*)"sta_network", sta_network_post},
 /*02*/{(const char*)"sta_setting", sta_setting_post},
@@ -110,21 +110,22 @@ server_post_handle_t client_post_handle[DATA_POST_HANDLE_NUM] = {
 /*10*/{(const char*)"pass_common", pass_common_post}
 };
 
-WebserverURLHandle::WebserverURLHandle(/* args */){}
+WebserverURLHandle::WebserverURLHandle(const char *argName)
+    : _argName(argName) {}
 WebserverURLHandle::~WebserverURLHandle(){}
 
 /**
  * Handler called after once request with method GET.
  */
-void WebserverURLHandle::onHttpGet(AsyncWebServerRequest* request)
+int WebserverURLHandle::onHttpGet(AsyncWebServerRequest* request)
 {
-    onHttpGetAuth(request);
+    return onHttpGetAuth(request);
 }
 
 /**
  * Handler called after once request with method GET and authenticated.
  */
-void WebserverURLHandle::onHttpGetAuth(AsyncWebServerRequest* request)
+int WebserverURLHandle::onHttpGetAuth(AsyncWebServerRequest* request)
 {
     bool isHandler = false;
     /* param wifi get 
@@ -133,7 +134,7 @@ void WebserverURLHandle::onHttpGetAuth(AsyncWebServerRequest* request)
      * using arg(0) is parameter to find callback_post
      */
     AsyncWebParameter* p = request->getParam(0);
-    if (p->name() == "param_wifi")
+    if (p->name() == _argName)
     {              
         for (uint8_t i = 0; i < DATA_GET_HANDLE_NUM; ++i)
         {
@@ -142,10 +143,13 @@ void WebserverURLHandle::onHttpGetAuth(AsyncWebServerRequest* request)
                 HTTPSERVER_URL_TAG_CONSOLE("get [%u]: argName = \"%s\"", i, client_get_handle[i].path_arg);
                 client_get_handle[i].cb(request, this);
                 isHandler = true;
-                break;
+                return i;
             }
         }
     }
+
+    return -1;
+#if (0)
     /* non process callback, so return arg parse */
     if (!isHandler)
     {
@@ -153,13 +157,13 @@ void WebserverURLHandle::onHttpGetAuth(AsyncWebServerRequest* request)
         print_handlerequest(request, arg_str);
         request->send(200, "text/html", arg_str);
     }
-    
+#endif
 }
 
 /**
  * Handler called after once request with method POST and authenticated.
  */
-void WebserverURLHandle::onHttpPostAuth(AsyncWebServerRequest* request)
+int WebserverURLHandle::onHttpPostAuth(AsyncWebServerRequest* request)
 {
     bool isHandler = false;
     /* param wifi post 
@@ -176,10 +180,11 @@ void WebserverURLHandle::onHttpPostAuth(AsyncWebServerRequest* request)
             HTTPSERVER_URL_TAG_CONSOLE("post [%u]: argName = \"%s\"", i, client_post_handle[i].path_arg);
             client_post_handle[i].cb(request, this);
             isHandler = true;
-            break;
+            return i;
         }
     }
-
+    return -1;
+#if (0)
     /* non process callback, so return arg parse */
     if (!isHandler)
     {
@@ -187,6 +192,7 @@ void WebserverURLHandle::onHttpPostAuth(AsyncWebServerRequest* request)
         print_handlerequest(request, arg_str);
         request->send(200, "text/html", arg_str);
     }
+#endif
 }
 
 /*---------------------------------------------------------------------*
@@ -195,7 +201,6 @@ void WebserverURLHandle::onHttpPostAuth(AsyncWebServerRequest* request)
 void sta_ap_info_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
 {
     IPAddress local_ip(0,0,0,0);
-    String json_network;
     bool connect_st = false;
 
     DynamicJsonBuffer djbco;
@@ -265,8 +270,9 @@ void sta_ap_info_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
         root["sta_status"].set("Disconnect");
     }
     
-    root.prettyPrintTo(json_network);
-    request->send(200, "text/json", json_network);
+    AsyncResponseStream *response = request->beginResponseStream("text/json");
+    root.printTo(*response);
+    request->send(response);
 }
 
 /* Get json sta_network */
@@ -297,7 +303,6 @@ void sta_setting_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
     IPAddress gateway_ip(0,0,0,0);
     IPAddress subnet_ip(0,0,0,0);
     IPAddress dns_ip(0,0,0,0);
-    String json_network;
     uint8_t connect_st = 0;
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
@@ -376,14 +381,13 @@ void sta_setting_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
     root["tcp_port"].set(ESPConfig.tcpPort());
     root["ws_port"].set(ESPConfig.wsPort());
 
-    root.prettyPrintTo(json_network);
-    request->send(200, "text/json", json_network);
+    AsyncResponseStream *response = request->beginResponseStream("text/json");
+    root.printTo(*response);
+    request->send(response);
 }
 
 void ap_setting_get(AsyncWebServerRequest *request, WebserverURLHandle* client) 
 {
-    String json_network;
-    
     DynamicJsonBuffer djbco;
     JsonObject& root = djbco.createObject();   
     root["ap_ssid"].set(ESPConfig.ssidAP());
@@ -393,14 +397,13 @@ void ap_setting_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
     root["ap_channel"].set(ESPConfig.channelAP());
     root["ap_hidden"].set(ESPConfig.isHiddenAP());
 
-    root.prettyPrintTo(json_network);
-    request->send(200, "text/json", json_network);
+    AsyncResponseStream *response = request->beginResponseStream("text/json");
+    root.printTo(*response);
+    request->send(response);
 }
 
 void sntp_setting_get(AsyncWebServerRequest *request, WebserverURLHandle* client) 
 {
-    String json_network;
-    
     DynamicJsonBuffer djbco;
     JsonObject& root = djbco.createObject();   
     root["server1"].set(ESPConfig.server1SNTP());
@@ -409,25 +412,25 @@ void sntp_setting_get(AsyncWebServerRequest *request, WebserverURLHandle* client
     root["gmtOffset"].set(ESPConfig.gmtOffsetSNTP());
     root["daylightOffset"].set(ESPConfig.daylightOffsetSNTP());
 
-    root.prettyPrintTo(json_network);
-    request->send(200, "text/json", json_network);
+    AsyncResponseStream *response = request->beginResponseStream("text/json");
+    root.printTo(*response);
+    request->send(response);
 }
 
 void device_info_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
 {
-    String json_network;
     DynamicJsonBuffer djbco;
     JsonObject& root = djbco.createObject();   
     root["name"].set(ESPConfig.nameDevice());
     root["addr"].set(ESPConfig.addrDevice());
 
-    root.prettyPrintTo(json_network);
-    request->send(200, "text/json", json_network);
+    AsyncResponseStream *response = request->beginResponseStream("text/json");
+    root.printTo(*response);
+    request->send(response);
 }
 
 void time_setting_get(AsyncWebServerRequest *request, WebserverURLHandle* client)
 {    
-    String json_network;
     rtc_time_t rtc;
 
     DynamicJsonBuffer djbco;
@@ -444,8 +447,9 @@ void time_setting_get(AsyncWebServerRequest *request, WebserverURLHandle* client
     root["time"].set(time);
     root["date"].set(date);        
     
-    root.prettyPrintTo(json_network);
-    request->send(200, "text/json", json_network);
+    AsyncResponseStream *response = request->beginResponseStream("text/json");
+    root.printTo(*response);
+    request->send(response);
 }
 
 /* /get?param_wifi=fw_version */

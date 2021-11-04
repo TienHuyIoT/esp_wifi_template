@@ -2,6 +2,7 @@
 #define __ESP_WEBSERVER_H
 
 #include <Arduino.h>
+#include <vector>
 #include <functional>
 #include <ESPAsyncWebServer.h>
 #include "THIoT_ESPConfig.h"
@@ -20,25 +21,27 @@ typedef enum {
 typedef std::function<void(AsyncWebServerRequest *)> asyncHttpHandler;
 
 typedef std::function<void(void)> scanNetworkHandler;
+typedef std::function<void(const char *, const char *)> eventSocketHandler;
 
 class WebserverURLHandleCallbacks {
 private:
   scanNetworkHandler _pScanNetworkCb;
+  eventSocketHandler _pEventSocketCb;
 public:
   WebserverURLHandleCallbacks();
 	virtual ~WebserverURLHandleCallbacks();
   /**
   * Handler called after once request with method GET and authenticated.
   */
-  virtual void onHttpGetAuth(AsyncWebServerRequest* request);
+  virtual int onHttpGetAuth(AsyncWebServerRequest* request);
   /**
     * Handler called after once request with method GET.
     */
-  virtual void onHttpGet(AsyncWebServerRequest* request);
+  virtual int onHttpGet(AsyncWebServerRequest* request);
   /**
     * Handler called after once request with method POST and authenticated.
     */
-  virtual void onHttpPostAuth(AsyncWebServerRequest* request);
+  virtual int onHttpPostAuth(AsyncWebServerRequest* request);
 
   /**
    * A class derived will call this function to active async scan network
@@ -53,11 +56,31 @@ public:
   }
 
   /**
+   * A class derived will call this function to send async event socket
+   * 
+  */
+  virtual void eventsSend(const char *message, const char *event)
+  {
+    if (_pEventSocketCb)
+    {
+      _pEventSocketCb(message, event);
+    }
+  }
+
+  /**
    * Register an async scan network function
   */
   void onScanNetwork(scanNetworkHandler cb)
   {
     _pScanNetworkCb = cb;
+  }
+
+  /**
+   * Register an async event socket function
+  */
+  void onEventSocket(eventSocketHandler cb)
+  {
+    _pEventSocketCb = cb;
   }
 };
 
@@ -69,7 +92,7 @@ private:
   static AsyncWebServer* _server80;
   static ESPFSEditor* _spiffsEditor;
   static ESPWebsocket* _wsHandler;
-  static WebserverURLHandleCallbacks* _pUrlCallbacks;
+  static std::vector<WebserverURLHandleCallbacks*> _pUrlCallbacks;
   static asyncHttpHandler _httpGetAuthHandler;
   static asyncHttpHandler _httpGetHandler;
   static asyncHttpHandler _httpPostAuthHandler;
@@ -96,6 +119,7 @@ private:
   static void sdfsPrintProgress(size_t prg, size_t sz);
 #endif
   static void fs_editor_status(AsyncWebServerRequest *request);
+  static void printHandleRequest(AsyncWebServerRequest *request);
 
 public:
   ESPWebserver(/* args */);
@@ -122,9 +146,14 @@ public:
     _uriHttpPostAuth = uri;
   }
 
-  void setHandleCallbacks(WebserverURLHandleCallbacks* pCallbacks);
+  void onUrlHandle(WebserverURLHandleCallbacks* pCallbacks);
 
   void syncSsidNetworkToEvents();
+
+  void eventsSend(const char *message, const char *event)
+  {
+    _wsHandler->eventsSend(message, event);
+  }
 
   void end() {
     if (_server) {
@@ -140,7 +169,6 @@ public:
     }
 
     delete _wsHandler;
-    delete _pUrlCallbacks;
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
     if (_sdCardEditor) {
       delete _sdCardEditor;
