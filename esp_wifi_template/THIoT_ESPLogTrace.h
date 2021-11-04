@@ -15,7 +15,7 @@ private:
     void assertOverSize(size_t limit);
     String backupName() {
         int dotIndex = _fileName.indexOf(".");
-        String name = _fileName.substring(0,dotIndex);
+        String name = _fileName.substring(0, dotIndex);
         name += "_BK.TXT";
         return name;
     }

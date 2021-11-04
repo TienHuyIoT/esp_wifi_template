@@ -39,8 +39,7 @@ void setup()
 #elif defined(ESP8266)
     SERIAL_PORT.begin(SERIAL_BAUDRATE, SERIAL_8N1);
 #endif
-    const char *build_time = __DATE__ " " __TIME__ " GMT";
-    MAIN_TAG_CONSOLE("\r\n\r\nbuild_time: %s", build_time);
+    MAIN_TAG_CONSOLE("\r\n\r\nbuild_time: %s %s GMT", __DATE__, __TIME__);
     MAIN_TAG_CONSOLE("==== Firmware version %u.%u.%u ====\r\n",
                      FW_VERSION_MAJOR,
                      FW_VERSION_MINOR,
@@ -133,7 +132,7 @@ void setup()
 #endif
     
     // register callback handle http request
-    webServer.setHandleCallbacks(new WebserverURLHandle());
+    webServer.onUrlHandle(new WebserverURLHandle("param_wifi"));
     webServer.begin();
 
     // handle factory system params by hold button over 2s
