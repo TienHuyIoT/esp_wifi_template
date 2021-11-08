@@ -47,7 +47,7 @@ void ESPBlinkGPIO::attach(int firstHalf_ms, int endHalf_ms, int counter)
     _firstHalf_ms = firstHalf_ms;
     _endHalf_ms = endHalf_ms;
     firstHalfLevel(); // called immediately
-    // make a interval timeout with total cycle
+    // make an interval timeout with total cycle
     _longTick.attach_ms<void*>(_firstHalf_ms + _endHalf_ms, []( void* arg){ 
         ((ESPBlinkGPIO*)(arg))->firstHalfLevel();
     }, this);
@@ -56,7 +56,7 @@ void ESPBlinkGPIO::attach(int firstHalf_ms, int endHalf_ms, int counter)
 void ESPBlinkGPIO::firstHalfLevel()
 {
     digitalWrite(_gpio, !_stLevel);
-    // make a one timeout with the first haft cycle ms
+    // make an one timeout with the first haft cycle ms
     _shortTick.once_ms<void*>(_firstHalf_ms, []( void* arg){ 
         ((ESPBlinkGPIO*)(arg))->endHalfLevel();
     }, this);
