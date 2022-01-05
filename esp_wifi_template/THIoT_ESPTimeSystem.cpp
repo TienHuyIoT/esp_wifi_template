@@ -25,6 +25,7 @@ const char *const mon_list[] PROGMEM = {
             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
 #ifdef ESP8266
+#if (0)
 static bool getLocalTime(struct tm *info, uint32_t ms)
 {
     uint32_t start = millis();
@@ -41,6 +42,7 @@ static bool getLocalTime(struct tm *info, uint32_t ms)
     }
     return false;
 }
+#endif
 #endif
 
 ESPTimeSystem::ESPTimeSystem(/* args */)
