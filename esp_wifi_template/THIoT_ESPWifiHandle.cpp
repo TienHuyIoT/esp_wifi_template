@@ -240,7 +240,7 @@ void ESPWifiHandle::registerEventHandler()
   WiFiEvent_t::m_ESP32_EVENT_STA_DISCONNECTED);
 
 #elif defined(ESP8266)
-  // To register evetn, must be declare _accessPointGotIpHandler
+  // To register event, must be declare _accessPointGotIpHandler
   _accessPointGotIpHandler = WiFi.onStationModeGotIP(
     [](const WiFiEventStationModeGotIP& evt) {
       _wifiConnected = true;
@@ -269,7 +269,7 @@ void ESPWifiHandle::registerEventHandler()
     }
   );
 
-  // To register evetn, must be declare _accessPointConnectedHandler
+  // To register event, must be declare _accessPointConnectedHandler
   _accessPointConnectedHandler = WiFi.onStationModeConnected(
     [](const WiFiEventStationModeConnected& evt) {
       ESP_WIFI_TAG_CONSOLE("[EVENT] connected to %s", evt.ssid.c_str());
