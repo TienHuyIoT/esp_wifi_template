@@ -143,13 +143,17 @@ https://github.com/boblemaire/asyncHTTPrequest
   #include <FS.h>
   #include <FFat.h>
 #elif (defined USE_NAND_FS_SYSTEM) && (USE_NAND_FS_SYSTEM == 1)
-#ifdef ESP32
-  #define NAND_FS_SYSTEM LITTLEFS
   #include <FS.h>
+#ifdef ESP32
+#if ESP_IDF_VERSION_MAJOR >= 4
+  #define NAND_FS_SYSTEM LittleFS
+  #include <LittleFS.h>
+#else
+  #define NAND_FS_SYSTEM LITTLEFS
   #include <LITTLEFS.h>
+#endif
 #elif defined(ESP8266)
   #define NAND_FS_SYSTEM LittleFS
-  #include <FS.h>
   #include <LittleFS.h>
 #endif
 #else

@@ -23,7 +23,7 @@ Some Library references:
 #include "THIoT_ESPAsyncEasyDDNS.h"
 
 #if (defined ASYNC_EASYDDNS_DEBUG) && (ASYNC_EASYDDNS_DEBUG == 1)
-#include "THIoT_SerialTrace.h"
+#include "THIoT_PFSerialTrace.h"
 #define EASYDDNS_PORT SERIAL_PORT
 #define EASYDDNS_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)
 #define EASYDDNS_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[EASYDDNS]", __VA_ARGS__)

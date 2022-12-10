@@ -6,11 +6,11 @@
 #include "THIoT_ESPTimeSystem.h"
 #include "THIoT_ESPSysParams.h"
 #include "THIoT_ESPEEPromParams.h"
-#include "THIoT_SDFSClass.h"
+#include "THIoT_ESPSDFSClass.h"
 #include "THIoT_ESPFSHandle.h"
 #include "THIoT_ESPEthernet.h"
-#include "THIoT_SerialTrace.h"
-#include "THIoT_WebserverURLHandle.h"
+#include "THIoT_PFSerialTrace.h"
+#include "THIoT_ESPWebserverURLHandle.h"
 #include "THIoT_ESPLogTrace.h"
 
 #define SERVER_DATA_PORT SERIAL_PORT

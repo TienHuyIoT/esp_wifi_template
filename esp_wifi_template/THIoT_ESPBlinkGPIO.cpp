@@ -1,5 +1,5 @@
 #include "THIoT_ESPBlinkGPIO.h"
-#include "THIoT_SerialTrace.h"
+#include "THIoT_PFSerialTrace.h"
 
 #define BLINK_GPIO_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[BLINK_GPIO]", __VA_ARGS__)
 

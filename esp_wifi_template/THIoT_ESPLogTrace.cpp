@@ -1,6 +1,6 @@
 #include "THIoT_ESPConfig.h"
 #include "THIoT_ESPTimeSystem.h"
-#include "THIoT_SerialTrace.h"
+#include "THIoT_PFSerialTrace.h"
 #include "THIoT_ESPLogTrace.h"
 
 #define LOG_TRACE_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[LOG_TRACE]", __VA_ARGS__)

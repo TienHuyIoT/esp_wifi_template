@@ -1,5 +1,5 @@
-#ifndef	__SDFS_CLASS_H
-#define __SDFS_CLASS_H
+#ifndef	__ESP_SDFS_CLASS_H
+#define __ESP_SDFS_CLASS_H
 
 #include <Arduino.h>
 #include "THIoT_ESPConfig.h"
@@ -104,4 +104,4 @@ extern ESPSdCard HTH_sdCard;
 
 #endif // (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 
-#endif // __SDFS_CLASS_H
+#endif // __ESP_SDFS_CLASS_H

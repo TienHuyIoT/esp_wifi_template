@@ -1,5 +1,5 @@
-#include "THIoT_FactoryButton.h"
-#include "THIoT_SerialTrace.h"
+#include "THIoT_PFFactoryButton.h"
+#include "THIoT_PFSerialTrace.h"
 
 #define FACTORY_BUTTON_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[FACTORY_BUTTON]", __VA_ARGS__)
 

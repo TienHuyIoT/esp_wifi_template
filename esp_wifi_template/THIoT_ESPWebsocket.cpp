@@ -1,4 +1,4 @@
-#include "THIoT_SerialTrace.h"
+#include "THIoT_PFSerialTrace.h"
 #include "THIoT_ESPWebsocket.h"
 
 #define WS_DBG_PORT SERIAL_PORT

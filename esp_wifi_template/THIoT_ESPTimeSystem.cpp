@@ -5,7 +5,7 @@
 #include <ArduinoJson.h>
 #include "THIoT_ESPConfig.h"
 #include "THIoT_ESPSysParams.h"
-#include "THIoT_SerialTrace.h"
+#include "THIoT_PFSerialTrace.h"
 #include "THIoT_ESPTimeSystem.h"
 
 #define RTC_CONSOLE_PORT SERIAL_PORT

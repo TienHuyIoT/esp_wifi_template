@@ -45,14 +45,14 @@ uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 ()
 #endif
 
 #include "THIoT_ESPConfig.h"
-#include "THIoT_SerialTrace.h"
+#include "THIoT_PFSerialTrace.h"
 #include "THIoT_ESPSysParams.h"
 #include "THIoT_ESPTimeSystem.h"
 #include "THIoT_ESPWatchDogTimer.h"
 #include "THIoT_ESPAsyncEasyNTP.h"
 #include "THIoT_ESPLogTrace.h"
 #include "THIoT_ESPWifiHandle.h"
-#include "esp_led_status.h"
+#include "THIoT_PFLedStatus.h"
 
 #define SNTP_CONSOLE_PORT SERIAL_PORT
 #define SNTP_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)

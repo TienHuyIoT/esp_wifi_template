@@ -6,8 +6,8 @@
 #include "THIoT_ESPEthernet.h"
 #include "THIoT_ESPAsyncEasyNTP.h"
 #include "THIoT_ESPLogTrace.h"
-#include "THIoT_SerialTrace.h"
-#include "esp_led_status.h"
+#include "THIoT_PFSerialTrace.h"
+#include "THIoT_PFLedStatus.h"
 
 #define ESP_ETH_PORT SERIAL_PORT
 #define ETH_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[ETH]", __VA_ARGS__)

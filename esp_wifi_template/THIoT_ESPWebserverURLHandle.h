@@ -1,5 +1,5 @@
-#ifndef	__WEBSERVER_URL_HANDLE_H
-#define __WEBSERVER_URL_HANDLE_H
+#ifndef	__ESP_WEB_SERVER_URL_HANDLE_H
+#define __ESP_WEB_SERVER_URL_HANDLE_H
 
 #include <ESPAsyncWebServer.h>
 #include "THIoT_ESPWebserver.h"
@@ -34,4 +34,4 @@ typedef struct {
     void (*cb)(AsyncWebServerRequest *request, WebserverURLHandle* client);
 } server_get_handle_t;
 
-#endif // __WEBSERVER_URL_HANDLE_H
+#endif // __ESP_WEB_SERVER_URL_HANDLE_H

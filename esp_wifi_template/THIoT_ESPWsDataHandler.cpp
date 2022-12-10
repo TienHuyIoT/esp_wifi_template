@@ -2,7 +2,7 @@
 #include <ESPAsyncWebServer.h>
 #include "THIoT_ESPWsDataHandler.h"
 #include "THIoT_ESPTimeSystem.h"
-#include "THIoT_SerialTrace.h"
+#include "THIoT_PFSerialTrace.h"
 
 #define APP_WS_DBG_PRINT(...) SERIAL_TAG_LOGI("[APP_WS]", __VA_ARGS__)
 

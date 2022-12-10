@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include "THIoT_ESPBlinkGPIO.h"
-#include "THIoT_SerialTrace.h"
+#include "THIoT_PFSerialTrace.h"
 #define LED_STATUS_TAG_CONSOLE(...) SERIAL_FUNCTION_TAG_LOGI("[LED_STATUS]", __VA_ARGS__)
 class ESPLedCycleBlinkCallbacks : public ESPBlinkCycleCallbacks
 {

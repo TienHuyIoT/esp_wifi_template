@@ -2,7 +2,7 @@
 
 #include <FS.h>
 #include "THIoT_ESPConfig.h"
-#include "THIoT_SerialTrace.h"
+#include "THIoT_PFSerialTrace.h"
 #include "THIoT_ESPFSHandle.h"
 #if (defined SD_SPI_INTERFACE) && (SD_SPI_INTERFACE == 1)
 #include <SD.h>

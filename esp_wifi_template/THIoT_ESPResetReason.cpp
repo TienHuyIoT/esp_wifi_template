@@ -1,5 +1,5 @@
 #include "THIoT_ESPResetReason.h"
-#include "THIoT_SerialTrace.h"
+#include "THIoT_PFSerialTrace.h"
 
 #ifdef ESP8266
 extern "C" {

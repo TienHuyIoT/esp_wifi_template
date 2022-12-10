@@ -1,5 +1,5 @@
-#ifndef	__ESP_WEBSERVER_H
-#define __ESP_WEBSERVER_H
+#ifndef	__ESP_WEB_SERVER_H
+#define __ESP_WEB_SERVER_H
 
 #include <Arduino.h>
 #include <vector>
@@ -177,4 +177,4 @@ public:
   }
 };
 
-#endif // __ESP_WEBSERVER_H
+#endif // __ESP_WEB_SERVER_H

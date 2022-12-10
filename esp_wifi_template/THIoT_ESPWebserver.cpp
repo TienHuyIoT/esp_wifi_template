@@ -13,10 +13,10 @@
 #endif
 #include "THIoT_ESPConfig.h"
 #include "THIoT_ESPWifiHandle.h"
-#include "THIoT_SerialTrace.h"
+#include "THIoT_PFSerialTrace.h"
 #include "THIoT_ESPSysParams.h"
 #include "THIoT_ESPSoftReset.h"
-#include "THIoT_SDFSClass.h"
+#include "THIoT_ESPSDFSClass.h"
 #include "THIoT_ESPWatchDogTimer.h"
 #include "THIoT_ESPLogTrace.h"
 #include "THIoT_ESPWebserver.h"

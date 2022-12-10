@@ -2,7 +2,7 @@
 #include "THIoT_ESPConfig.h"
 #include "THIoT_ESPSoftReset.h"
 #include "THIoT_ESPTimeSystem.h"
-#include "THIoT_SerialTrace.h"
+#include "THIoT_PFSerialTrace.h"
 
 #define RESET_DBG_PORT SERIAL_PORT
 #define RESET_DBG_PRINTF(...) SERIAL_LOGI(__VA_ARGS__)

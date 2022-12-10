@@ -7,7 +7,7 @@
 #endif
 #include "THIoT_ESPTimeSystem.h"
 #include "THIoT_ESPAsyncEasyNTP.h"
-#include "THIoT_SerialTrace.h"
+#include "THIoT_PFSerialTrace.h"
 
 #define ASYNC_NTP_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)
 #define ASYNC_NTP_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[ASYNC_NTP]", __VA_ARGS__)

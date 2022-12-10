@@ -1,5 +1,5 @@
 #include "THIoT_ESPWatchDogTimer.h"
-#include "THIoT_SerialTrace.h"
+#include "THIoT_PFSerialTrace.h"
 
 #ifdef ESP32
 #include "esp_system.h"
