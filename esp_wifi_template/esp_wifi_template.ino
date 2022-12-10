@@ -51,6 +51,8 @@ void setup()
                      FW_VERSION_MINOR,
                      FW_VERSION_BUILD);
     
+    MAIN_TAG_CONSOLE("setup() running on core %u", xPortGetCoreID());
+    
     MAIN_TAG_CONSOLE("Reset reason %s", esp_reset_reason_str().c_str());
 
     // Enable watch dog timer         

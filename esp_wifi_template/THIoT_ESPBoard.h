@@ -4,6 +4,10 @@
 /* GPIO Led status
  * -1: be not used
 */
+
+#ifndef LED_BUILTIN
+#define LED_BUILTIN 5
+#endif
 #define LED_STATUS_GPIO         LED_BUILTIN
 
 /** GPIO to reset factory
