@@ -155,8 +155,9 @@ ESPWifiHandle::~ESPWifiHandle()
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
 ESPAsyncEasyDDNS* ESPWifiHandle::ddnsClient = nullptr;
 #endif
-Ticker ESPWifiHandle::_reconnetTicker;
+Ticker ESPWifiHandle::_reconnectTicker;
 bool ESPWifiHandle::_wifiConnected = false;
+bool ESPWifiHandle::_firstConnection = false;
 WiFiLedStatusHandler ESPWifiHandle::_ledStatusFunc = nullptr;
 
 void ESPWifiHandle::registerEventHandler()
@@ -230,9 +231,14 @@ void ESPWifiHandle::registerEventHandler()
       We don't need call WiFi.reconnect() once loss connection, it is self reconnect after loss connection.
     Reconnecting will be destroy, if executing scan network.
     */
-    constexpr uint32_t RECONNECT_SECOND_TIMEOUT = 15;
     // manual reconnect after an expired timeout
-    _reconnetTicker.once(RECONNECT_SECOND_TIMEOUT, [](){
+    uint32_t tReconnect = ESP_RECONNECTION_SECOND_NUM;
+    if(!_firstConnection)
+    {
+      _firstConnection = true;
+      tReconnect = FIRST_RECONNECTION_SECOND_NUM;
+    }
+    _reconnectTicker.once(tReconnect, [](){
       ESP_WIFI_TAG_CONSOLE("Reconnecting");
       WiFi.reconnect();
     });
@@ -301,9 +307,14 @@ void ESPWifiHandle::registerEventHandler()
         We don't need call WiFi.reconnect() once loss connection, it is self reconnect after loss connection.
       Reconnecting will be destroy, if executing scan network.
       */
-      constexpr uint32_t RECONNECT_SECOND_TIMEOUT = 15;
       // manual reconnect after an expired timeout
-      _reconnetTicker.once(RECONNECT_SECOND_TIMEOUT, [](){
+      uint32_t tReconnect = ESP_RECONNECTION_SECOND_NUM;
+      if(!_firstConnection)
+      {
+        _firstConnection = true;
+        tReconnect = FIRST_RECONNECTION_SECOND_NUM;
+      }
+      _reconnectTicker.once(tReconnect, [](){
         ESP_WIFI_TAG_CONSOLE("Reconnecting");
         WiFi.reconnect();
       });
@@ -439,7 +450,7 @@ void ESPWifiHandle::onArduinoOTA()
           NAND_FS_SYSTEM.end();
         }
 
-        _reconnetTicker.detach(); // disable wifi auto reconnect access point
+        _reconnectTicker.detach(); // disable wifi auto reconnect access point
 
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
         EASYNTP.end();

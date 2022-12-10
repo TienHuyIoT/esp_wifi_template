@@ -9,6 +9,9 @@
 #include "THIoT_ESPAsyncEasyDDNS.h"
 #include "THIoT_ESPEventSignal.h"
 
+#define ESP_RECONNECTION_SECOND_NUM 60
+#define FIRST_RECONNECTION_SECOND_NUM   15
+
 typedef std::function<void(int type)> WiFiLedStatusHandler;
 
 class ESPSntpService
@@ -53,7 +56,8 @@ private:
     void onDDNSclient();  // DDNS client service
 #endif
 
-    static Ticker _reconnetTicker;
+    static Ticker _reconnectTicker;
+    static boolean _firstConnection;
 #ifdef ESP8266
     WiFiEventHandler _accessPointConnectedHandler;
     WiFiEventHandler _accessPointDisconnectedHandler;

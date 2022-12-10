@@ -1,7 +1,15 @@
 #ifndef	__ESP_BOARD_H
 #define __ESP_BOARD_H
 
-#define LED_STATUS_GPIO         3 /* HW 25(Heltec) 3(web485), 23(ken_sos), 2(esp8266) */
+/* GPIO Led status
+ * -1: be not used
+*/
+#define LED_STATUS_GPIO         LED_BUILTIN
+
+/** GPIO to reset factory
+ * -1: be not used
+*/
+#define FACTORY_INPUT_PIN       -1
 
 /*
 SPI BUS
@@ -25,9 +33,6 @@ SPI BUS
 #define SD_NSS_PIN				16 
 // GPIO control power of SD card, don't care if the SD_CARD_ENABLE = 0
 #define SD_POWER_PIN     		-1
-
-/* GPIO to reset factory */
-#define FACTORY_INPUT_PIN       36 /* HW 0(Heltec) 36(web485 Button1), -1(ken_sos), 0(esp8266) */
 
 /* GPIO to enable ethernet, don't care if the ETH_ENABLE = 0 */
 #define ETH_GPIO_ENABLE         39 /* HW 39(web485 Button2), 4(esp8266)*/

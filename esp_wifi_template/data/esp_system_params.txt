@@ -29,7 +29,7 @@
     "gw":"192.168.1.1",
     "sn":"255.255.255.0",
     "dns":"192.168.1.1",
-    "ssid":"work_room",
+    "ssid":"Quyen_2.4G",
     "psk":"12345679",
     "hostname": "tienhuyiot",
     "dhcp": 1,

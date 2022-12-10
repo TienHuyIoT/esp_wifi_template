@@ -98,7 +98,7 @@ https://github.com/boblemaire/asyncHTTPrequest
 0: Disable
 1: Enable
 */
-#define ETH_ENABLE    1
+#define ETH_ENABLE    0
 #ifdef ESP32
 #define LAN_LAN8720   1
 #define LAN_TLK110    0
@@ -112,7 +112,7 @@ https://github.com/boblemaire/asyncHTTPrequest
 0: Disable
 1: Enable
 */
-#define SD_CARD_ENABLE  1
+#define SD_CARD_ENABLE  0
 
 /* Select sd card interface
 0: SD_MMC with ESP32 only
