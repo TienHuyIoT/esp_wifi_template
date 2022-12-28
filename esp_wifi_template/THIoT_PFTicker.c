@@ -6,7 +6,7 @@
 extern unsigned long millis();
 
 static uint8_t function_counter = 0;
-static list_t* list_fp_handler = NULL;
+static c_list_t* list_fp_handler = NULL;
 static void _schedule_handler(ticker_function_handle_t *fp_ticker);
 
 static uint8_t _attach_ms(ticker_function_handle_t *fp_ticker, 
@@ -140,7 +140,7 @@ uint8_t allocate_ticker_once_ms(uint32_t interval,
 
 void ticker_detach(ticker_function_handle_t *fp_ticker)
 {
-  if (list_removeByValue(&list_fp_handler, fp_ticker, fp_ticker->heap_flag) == LIST_OK)
+  if (c_list_removeByValue(&list_fp_handler, fp_ticker, fp_ticker->heap_flag) == LIST_OK)
   {
     ticker_stop(&fp_ticker->ticker); 
     function_counter--;
@@ -168,9 +168,9 @@ static uint8_t _attach_ms(ticker_function_handle_t *fp_ticker,
   fp_ticker->arg = arg;
   fp_ticker->repeat = repeat;
 
-  if (list_findByValue(&list_fp_handler, fp_ticker) == NULL)
+  if (c_list_findByValue(&list_fp_handler, fp_ticker) == NULL)
   {
-    if(list_insert(&list_fp_handler, fp_ticker))
+    if(c_list_insert(&list_fp_handler, fp_ticker))
     {
       function_counter++;
       // insert list succeed
@@ -184,13 +184,13 @@ static uint8_t _attach_ms(ticker_function_handle_t *fp_ticker,
 
 void ticker_schedule_handler(void)
 {
-  list_t *pList = list_fp_handler;
+  c_list_t *pList = list_fp_handler;
   ticker_function_handle_t *fp_handler;
   while (pList)
   {
-    fp_handler = list_get_value(pList);
+    fp_handler = c_list_get_value(pList);
     _schedule_handler(fp_handler);
-    pList = list_next(pList);
+    pList = c_list_next(pList);
   }
 }
 

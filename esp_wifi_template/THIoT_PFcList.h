@@ -5,8 +5,8 @@
  *      Author: kolban
  */
 
-#ifndef __C_LIST_H_
-#define __C_LIST_H_
+#ifndef __C_LIST_H
+#define __C_LIST_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,24 +26,24 @@ typedef enum {
     LIST_DYNAMIC_VALUE
 } list_value_t;
 
-typedef struct _list_t {
+typedef struct _c_list_t {
     void *value;
-    struct _list_t *next;
-    struct _list_t *prev;
-} list_t;
+    struct _c_list_t *next;
+    struct _c_list_t *prev;
+} c_list_t;
 
-void list_deleteList(list_t **pRootList, int withFree);
-list_t *list_insert(list_t **pRootList, void *value);
-uint8_t list_remove(list_t **pRootList, list_t *pEntry, int withFree);
-list_t *list_next(list_t *pList);
-uint8_t list_removeByValue(list_t **pRootList, void *value, int withFree);
-list_t *list_findByValue(list_t **pRootList, void *value);
-list_t *list_prev(list_t *pList);
-list_t *list_insert_after(list_t *pEntry, void *value);
-list_t *list_insert_before(list_t *pEntry, void *value);
-void *list_get_value(list_t *pList);
+void c_list_deleteList(c_list_t **pRootList, int withFree);
+c_list_t *c_list_insert(c_list_t **pRootList, void *value);
+uint8_t c_list_remove(c_list_t **pRootList, c_list_t *pEntry, int withFree);
+c_list_t *c_list_next(c_list_t *pList);
+uint8_t c_list_removeByValue(c_list_t **pRootList, void *value, int withFree);
+c_list_t *c_list_findByValue(c_list_t **pRootList, void *value);
+c_list_t *c_list_prev(c_list_t *pList);
+c_list_t *c_list_insert_after(c_list_t *pEntry, void *value);
+c_list_t *c_list_insert_before(c_list_t *pEntry, void *value);
+void *c_list_get_value(c_list_t *pList);
 #if (defined LIST_MONITOR_HEAP_MEMORY) && (LIST_MONITOR_HEAP_MEMORY == 1)
-size_t list_heap_size(void);
+size_t c_list_heap_size(void);
 #endif
 
 #ifdef __cplusplus
