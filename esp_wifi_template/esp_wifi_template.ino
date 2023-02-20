@@ -50,9 +50,11 @@ void setup()
                      FW_VERSION_MAJOR,
                      FW_VERSION_MINOR,
                      FW_VERSION_BUILD);
-    
+
+#ifdef ESP32
     MAIN_TAG_CONSOLE("setup() running on core %u", xPortGetCoreID());
-    
+#endif
+
     MAIN_TAG_CONSOLE("Reset reason %s", esp_reset_reason_str().c_str());
 
     // Enable watch dog timer         

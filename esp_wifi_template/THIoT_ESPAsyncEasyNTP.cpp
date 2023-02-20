@@ -65,7 +65,12 @@ void ESPAsyncEasyNTP::runAsync(int interval)
     // The first time running always is failed. So should be run here to reduce waiting time.
     WiFi.hostByName(_server.c_str(), _ipServer);
     _tickerRunAsync.detach();
-    _tickerRunAsync.attach<void*>(INTERVAL_MINIMUM, [](void* arg){((ESPAsyncEasyNTP*)(arg))->requestTime();}, this);
+#ifdef ESP32
+    _tickerRunAsync.attach<void*>
+#elif defined(ESP8266)
+    _tickerRunAsync.attach<void (*)(void*), void*>
+#endif
+    (INTERVAL_MINIMUM, [](void* arg){((ESPAsyncEasyNTP*)(arg))->requestTime();}, this);
 }
 
 void ESPAsyncEasyNTP::requestTime()
@@ -133,7 +138,12 @@ void ESPAsyncEasyNTP::_onPacket(AsyncUDPPacket& packet){
 
         _tickerRunAsync.detach();
         ASYNC_NTP_FUNCTION_CONSOLE("runAsync after %us", _interval);
-        _tickerRunAsync.once<void*>(_interval, [](void* arg){((ESPAsyncEasyNTP*)(arg))->runAsync();}, this);
+#ifdef ESP32
+        _tickerRunAsync.once<void*>
+#elif defined(ESP8266)
+        _tickerRunAsync.once<void (*)(void*), void*>
+#endif        
+        (_interval, [](void* arg){((ESPAsyncEasyNTP*)(arg))->runAsync();}, this);
     }
     ASYNC_NTP_TAG_CONSOLE("Close udp socket");
     _udp.close();

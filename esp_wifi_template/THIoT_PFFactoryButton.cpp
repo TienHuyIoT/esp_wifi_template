@@ -31,7 +31,12 @@ void FactoryButton::begin() {
     constexpr int TIME_DEBOUNCE_BUTTON_MS = 100;
     _button.setDebounceTicks(TIME_DEBOUNCE_BUTTON_MS);
     // we should be settup a ticker with interval less than button debounce tick
-    _tickButton.attach_ms<void*>(TIME_DEBOUNCE_BUTTON_MS - 20, [](void* arg){((FactoryButton*)(arg))->buttonTick();}, this);
+#ifdef ESP32
+    _tickButton.attach_ms<void*>
+#elif defined(ESP8266)
+    _tickButton.attach_ms<void (*)(void*), void*>
+#endif
+    (TIME_DEBOUNCE_BUTTON_MS - 20, [](void* arg){((FactoryButton*)(arg))->buttonTick();}, this);
 }
 
 void FactoryButton::buttonTick() {
