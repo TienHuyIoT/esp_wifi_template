@@ -23,6 +23,7 @@
 #include "THIoT_PFFrame.h"
 #include "THIoT_PFFrameCom.h"
 #include "THIoT_PFFrameCmdManage.h"
+#include "THIoT_PFCsvFileHandler.h"
 
 /* Private macro -------------------------------------------------------------*/
 #define MAIN_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)

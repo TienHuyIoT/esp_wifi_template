@@ -70,6 +70,7 @@ asyncHttpHandler ESPWebserver::_httpGetAuthHandler = nullptr;
 asyncHttpHandler ESPWebserver::_httpGetHandler = nullptr;
 asyncHttpHandler ESPWebserver::_httpPostAuthHandler = nullptr;
 ESPFSEditor* ESPWebserver::_spiffsEditor = nullptr;
+ESPFsPart* ESPWebserver::_spiffsPart = nullptr;
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 ESPFSEditor* ESPWebserver::_sdCardEditor = nullptr;
 #endif
@@ -351,6 +352,11 @@ void ESPWebserver::begin(void)
   _spiffsEditor->onProgress(spiffsPrintProgress).setAuthentication(_adminAuthUser.c_str(), _adminAuthPass.c_str());
   _spiffsEditor->onStatus(fs_editor_status);
   _server->addHandler(_spiffsEditor);
+
+  // uri handle = "/fs_part"
+  _spiffsPart = new ESPFsPart(NAND_FS_SYSTEM, FS_PART_NAND_TYPE);
+  _spiffsPart->setAuthentication(_adminAuthUser.c_str(), _adminAuthPass.c_str());
+  _server->addHandler(_spiffsPart);
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
   // uri handle = "/edit_sdfs"

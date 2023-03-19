@@ -10,6 +10,7 @@
 #include "THIoT_ESPFSHandle.h"
 #include "THIoT_ESPWebsocket.h"
 #include "THIoT_ESPWsDataHandler.h"
+#include "THIoT_ESPFsPartHandler.h"
 
 typedef enum {
   HTTP_AUTH_LV0 = 0,
@@ -91,6 +92,7 @@ private:
   static AsyncWebServer* _server;
   static AsyncWebServer* _server80;
   static ESPFSEditor* _spiffsEditor;
+  static ESPFsPart* _spiffsPart;
   static ESPWebsocket* _wsHandler;
   static std::vector<WebserverURLHandleCallbacks*> _pUrlCallbacks;
   static asyncHttpHandler _httpGetAuthHandler;
@@ -166,6 +168,10 @@ public:
 
     if (_spiffsEditor) {
       delete _spiffsEditor;
+    }
+
+    if (_spiffsPart) {
+      delete _spiffsPart;
     }
 
     delete _wsHandler;

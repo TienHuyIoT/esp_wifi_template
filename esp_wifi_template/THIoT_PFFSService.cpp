@@ -154,7 +154,15 @@ bool FSULogService::lookUp(int find_val)
         char *line = lineIndex(buff, FIND_FORWARD);
         if (line != nullptr)
         {
-            if (_lookupLogCallback(line, &parse_val))
+            _posLineBegin = mid_index + (line - buff);
+            // +1 is '\n'
+            _posLineEnd = _posLineBegin + (strchr(line, '\n') + 1 - line);
+
+            fsContent_t output;
+            output.buff = line;
+            output.len  = _posLineEnd - _posLineBegin;
+            output.pos  = _posLineBegin;
+            if (_lookupLogCallback(&output, &parse_val))
             {
                 FS_UTILITY_TAG_CONSOLE("parse_val: %d", parse_val);
 
@@ -254,13 +262,19 @@ bool FSULogService::query(uint32_t offset, int find_val)
     size_t read_cnt = file.readBytes(buff, window);
     buff[read_cnt] = '\0'; /* Add NuLL */
     char *line = lineIndex(buff, FIND_FORWARD);
+    fsContent_t output;
     while (line != nullptr)
     {
-        if (_queryLogCallback(line, find_val))
+        _posLineBegin = offset + (line - buff);
+        // +1 is '\n'
+        _posLineEnd = _posLineBegin + (strchr(line, '\n') + 1 - line);
+
+        output.buff = line;
+        output.len  = _posLineEnd - _posLineBegin;
+        output.pos  = _posLineBegin;
+        if (_queryLogCallback(&output, find_val))
         {
             status_isOK = true;
-            _posLineBegin = offset + (line - buff);
-            _posLineEnd = _posLineBegin + (strchr(line, '\n') - line);
             FS_UTILITY_TAG_CONSOLE("_posLineBegin = %lu", _posLineBegin);
             FS_UTILITY_TAG_CONSOLE("_posLineEnd = %lu", _posLineEnd);
             break;
@@ -335,11 +349,17 @@ bool FSULogService::find(int offset, uint8_t searchType)
     char *line = lineIndex(buff, searchType);
     if (line != nullptr)
     {
-        if (_parseLogCallback(line))
+        _posLineBegin = seek + (line - buff);
+        // +1 is '\n'
+        _posLineEnd = _posLineBegin + (strchr(line, '\n') + 1 - line);
+
+        fsContent_t output;
+        output.buff = line;
+        output.len  = _posLineEnd - _posLineBegin;
+        output.pos  = _posLineBegin;
+        if (_parseLogCallback(&output))
         {
             status_isOK = true;
-            _posLineBegin = seek + (line - buff);
-            _posLineEnd = _posLineBegin + (strchr(line, '\n') - line);
             FS_UTILITY_TAG_CONSOLE("_posLineBegin = %lu", _posLineBegin);
             FS_UTILITY_TAG_CONSOLE("_posLineEnd = %lu", _posLineEnd);
         }
@@ -353,6 +373,12 @@ bool FSULogService::find(int offset, uint8_t searchType)
     return status_isOK;
 }
 
+/**
+ * @brief Find the string start at \n and stop at \n
+ *        "This is\r\nfile system\r\nservice"
+ * 
+ * @return char* = "file system\r\nservice"
+*/
 char* FSULogService::lineIndex(char* buff, uint8_t searchType)
 {
     char *pStart = nullptr;

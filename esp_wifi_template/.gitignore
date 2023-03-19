@@ -1,1 +1,4 @@
 **.vscode
+*.json
+*.cfg
+*.svd

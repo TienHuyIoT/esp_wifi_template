@@ -11,12 +11,18 @@
 #define WINDOW_LOOKUP_SIZE 512
 #define LOG_SIZE_MAX 1048576U
 
-typedef std::function<bool(char*)> parseLogHandler;
-typedef std::function<bool(void*, char*)> parseLogWithArgHandler;
-typedef std::function<bool(char*, int*)> lookupLogHandler;
-typedef std::function<bool(void*, char*, int*)> lookupLogWithArgHandler;
-typedef std::function<bool(char*, int)> queryLogHandler;
-typedef std::function<bool(void*, char*, int)> queryLogWithArgHandler;
+typedef struct {
+  char *buff;
+  size_t len;
+  size_t pos;
+} fsContent_t;
+
+typedef std::function<bool(fsContent_t*)> parseLogHandler;
+typedef std::function<bool(void*, fsContent_t*)> parseLogWithArgHandler;
+typedef std::function<bool(fsContent_t*, int*)> lookupLogHandler;
+typedef std::function<bool(void*, fsContent_t*, int*)> lookupLogWithArgHandler;
+typedef std::function<bool(fsContent_t*, int)> queryLogHandler;
+typedef std::function<bool(void*, fsContent_t*, int)> queryLogWithArgHandler;
 
 /**
  * @brief file system utility
@@ -40,9 +46,9 @@ private:
   queryLogHandler _queryLogCallback;
   String _path;
   int _window;
-  size_t _headerLength;
-  size_t _posLineBegin;
-  size_t _posLineEnd;
+  size_t _headerLength; /* Exclude \r\n at the end of string */
+  size_t _posLineBegin; /* Exclude \r\n at the begin */
+  size_t _posLineEnd;   /* Include \r\n at the end */
   uint32_t _lookupPos;
   bool find(int offset, uint8_t searchType);
   bool query(uint32_t offset, int find_val);
