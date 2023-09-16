@@ -17,6 +17,7 @@
 #define DDNS_DOMAIN_LENGTH_MAX  31
 #define DDNS_USER_LENGTH_MAX    15
 #define DDNS_PASS_LENGTH_MAX    15
+#define DDNS_IPURL_LENGTH_MAX   50
 #define SNTP_LENGTH_MAX         31
 
 #define PASS_COMMON_DEFAULT     1234
@@ -74,6 +75,7 @@ typedef struct {
         char        domain[DDNS_DOMAIN_LENGTH_MAX + 1];
         char        user[DDNS_USER_LENGTH_MAX + 1];
         char        pass[DDNS_PASS_LENGTH_MAX + 1];
+        char        ipUrl[DDNS_IPURL_LENGTH_MAX + 1];
         uint8_t     sync_time;
         uint8_t     disable : 1;
     }ddns;
@@ -104,7 +106,7 @@ private:
     void syncFromFileSystem();
     void saveToFileSystem();
 public:
-    ESPSysParams(fs::FS &fs = NAND_FS_SYSTEM);
+    ESPSysParams(fs::FS &fs);
     ~ESPSysParams();
 
     void load(fs::FS* fs = nullptr);
@@ -218,6 +220,7 @@ public:
     String domainDDNS() { return _sys_prams.ddns.domain; }
     String userDDNS() { return _sys_prams.ddns.user; }
     String passDDNS() { return _sys_prams.ddns.pass; }
+    String ipUrlDDNS() { return _sys_prams.ddns.ipUrl; }
     uint8_t syncTimeDDNS() { return _sys_prams.ddns.sync_time; }
     uint8_t disableDDNS() { return _sys_prams.ddns.disable; }
     void serviceDDNSSet(const String &service) { 
@@ -231,6 +234,9 @@ public:
     }
     void passDDNSSet(const String &pass) { 
         pass.toCharArray(_sys_prams.ddns.pass, DDNS_PASS_LENGTH_MAX + 1);
+    }
+    void ipUrlDDNSSet(const String &ipUrl) { 
+        ipUrl.toCharArray(_sys_prams.ddns.ipUrl, DDNS_IPURL_LENGTH_MAX + 1);
     }
     void syncTimeDDNSSet(uint8_t sync_time) { _sys_prams.ddns.sync_time = sync_time; }
     void disableDDNSSet(uint8_t disable) { _sys_prams.ddns.disable = disable; }

@@ -11,7 +11,6 @@ typedef std::function<void(int type)> ETHLedStatusHandler;
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
 #ifdef ESP32
-#include <ETH.h>
 /* 
    * ETH_CLOCK_GPIO0_IN   - default: external clock from crystal oscillator
    * ETH_CLOCK_GPIO0_OUT  - 50MHz clock from internal APLL output on GPIO0 - possibly an inverter is needed for LAN8720
@@ -35,6 +34,30 @@ typedef std::function<void(int type)> ETHLedStatusHandler;
 #define ETH_TYPE ETH_PHY_TLK110
 // I²C-address of Ethernet PHY (0 or 1 for LAN8720, 31 for TLK110)
 #define ETH_ADDR 31
+#elif (LAN_ENC28J60 == 1) || (LAN_W5500 == 1) 
+#if (LAN_ENC28J60 == 1)
+#define SPI_CLOCK_MHZ  8    // max 10Mhz
+#else
+#define SPI_CLOCK_MHZ  25    // Using 25MHz for W5500, 14MHz for W5100
+#endif
+#define SPI_HOST       3
+#define INT_GPIO       22
+#if CONFIG_IDF_TARGET_ESP32
+    #define MISO_GPIO 19
+    #define MOSI_GPIO 18
+    #define SCLK_GPIO 5
+    #define CS_GPIO   17
+#elif CONFIG_IDF_TARGET_ESP32C3
+    #define MISO_GPIO  2
+    #define MOSI_GPIO  7
+    #define SCLK_GPIO  6
+    #define CS_GPIO   10
+#else
+    #define MISO_GPIO 13
+    #define MOSI_GPIO 11
+    #define SCLK_GPIO 12
+    #define CS_GPIO   10
+#endif
 #else
 #error "No Ethernet card selected"
 #endif

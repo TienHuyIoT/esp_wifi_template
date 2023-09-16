@@ -25,14 +25,14 @@
     1234
   ],
   "sta": {
-    "ip":"192.168.1.101",
+    "ip":"192.168.1.100",
     "gw":"192.168.1.1",
     "sn":"255.255.255.0",
     "dns":"192.168.1.1",
-    "ssid":"Coffee Mr . Bean_2 4G",
-    "psk":"68686868",
-    "hostname": "tienhuyiot",
-    "dhcp": 1,
+    "ssid":"Quyen_2.4G",
+    "psk":"12345679",
+    "hostname": "tienhuyiot1",
+    "dhcp": 0,
     "disable": 0,
     "smart_cfg": 0
   },

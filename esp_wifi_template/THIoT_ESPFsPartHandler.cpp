@@ -101,7 +101,7 @@ bool ESPFsPart::canHandle(AsyncWebServerRequest *request){
       position_log_t posEnd = logCard.posParamsDown();
       logCard.end();
 
-      _filesize = posEnd.end - posStart.start;
+      _filesize = posEnd.end + 2 - posStart.start; // 2: "\r\n"
       FS_PART_DBG_PRINTF("Size: %u", _filesize);
 
       request->_tempFile.seek(posStart.start);

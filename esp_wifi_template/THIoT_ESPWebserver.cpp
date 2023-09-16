@@ -366,7 +366,7 @@ void ESPWebserver::begin(void)
   _server->addHandler(_sdCardEditor);
 #endif
 
-_server->on("/get", HTTP_GET, [](AsyncWebServerRequest *request)
+  _server->on("/get", HTTP_GET, [](AsyncWebServerRequest *request)
           {
             if (authentication_level(request) != HTTP_AUTH_FAIL)
             {
@@ -395,7 +395,7 @@ _server->on("/get", HTTP_GET, [](AsyncWebServerRequest *request)
             }
           });
 
-_server->on("/get_open", HTTP_GET,
+  _server->on("/get_open", HTTP_GET,
           [](AsyncWebServerRequest *request)
           {
             if (_httpGetHandler)
@@ -421,7 +421,7 @@ _server->on("/get_open", HTTP_GET,
             }
           });
 
-_server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
+  _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
           {
             if (authentication_level(request) != HTTP_AUTH_FAIL)
             {
@@ -449,6 +449,29 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
               }
             }
           });
+  
+  
+  /* Handling Content-Type: raw (application/json) */
+  _server->on("/petro_counter", HTTP_POST, [](AsyncWebServerRequest *request){
+    if(authentication_level(request) != HTTP_AUTH_FAIL)
+    {
+      String resp = "{\"Data_type\": 2,\"Error_code\": 0}";
+      AsyncWebServerResponse *response = request->beginResponse(200, "text/json", resp);
+      response->addHeader("Connection", "disconnect");
+      request->send(response);
+    }
+  }, nullptr
+  , [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
+    if(!index)
+    {
+      WEB_SERVER_TAG_CONSOLE("BodyStart: %u", total);
+    }
+    WEB_SERVER_DBG_PORT.write(data, len);
+    if((index + len) == total)
+    {
+      WEB_SERVER_TAG_CONSOLE("BodyEnd: %u", total);
+    }
+  });
 
   /* Serving files in directory. Serving static files with authentication */
   _server->serveStatic("/", NAND_FS_SYSTEM, "/").setDefaultFile("index.htm").setAuthentication(_adminAuthUser.c_str(), _adminAuthPass.c_str());
@@ -618,7 +641,7 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
         {
           WEB_SERVER_TAG_CONSOLE("UploadStart: %s", filename.c_str());
         }
-        WEB_SERVER_TAG_CONSOLE("%s", (const char *)data);
+        WEB_SERVER_DBG_PORT.write(data, len);
         if (final)
         {
           WEB_SERVER_TAG_CONSOLE("UploadEnd: %s (%u)", filename.c_str(), index + len);
@@ -632,7 +655,7 @@ _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
         {
           WEB_SERVER_TAG_CONSOLE("BodyStart: %u", total);
         }
-        WEB_SERVER_TAG_CONSOLE("%s", (const char *)data);
+        WEB_SERVER_DBG_PORT.write(data, len);
         if (index + len == total)
         {
           WEB_SERVER_TAG_CONSOLE("BodyEnd: %u", total);

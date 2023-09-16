@@ -24,11 +24,11 @@ ESP32 and ESP8266 Arduino wifi template
   - Log File operating system into SPIFFS/LittleFS
 
 **Ethernet IC supported**
-  - ENC28J60 for ESP8266
-  - W5100 for ESP8266
-  - w5500 for ESP8266
-  - LAN8720A for ESP32
-  - TLK110 for ESP32
+  - ENC28J60
+  - W5100
+  - w5500
+  - LAN8720A only for ESP32
+  - TLK110 only for ESP32
 
 **File system handle**
   - SPIFFS
@@ -67,6 +67,8 @@ ESP32 and ESP8266 Arduino wifi template
 - [EasyDDNS](https://github.com/ayushsharma82/EasyDDNS) - C++
 - [ArduinoJson](https://github.com/bblanchon/ArduinoJson/tree/5.x) - C++
 - [oneButton](https://github.com/mathertel/OneButton) - C++
+- [WebServer_ESP32_W5500](https://github.com/khoih-prog/WebServer_ESP32_W5500) - C++
+- [ESP32-ENC28J60](https://github.com/tobozo/ESP32-ENC28J60) - C++
 
 ### HttpServer page
 | Link | Description |

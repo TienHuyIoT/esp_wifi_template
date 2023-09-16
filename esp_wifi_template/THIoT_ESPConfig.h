@@ -102,6 +102,10 @@ https://github.com/boblemaire/asyncHTTPrequest
 #ifdef ESP32
 #define LAN_LAN8720   1
 #define LAN_TLK110    0
+// https://github.com/khoih-prog/WebServer_ESP32_W5500
+#define LAN_W5500     0
+// https://github.com/tobozo/ESP32-ENC28J60
+#define LAN_ENC28J60  0
 #elif defined(ESP8266)
 #define LAN_ENC28J60  1
 #define LAN_W5100     0
@@ -173,7 +177,13 @@ https://github.com/boblemaire/asyncHTTPrequest
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
 #ifdef ESP32
+#if (LAN_ENC28J60 == 1)
+#include <ESP32-ENC28J60.h>
+#elif (LAN_W5500 == 1)
+#include <WebServer_ESP32_W5500.h>
+#else
 #include <ETH.h>
+#endif
 #elif defined(ESP8266)
 #include <SPI.h>
 #include <ENC28J60lwIP.h>

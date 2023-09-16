@@ -46,7 +46,7 @@ static rtc_time_t rtcConvert(uint32_t ddmmyy, uint32_t hhmmss)
 
 LOGTransactionCardClass::LOGTransactionCardClass(const char * path)
 :FSULogStream(TRANSACTION_CARD_LOG_FS, path),
-_fsService(TRANSACTION_CARD_LOG_FS, TRANSACTION_CARD_LOG_LENGTH_MAX * 2, path, sizeof(transaction_card_log_header) - 1),
+_fsService(TRANSACTION_CARD_LOG_FS, TRANSACTION_CARD_LOG_LENGTH_MAX, path, sizeof(transaction_card_log_header) - 1),
 _path(path)
 {
     _totalObject = 0;
@@ -61,6 +61,9 @@ LOGTransactionCardClass::~LOGTransactionCardClass()
 
 void LOGTransactionCardClass::_Object()
 {
+    _totalObject = 0;
+    _firstObject = 0;
+    _lastObject = 0;
     if (_fsService.first())
     {
         _firstObject = _params.sell.pump_cnt;
@@ -72,6 +75,10 @@ void LOGTransactionCardClass::_Object()
     }
 
     _totalObject = _lastObject - _firstObject;
+    if (_firstObject > 0)
+    {
+        _totalObject += 1;
+    }
 
     TRANSACTION_CARD_TAG_CONSOLE("_firstObject %u", _firstObject);
     TRANSACTION_CARD_TAG_CONSOLE("_lastObject %u", _lastObject);
@@ -79,6 +86,17 @@ void LOGTransactionCardClass::_Object()
 }
 
 void LOGTransactionCardClass::end() {}
+
+void LOGTransactionCardClass::pathUpdate(const char * path)
+{
+    if (_path != path)
+    {
+        _path = path;
+        _fsService.setPath(path);
+        this->pathSet(path); /* FSULogStream pathSet */
+        _Object();
+    }
+}
 
 void LOGTransactionCardClass::begin(const char * path)
 {
@@ -264,9 +282,6 @@ bool LOGTransactionCardClass::getDownParams(params_transaction_card_t* params)
 
 void LOGTransactionCardClass::saveAsFile(const char* buff)
 {
-    _totalObject = 0;
-    _firstObject = 0;
-    _lastObject = 0;
     clean(); // clean to make sure create a new file after that.
     TRANSACTION_LOG_PRINTFLF("%s", FPSTR(transaction_card_log_header));
     TRANSACTION_LOG_PRINTF("%s", buff); // buff must be has string "\r\n"
@@ -281,13 +296,11 @@ void LOGTransactionCardClass::addParams(params_transaction_card_t* params)
         clean(); // clean to make sure create a new file after that.
         TRANSACTION_CARD_TAG_CONSOLE("Write header");
         TRANSACTION_LOG_PRINTFLF("%s", FPSTR(transaction_card_log_header));
+        _Object();
     }
     
+    _lastObject = params->sell.pump_cnt;
     _totalObject++;
-    _lastObject++;
-
-    /* Number object always is pump_cnt */
-    // params->sell.pump_cnt = _lastObject;
 
     TRANSACTION_LOG_PRINTFLF("%u,%u,%lX,%s ,%u,%u,%u,%u,%u,%u,%u,%u,%d,%u",
                 params->sell.pump_cnt,

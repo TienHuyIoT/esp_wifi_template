@@ -21,6 +21,7 @@ Some Library references:
 #include <Arduino.h>
 #include <base64.h>
 #include "THIoT_ESPAsyncEasyDDNS.h"
+#include "THIoT_ESPSysParams.h"
 
 #if (defined ASYNC_EASYDDNS_DEBUG) && (ASYNC_EASYDDNS_DEBUG == 1)
 #include "THIoT_PFSerialTrace.h"
@@ -101,7 +102,7 @@ void ESPAsyncEasyDDNS::getIP()
   ddnsIP.fromString("0.0.0.0");
   if (_aHttpGetIP.readyState() == 0 || _aHttpGetIP.readyState() == 4)
   {
-    bool result = _aHttpGetIP.open("GET", "http://ipv4bot.whatismyipaddress.com/");
+    bool result = _aHttpGetIP.open("GET", ESPConfig.ipUrlDDNS().c_str());
     
     if (result)
     {

@@ -1,5 +1,5 @@
-#ifndef __FS_UTILITY_H
-#define __FS_UTILITY_H
+#ifndef __FS_SERVICE_H
+#define __FS_SERVICE_H
 
 /** Common include */
 #include <Arduino.h>
@@ -17,6 +17,11 @@ typedef struct {
   size_t pos;
 } fsContent_t;
 
+typedef struct {
+    size_t start;
+    size_t end;
+} position_log_t;
+
 typedef std::function<bool(fsContent_t*)> parseLogHandler;
 typedef std::function<bool(void*, fsContent_t*)> parseLogWithArgHandler;
 typedef std::function<bool(fsContent_t*, int*)> lookupLogHandler;
@@ -33,6 +38,8 @@ typedef std::function<bool(void*, fsContent_t*, int)> queryLogWithArgHandler;
 */
 class FSULogService
 {
+  using File = fs::File;
+  using FS = fs::FS;
 private:
   typedef enum {
     FIND_NONE = 0,
@@ -40,7 +47,7 @@ private:
     FIND_REVERSE
   } direct_search_t;
   
-  fs::FS _fs;
+  FS _fs;
   parseLogHandler _parseLogCallback;
   lookupLogHandler _lookupLogCallback;
   queryLogHandler _queryLogCallback;
@@ -55,7 +62,8 @@ private:
   bool lookUp(int find_val);
   char* lineIndex(char* buff, uint8_t searchType);
 public:
-  FSULogService(const fs::FS &fs, int window, const char *path, size_t headerLength);
+  /* window: Equal or exceed length of one log */
+  FSULogService(const FS &fs, int logLength, const char *path, size_t headerLength);
   ~FSULogService();
 
   bool last();
@@ -117,28 +125,43 @@ public:
 
 class FSULogStream : public Stream
 {
-private:
-    fs::FS* _fs;
-    String _fileName;
+protected:
+    using File = fs::File;
+    using FS = fs::FS;
+    FS *_fs;
+    String _logPath;
+    String backupName() {
+        String ext = _logPath.substring(1); /* pass '/' */
+        String name = "/bk";
+        name += ext;
+        return name;
+    }
 public:
-    FSULogStream(fs::FS &fs, const char* fileName)
-    :_fs(&fs),_fileName(fileName) {
+    FSULogStream(FS &fs, const char* logPath)
+    :_fs(&fs),_logPath(logPath) {
 
     }
+    void pathSet(const char* logPath) {_logPath = logPath;}
     int available() override { return 0;}
     int read() override { return -1; }
     int peek() override { return -1; }
     void flush(void) override {}
     size_t write(uint8_t c) override { write(&c, 1); return 1; }
     size_t write(const uint8_t *buffer, size_t size) override {
-        File fs_handle = _fs->open(_fileName, "a");
+        File fs_handle = _fs->open(_logPath, "a");
         fs_handle.write(buffer, size);
         fs_handle.close();
         return size;
     }
+    size_t logSize() {
+      File fs_handle = _fs->open(_logPath, "r");
+      size_t size = fs_handle.size();
+      fs_handle.close();
+      return size;
+    }
     void clean() {
-        _fs->remove(_fileName);
+        _fs->remove(_logPath);
     }
 };
 
-#endif // __FS_UTILITY_H
+#endif // __FS_SERVICE_H

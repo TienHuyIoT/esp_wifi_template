@@ -7,11 +7,11 @@
 
 #define FS_UTILITY_TAG_CONSOLE(...) //SERIAL_FUNCTION_TAG_LOGI("[FS_UTILITY]", __VA_ARGS__)
 
-FSULogService::FSULogService(const fs::FS &fs, int _window, const char *path, size_t headerLength)
+FSULogService::FSULogService(const FS &fs, int logLength, const char *path, size_t headerLength)
     : _fs(fs),
       _path(path),
       _headerLength(headerLength),
-      _window(_window)
+      _window(logLength * 2) /*_window the minimum size of two line so multi 2 length input*/
 {
     _posLineBegin = 0;
     _posLineEnd = 0;
@@ -155,8 +155,8 @@ bool FSULogService::lookUp(int find_val)
         if (line != nullptr)
         {
             _posLineBegin = mid_index + (line - buff);
-            // +1 is '\n'
-            _posLineEnd = _posLineBegin + (strchr(line, '\n') + 1 - line);
+            // -1 is '\r'
+            _posLineEnd = _posLineBegin + (strchr(line, '\n') - 1 - line);
 
             fsContent_t output;
             output.buff = line;
@@ -266,8 +266,8 @@ bool FSULogService::query(uint32_t offset, int find_val)
     while (line != nullptr)
     {
         _posLineBegin = offset + (line - buff);
-        // +1 is '\n'
-        _posLineEnd = _posLineBegin + (strchr(line, '\n') + 1 - line);
+        // -1 is '\r'
+        _posLineEnd = _posLineBegin + (strchr(line, '\n') - 1 - line);
 
         output.buff = line;
         output.len  = _posLineEnd - _posLineBegin;
@@ -350,8 +350,8 @@ bool FSULogService::find(int offset, uint8_t searchType)
     if (line != nullptr)
     {
         _posLineBegin = seek + (line - buff);
-        // +1 is '\n'
-        _posLineEnd = _posLineBegin + (strchr(line, '\n') + 1 - line);
+        // -1 is '\r'
+        _posLineEnd = _posLineBegin + (strchr(line, '\n') - 1 - line);
 
         fsContent_t output;
         output.buff = line;

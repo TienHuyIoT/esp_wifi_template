@@ -43,6 +43,7 @@ void setup()
 {
 #ifdef ESP32
     SERIAL_PORT.begin(SERIAL_BAUDRATE, SERIAL_8N1, -1, 1);
+    SERIAL_PORT.setTxBufferSize(256);
 #elif defined(ESP8266)
     SERIAL_PORT.begin(SERIAL_BAUDRATE, SERIAL_8N1);
 #endif

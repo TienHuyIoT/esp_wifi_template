@@ -38,11 +38,6 @@ typedef struct {
     uint32_t time; // hhmmss
 } total_time_t;
 
-typedef struct {
-    size_t start;
-    size_t end;
-} position_log_t;
-
 typedef card_info_trans_t params_transaction_card_t;
 
 class LOGTransactionCardClass : public FSULogStream
@@ -66,6 +61,7 @@ public:
     ~LOGTransactionCardClass();
     void begin(const char * path = nullptr);
     void end();
+    void pathUpdate(const char * path);
     position_log_t posParams() { return _pos_params;}
     position_log_t posParamsDown() { return _pos_paramsDown;}
     position_log_t posParamsUp() { return _pos_paramsUp;}

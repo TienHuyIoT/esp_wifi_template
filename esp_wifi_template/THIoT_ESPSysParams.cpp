@@ -58,6 +58,7 @@ const char espSysParamsDefault[] PROGMEM = R"=====(
     },
     "ddns":{
         "service": "noip",
+        "ipUrl": "ifconfig.me/ip",
         "domain": "tienhuyiot.ddns.net",
         "user": "tienhuyiot",
         "pass": "123456789",
@@ -178,6 +179,7 @@ void ESPSysParams::saveToFileSystem()
     ddns["domain"].set(_sys_prams.ddns.domain);
     ddns["user"].set(_sys_prams.ddns.user);    
     ddns["pass"].set(_sys_prams.ddns.pass); 
+    ddns["ipUrl"].set(_sys_prams.ddns.ipUrl);
     ddns["sync_time"].set(_sys_prams.ddns.sync_time); 
     ddns["disable"].set(_sys_prams.ddns.disable);
 
@@ -295,6 +297,7 @@ void ESPSysParams::syncFromFileSystem()
         ddns["domain"].as<String>().toCharArray(_sys_prams.ddns.domain, DDNS_DOMAIN_LENGTH_MAX + 1);
         ddns["user"].as<String>().toCharArray(_sys_prams.ddns.user, DDNS_USER_LENGTH_MAX + 1);
         ddns["pass"].as<String>().toCharArray(_sys_prams.ddns.pass, DDNS_PASS_LENGTH_MAX + 1);
+        ddns["ipUrl"].as<String>().toCharArray(_sys_prams.ddns.ipUrl, DDNS_IPURL_LENGTH_MAX + 1);
         _sys_prams.ddns.sync_time = ddns["sync_time"].as<int>();
         _sys_prams.ddns.disable = ddns["disable"].as<int>();
     } 

@@ -123,7 +123,11 @@ bool ESPEthernet::begin()
   }
   ,WiFiEvent_t::m_ESP32_EVENT_ETH_DISCONNECTED);
 
+#if (LAN_ENC28J60 == 1) || (LAN_W5500 == 1)
+  ETH.begin( MISO_GPIO, MOSI_GPIO, SCLK_GPIO, CS_GPIO, INT_GPIO, SPI_CLOCK_MHZ, SPI_HOST);
+#else
   ETH.begin(ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_TYPE, ETH_CLK_MODE);
+#endif
 #endif
   if (!ESPConfig.dhcpSTA())
   {
