@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include "THIoT_PFStateMachine.h"
 
 uint8_t sm_current(sm_handle_t *sm)

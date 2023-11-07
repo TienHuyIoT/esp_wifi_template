@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <Arduino.h>
 #include "THIoT_PFcList.h"
 
 /**
@@ -47,11 +48,11 @@ void c_list_deleteList(c_list_t **pRootList, int withFree) {
 c_list_t *c_list_insert(c_list_t **pRootList, void *value) {
     c_list_t *pList = *pRootList;
     if (NULL == pList) {
-        pList = malloc(sizeof(c_list_t));
-        if(NULL == pList)
-        {
+        pList = (c_list_t*)malloc(sizeof(c_list_t));
+        if(NULL == pList) {
             return NULL;
         }
+        memset(pList, 0, sizeof(c_list_t));
 #if (defined LIST_MONITOR_HEAP_MEMORY) && (LIST_MONITOR_HEAP_MEMORY == 1)
         list_heap += sizeof(c_list_t);
 #endif
@@ -77,11 +78,11 @@ c_list_t *c_list_insert_after(c_list_t *pEntry, void *value) {
     if (NULL == pEntry) {
         return NULL;
     }
-    c_list_t *pNew = malloc(sizeof(c_list_t));
-    if(NULL == pNew)
-    {
+    c_list_t *pNew = (c_list_t*)malloc(sizeof(c_list_t));
+    if(NULL == pNew) {
         return NULL;
     }
+    memset(pNew, 0, sizeof(c_list_t));
 #if (defined LIST_MONITOR_HEAP_MEMORY) && (LIST_MONITOR_HEAP_MEMORY == 1)
     list_heap += sizeof(c_list_t);
 #endif
@@ -106,11 +107,12 @@ c_list_t *c_list_insert_before(c_list_t *pEntry, void *value) {
     if (NULL == pEntry->prev) {
         return NULL;
     }
-    c_list_t *pNew = malloc(sizeof(c_list_t));
+    c_list_t *pNew = (c_list_t*)malloc(sizeof(c_list_t));
     if(NULL == pNew)
     {
         return NULL;
     }
+    memset(pNew, 0, sizeof(c_list_t));
 #if (defined LIST_MONITOR_HEAP_MEMORY) && (LIST_MONITOR_HEAP_MEMORY == 1)
     list_heap += sizeof(c_list_t);
 #endif
@@ -123,6 +125,17 @@ c_list_t *c_list_insert_before(c_list_t *pEntry, void *value) {
     pEntry->prev = pNew;
     return pNew;
 } // c_list_insert_before
+
+uint8_t c_list_validate(c_list_t **pRootList, c_list_t *pEntry) {
+    c_list_t *pList = *pRootList;
+    while(pList != NULL) {
+        if (pList == pEntry) {
+            return LIST_OK;
+        }
+        pList = pList->next;
+    }
+    return LIST_ERROR;
+}
 
 /**
  * Remove an item from the list.
@@ -161,6 +174,9 @@ uint8_t c_list_remove(c_list_t **pRootList, c_list_t *pEntry, int withFree) {
     if (withFree) {
         free(pEntry->value);
     }
+    pEntry->next = NULL;
+    pEntry->prev = NULL;
+    pEntry->value = NULL;
     free(pEntry);
 #if (defined LIST_MONITOR_HEAP_MEMORY) && (LIST_MONITOR_HEAP_MEMORY == 1)
     list_heap -= sizeof(c_list_t);
@@ -219,7 +235,7 @@ c_list_t *c_list_prev(c_list_t *pList) {
     return pList->prev;
 } // list_first
 
-void *c_list_get_value(c_list_t *pList) {
+void* c_list_get_value(c_list_t *pList) {
     if (NULL == pList) {
         return NULL;
     }

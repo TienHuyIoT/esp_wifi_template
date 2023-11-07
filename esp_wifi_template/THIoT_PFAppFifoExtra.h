@@ -10,9 +10,13 @@
 extern "C" {
 #endif
 
-uint32_t app_fifo_length(app_fifo_t * const fifo);
+inline uint32_t app_fifo_length(app_fifo_t * const fifo)
+{
+  uint32_t tmp = fifo->read_pos;
+  return fifo->write_pos - tmp;
+}
 
-uint32_t app_fifo_available(app_fifo_t * const fifo);
+uint32_t app_fifo_available_count(app_fifo_t * const fifo);
 
 uint32_t app_fifo_buff_peek(app_fifo_t * p_fifo, uint8_t * p_byte_array, uint32_t * p_size);
 

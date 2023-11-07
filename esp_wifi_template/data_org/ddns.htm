@@ -27,6 +27,7 @@
             obj.sync_time = sync_time;
             obj.service = document.getElementById('service').value;
             obj.domain = document.getElementById('domain').value;
+            obj.ipUrl = document.getElementById('ipUrl').value;
             obj.user = document.getElementById('user').value;
             obj.pass = document.getElementById('pass').value;
             obj.disable = !document.getElementById("enable").checked;
@@ -45,6 +46,7 @@
                 document.getElementById('domain').value = obj.domain;
                 document.getElementById('user').value = obj.user;
                 document.getElementById('pass').value = obj.pass;
+                document.getElementById('ipUrl').value = obj.ipUrl;
                 document.getElementById('sync_time').value = obj.sync_time;
                 document.getElementById('ip_ddns').value = obj.ip_ddns;
                 document.getElementById("enable").checked = !obj.disable;
@@ -95,6 +97,10 @@
             <tr>
                 <td align="left"><b>IP DDNS</b></td>
                 <td><input type="text" id="ip_ddns" readonly></td>
+            </tr>
+            <tr>
+                <td align="left"><b>IP url</b></td>
+                <td><input type="text" id="ipUrl"></td>
             </tr>
             <tr>
                 <td align="left"><b>ENABLE</b></td>

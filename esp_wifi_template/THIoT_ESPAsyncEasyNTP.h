@@ -2,7 +2,7 @@
 #define __ESP_ASYNC_EASY_NTP_H
 
 #include <Arduino.h>
-#include <Ticker.h>
+#include "THIoT_PFTicker.h"
 #ifdef ESP32
 #include "AsyncUDP.h"
 #elif defined(ESP8266)
@@ -21,7 +21,7 @@ private:
     String _server;
     AsyncUDP _udp;
     IPAddress _ipServer; // https://tf.nist.gov/tf-cgi/servers.cgi
-    Ticker _tickerRunAsync;
+    ticker_function_handle_t _tickerRunAsync;
     int _interval;
     void sendNTPpacket();
     void _onPacket(AsyncUDPPacket& packet);    
@@ -29,7 +29,8 @@ public:
     ESPAsyncEasyNTP(/* args */);
     ~ESPAsyncEasyNTP();
 
-    void begin(long gmtOffset = (3600 * 7), int daylightOffset = 0, const char *server = "time.nist.gov", int interval = 3600);
+    void begin(const char* tz, const char *server = "time.nist.gov", int interval = 3600);
+    void begin(long gmtOffset_sec, int daylightOffset_sec, const char *server = "time.nist.gov", int interval = 3600);
     
     void onNTPSyncEvent (onSyncEvent_t handler) {
         _onSyncEvent = handler;
@@ -41,7 +42,7 @@ public:
 };
 
 #if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_EASYNTP)
-extern ESPAsyncEasyNTP EASYNTP;
+extern ESPAsyncEasyNTP EASY_NTP;
 #endif
 
 #endif // __ESP_ASYNC_EASY_NTP_H

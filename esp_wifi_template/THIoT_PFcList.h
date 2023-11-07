@@ -35,6 +35,7 @@ typedef struct _c_list_t {
 void c_list_deleteList(c_list_t **pRootList, int withFree);
 c_list_t *c_list_insert(c_list_t **pRootList, void *value);
 uint8_t c_list_remove(c_list_t **pRootList, c_list_t *pEntry, int withFree);
+uint8_t c_list_validate(c_list_t **pRootList, c_list_t *pEntry);
 c_list_t *c_list_next(c_list_t *pList);
 uint8_t c_list_removeByValue(c_list_t **pRootList, void *value, int withFree);
 c_list_t *c_list_findByValue(c_list_t **pRootList, void *value);

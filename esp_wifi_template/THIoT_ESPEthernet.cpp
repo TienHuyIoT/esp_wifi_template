@@ -8,6 +8,7 @@
 #include "THIoT_ESPLogTrace.h"
 #include "THIoT_PFSerialTrace.h"
 #include "THIoT_PFLedStatus.h"
+#include "THIoT_ESPSoftReset.h"
 
 #define ESP_ETH_PORT SERIAL_PORT
 #define ETH_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[ETH]", __VA_ARGS__)
@@ -38,7 +39,7 @@ SPIEthernet ETH;
 
 ESPEthernet::ESPEthernet(/* args */)
 {
-  _status = false;
+  _enable = false;
 #ifdef ESP8266
   _connected = false;
 #endif
@@ -49,80 +50,17 @@ ESPEthernet::~ESPEthernet()
 }
 
 ETHLedStatusHandler ESPEthernet::_ledStatusFunc = nullptr;
+boolean ESPEthernet::_IsConnected = false;
 
 bool ESPEthernet::begin()
 { 
-  if (!_status) 
-  {
+  if (!_enable) {
     ETH_TAG_CONSOLE("ETH was disable");
     return false;
   }
   ETH_TAG_CONSOLE("ETH Start");
+  this->disconnectEvt(); /* Purpose: active timeout connection reset */
 #ifdef ESP32
-  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
-  {
-    ETH_TAG_CONSOLE("started");
-    ETH_TAG_LOG("started");
-    String ChipID = String((uint32_t)(ESP.getEfuseMac() >> 16), HEX);
-    ChipID.toUpperCase();
-    String hostName = "ETH_" + ESPConfig.hostNameSTA() + "_" + ChipID;
-    ETH.setHostname(hostName.c_str());
-  }
-  ,WiFiEvent_t::m_ESP32_EVENT_ETH_START);
-
-  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
-  {
-    ETH_TAG_CONSOLE("stopped");
-    ETH_TAG_LOG("stopped");
-    if (_ledStatusFunc)
-    {
-      _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_ETH_DISCONNECTED);
-    }
-  }
-  ,WiFiEvent_t::m_ESP32_EVENT_ETH_STOP);
-
-  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
-  {
-    ETH_TAG_CONSOLE("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
-    ETH_TAG_CONSOLE("MAC: %s, IPv4: %s", ETH.macAddress().c_str(), ETH.localIP().toString().c_str());
-    ETH_TAG_LOG("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
-    if (ETH.fullDuplex()) {
-        ETH_TAG_CONSOLE("FULL_DUPLEX");
-    }
-    ETH_TAG_CONSOLE("Link Speed %uMbps", ETH.linkSpeed()); 
-    if (_ledStatusFunc)
-    {
-      _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_ETH_GOT_IP);
-    }
-#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
-    ETH_TAG_LOG("[EASYNTP] begin(%ld, %d, %s, %u)"
-          , ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
-    EASYNTP.begin(ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
-#endif
-  }
-  ,WiFiEvent_t::m_ESP32_EVENT_ETH_GOT_IP);
-
-  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
-  {
-    ETH_TAG_CONSOLE("connected");
-    ETH_TAG_LOG("connected");
-  }
-  ,WiFiEvent_t::m_ESP32_EVENT_ETH_CONNECTED);
-
-  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
-  {
-    ETH_TAG_CONSOLE("disconnected");
-    ETH_TAG_LOG("disconnected");
-    if (_ledStatusFunc)
-    {
-      _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_ETH_DISCONNECTED);
-    }
-#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
-    EASYNTP.end();
-#endif
-  }
-  ,WiFiEvent_t::m_ESP32_EVENT_ETH_DISCONNECTED);
-
 #if (LAN_ENC28J60 == 1) || (LAN_W5500 == 1)
   ETH.begin( MISO_GPIO, MOSI_GPIO, SCLK_GPIO, CS_GPIO, INT_GPIO, SPI_CLOCK_MHZ, SPI_HOST);
 #else
@@ -151,69 +89,98 @@ bool ESPEthernet::begin()
   return true;
 }
 
-void ESPEthernet::loop()
-{
 #ifdef ESP8266
-  if (_status)
-  {
-    if (ETH.connected())
-    {
-      if (!_connected)
-      {
+void ESPEthernet::loop() {
+  if (_enable) {
+    if (ETH.connected()) {
+      if (!_connected) {
+        _connected = true;
         ETH_TAG_CONSOLE("connected");
         ETH_TAG_LOG("connected, got IP is %s", ETH.localIP().toString().c_str());
         ETH_TAG_CONSOLE("Ip: %s", ETH.localIP().toString().c_str());
         ETH_TAG_CONSOLE("Gw: %s", ETH.gatewayIP().toString().c_str());
         ETH_TAG_CONSOLE("Sn: %s", ETH.subnetMask().toString().c_str());
         ETH_TAG_CONSOLE("Dns: %s\r\n", ETH.dnsIP().toString().c_str());
-        _connected = true;
-        if (_ledStatusFunc)
-        {
-          _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_ETH_GOT_IP);
-        }
-#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
-        ETH_TAG_LOG("[EASYNTP] begin(%ld, %d, %s, %u)"
-          , ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
-        EASYNTP.begin(ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
-#endif
+        this->connectedEvt();
+        /* Run DDNS service */
+        EasyDDNS.updateTrigger();
       }
     }
-    else
-    {
-      if (_connected)
-      {
-        ETH_TAG_CONSOLE("disconnect");
-        ETH_TAG_LOG("disconnect");
+    else {
+      if (_connected) {
         _connected = false;
-        if (_ledStatusFunc)
-        {
-          _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_ETH_DISCONNECTED);
-        }
-#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
-        EASYNTP.end();
-#endif
+        this->disconnectEvt();
       }
     }
   }
+}
+#endif
+
+boolean ESPEthernet::disconnectEvt() { 
+  _IsConnected = false;
+  ETH_TAG_CONSOLE("[EVENT] disconnect");
+  ETH_TAG_LOG("[EVENT] disconnect");
+  if (_ledStatusFunc) {
+    _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_ETH_DISCONNECTED);
+  }
+
+#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
+  EASY_NTP.end();
+#endif
+
+#if (NETWORK_CONNECTION_TIMEOUT_RESET == 1)
+  ETH_TAG_CONSOLE("[EVENT] Enable timeout connection reset");
+  ticker_once(&_reconnectTicker, ETH_TIMEOUT_CONNECTION_RESET, [](void *arg) {
+    ESPEthernet *handler = (ESPEthernet*)arg;
+    ETH_TAG_CONSOLE("[EVENT] Timeout connection reset");
+    SOFTReset.enable(500, ESPSoftReset::WIFI_RECONNECT_TYPE);
+  }, this);
 #endif
 }
 
-void ESPEthernet::enable(void)
-{
+boolean ESPEthernet::connectedEvt() { 
+  _IsConnected = true; 
+#ifdef ESP32
+  ETH_TAG_LOG("[EVENT] connected");
+  ETH_TAG_CONSOLE("[EVENT] MAC: %s, IPv4: %s", ETH.macAddress().c_str(), ETH.localIP().toString().c_str());
+  if (ETH.fullDuplex()) {
+      ETH_TAG_CONSOLE("[EVENT] FULL_DUPLEX");
+  }
+  ETH_TAG_CONSOLE("[EVENT] Link Speed %uMbps", ETH.linkSpeed()); 
+#endif
+  if (_ledStatusFunc) {
+    _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_ETH_GOT_IP);
+  }
+
+#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
+#if (TIME_ZONE_TYPE_CFG == 1)
+  EASY_NTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
+#else
+  EASY_NTP.begin(ESPConfig.TzTime().c_str(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
+#endif
+#endif
+
+#if (NETWORK_CONNECTION_TIMEOUT_RESET == 1)
+  ETH_TAG_CONSOLE("[EVENT] Disable timeout connection reset");
+  ticker_detach(&_reconnectTicker);
+#endif
+}
+
+void ESPEthernet::enable(void) {
   ETH_TAG_CONSOLE("ETH set Enable");
-  _status = 1;
+  _enable = true;
 }
 
 void ESPEthernet::disable(void)
 {
   ETH_TAG_CONSOLE("ETH set Disable");
-  _status = 0;
+  _enable = false;
 }
 
-bool ESPEthernet::isEnable(void)
+boolean ESPEthernet::isEnable(void)
 {
-  ETH_TAG_CONSOLE("status %u", _status ? "ON" : "OFF");
-  return _status;
+  ETH_TAG_CONSOLE("status %s", _enable ? "ON" : "OFF");
+  return _enable;
 }
 
 ESPEthernet Ethernet;

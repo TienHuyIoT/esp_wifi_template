@@ -26,13 +26,13 @@ public:
         case BLINK_NORMAL:
         case BLINK_ETH_DISCONNECTED:
         case BLINK_WIFI_DISCONNECTED:
-            cycleTime = cycleTimeMs(100, 100);
-            break;
-        case BLINK_WIFI_GOT_IP:
             cycleTime = cycleTimeMs(100, 900);
             break;
-        case BLINK_ETH_GOT_IP:
+        case BLINK_WIFI_GOT_IP:
             cycleTime = cycleTimeMs(100, 400);
+            break;
+        case BLINK_ETH_GOT_IP:
+            cycleTime = cycleTimeMs(100, 100);
             break;
         case BLINK_FACTORY_SYSTEM_PARAMS:
             cycleTime = cycleTimeMs(1000, 1000);

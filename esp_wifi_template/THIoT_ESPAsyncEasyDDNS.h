@@ -24,6 +24,7 @@ Some Library references:
 #include <Arduino.h>
 #include <functional>
 #include <asyncHTTPrequest.h>
+#include "THIoT_PFTicker.h"
 
 #define ASYNC_EASYDDNS_DEBUG    1
 
@@ -33,31 +34,43 @@ typedef std::function<void(const char* oldIP, const char* newIP)> AsyncDDNSUpdat
 class ESPAsyncEasyDDNS{
 public:
   ESPAsyncEasyDDNS();
-  IPAddress ddnsIP;
-  void service(String ddns_service);
-  void begin(String ddns_domain, String ddns_username, String ddns_password = "");
-  void update();  
+  void service(String serviceDDNS);
+  void urlGetIp(String url);
+  void begin(String ddns_domain, String ddns_username, String ddns_password, int interval = 120);
+  void updateTrigger(uint16_t timeout = 15); 
 
   // Callback
   void onUpdateIP(AsyncDDNSUpdateHandler handler) {
     _ddnsUpdateFunc = handler;
   }
 
+  String ddnsIP() { return _ddnsIP.toString(); }
+
 private:
   AsyncDDNSUpdateHandler _ddnsUpdateFunc = nullptr;
   asyncHTTPrequest _aHttpGetIP;
   asyncHTTPrequest _aHttpPostIP;
+  IPAddress _ddnsIP;
+  ticker_function_handle_t _ddnsTicker;
   String _newIP;
   String _oldIP;
   String _userName;
   String _passWord;
   String _domain;
-  String _serverDDNS;
+  String _urlGetIp;
+  String _serviceDDNS;
   String _base64Authorization;
-  void getIP();
+  uint16_t _interval;
+  boolean _isStart;
+  boolean _updateStatus;
+  void _start(uint16_t interval);
+  void _update(); 
+  void getPublicIP();
   void postIP();
   void getIpCallback(void* optParm, asyncHTTPrequest* request, int readyState);
   void postIpCallback(void* optParm, asyncHTTPrequest* request, int readyState);
 };
+
+extern ESPAsyncEasyDDNS EasyDDNS;
 
 #endif // __ESP_ASYNC_EASY_DDNS_H

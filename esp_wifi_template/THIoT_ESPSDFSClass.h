@@ -18,7 +18,7 @@
 #elif defined(ESP8266)
 #include <SDFS.h>
 
-#define HTH_SFDS_HANDLE 1
+#define HTH_SDFS_HANDLE 1
 
 typedef enum {
     CARD_NONE,
@@ -29,7 +29,7 @@ typedef enum {
 } sdcard_type_t;
 
 /* Make the same API with SD class */
-#if (HTH_SFDS_HANDLE)
+#if (HTH_SDFS_HANDLE)
 class SDFSClass : public fs::FS
 {
 
@@ -88,19 +88,19 @@ SD INTERFACE
 class ESPSdCard
 {
 private:
-    bool _sdCardStatus;
+    boolean _sdCardStatus;
 public:
     ESPSdCard(/* args */);
     ~ESPSdCard();
-    bool statusIsOk() { return _sdCardStatus; }
+    boolean statusIsOk() { return _sdCardStatus; }
 #if (defined SD_SPI_INTERFACE) && (SD_SPI_INTERFACE == 1) && (defined ESP32)
-    void begin(SPIClass &spi);
+    boolean begin(SPIClass &spi);
 #else
-    void begin();
+    boolean begin();
 #endif
 };
 
-extern ESPSdCard HTH_sdCard;
+extern ESPSdCard SDCard;
 
 #endif // (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
 

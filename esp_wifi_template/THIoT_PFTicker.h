@@ -1,5 +1,5 @@
-#ifndef _TICKER_H_
-#define _TICKER_H_
+#ifndef __TICKER_H
+#define __TICKER_H
 
 #ifdef __cplusplus
  extern "C" {
@@ -7,12 +7,14 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
+#include <Arduino.h>
+#include "THIoT_APPConfig.h"
 
 #define TICKER_FUNCTION_HANDLE_MAX  20	/* maximum number ticker function handler */
 #define TICKER_FOREVER              0
-#define TICKER_START_INIT  {\
+#define TICKER_START_INIT(x)  {\
                               .start = 0,\
-                              .interval = 0,\
+                              .interval = (x),\
                               .status = TICKER_RUNNING\
                            }
 
@@ -22,22 +24,20 @@
                               .status = TICKER_STOP\
                            }
 
-typedef enum
-{
+typedef enum {
 	TICKER_STOP = 0,
 	TICKER_RUNNING
-}ticker_status_t;
+} ticker_status_t;
 
-typedef struct{
-	uint32_t 	start;   //ticker Start
-	uint32_t 	interval;   //tickerout_Value
+typedef struct {
+	uint32_t 	start;
+	uint32_t 	interval;
 	ticker_status_t 	status;
-}ticker_t;
+} ticker_t;
 
 typedef void (*fp_callback)(void*);
 
-typedef struct ticker_function_handle
-{
+typedef struct ticker_function_handle {
   ticker_t ticker;
   fp_callback cb;
   void *arg;
@@ -52,11 +52,15 @@ ticker_status_t ticker_status(ticker_t *ticker);
 uint32_t ticker_remain(ticker_t *ticker);
 void ticker_refresh(ticker_t *ticker);
 void ticker_update(ticker_t *ticker, uint32_t interval);
+void ticker_trigger(ticker_t *ticker, uint32_t timeout);
 
 uint8_t ticker_attach(ticker_function_handle_t *fp_ticker,
                         uint32_t interval,
                         fp_callback fp_register,
                         void* arg);
+                        
+uint8_t ticker_attach_trigger(ticker_function_handle_t *fp_ticker,
+                        uint32_t timeout);
 
 uint8_t ticker_attach_ms(ticker_function_handle_t *fp_ticker,
                         uint32_t interval,
@@ -79,10 +83,14 @@ uint8_t allocate_ticker_once_ms(uint32_t interval,
 
 void ticker_detach(ticker_function_handle_t *fp_ticker);
 
-void ticker_schedule_handler(void);
+void IRAM_ATTR ticker_schedule_handler(void);
+
+#if (MUTEX_PLATFORM_TICKER == 1)
+void ticker_schedule_init(void);
+#endif
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif	/* _TICKER_H_ */
+#endif	// __TICKER_H

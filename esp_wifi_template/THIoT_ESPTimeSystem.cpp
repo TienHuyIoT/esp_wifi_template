@@ -1,41 +1,51 @@
+#include <Arduino.h>
 #include <time.h> // time() ctime()
+#include <sys/time.h>
 #ifdef ESP8266
 #include <sys/time.h> // struct timeval
 #endif
+#include <FS.h>
+#include <SPIFFS.h>
 #include <ArduinoJson.h>
+#include "THIoT_APPConfig.h"
 #include "THIoT_ESPConfig.h"
 #include "THIoT_ESPSysParams.h"
+#include "THIoT_ESPTimeSystem.h" 
 #include "THIoT_PFSerialTrace.h"
-#include "THIoT_ESPTimeSystem.h"
+#include "THIoT_ESPLogTrace.h"
 
-#define RTC_CONSOLE_PORT SERIAL_PORT
-#define RTC_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)
-#define RTC_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[RTC]", __VA_ARGS__)
 
-#define RTC_DATA_CONSOLE_PORT SERIAL_PORT
-#define RTC_DATA_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)
-#define RTC_DATA_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[RTC DATA]", __VA_ARGS__)
-#define RTC_FUNCTION_TAG_CONSOLE(...) SERIAL_FUNCTION_TAG_LOGI("[RTC]", __VA_ARGS__)
+#define RTC_CONSOLE_PORT            SERIAL_PORT
+#define RTC_CONSOLE(...)            SERIAL_LOGI(__VA_ARGS__)
+#define RTC_TAG_CONSOLE(...)        SERIAL_TAG_LOGI("[RTC]", __VA_ARGS__)
+
+#define RTC_DATA_CONSOLE_PORT       SERIAL_PORT
+#define RTC_DATA_CONSOLE(...)       SERIAL_LOGI(__VA_ARGS__)
+#define RTC_DATA_TAG_CONSOLE(...)   SERIAL_TAG_LOGI("[RTC DATA]", __VA_ARGS__)
+#define RTC_FUNCTION_TAG_CONSOLE(...) //SERIAL_FUNCTION_TAG_LOGI("[RTC]", __VA_ARGS__)
+
+#define RTC_DATA_TAG_LOG(...)       FS_TAG_LOGI("[RTC] ", __VA_ARGS__)
 
 #define RTC_YEAR_BEGIN 1900
-#define RTC_FILE_PATH ((const char*)"/rtc_info_file.txt")
+#define ESP_RTC_FILE_PATH ((const char*)"/rtc_info_file.txt")
 
 const char *const mon_list[] PROGMEM = {
             "", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
+static void time_level_update_log() {
+    ESPTimeSystem::level_update_t level = ESPTime.getSourceUpdate();
+    RTC_DATA_TAG_LOG("Access Update the level: %s", ESPTime.printSourceUpdate(level));
+}
+
 #ifdef ESP8266
-#if (0)
-static bool getLocalTime(struct tm *info, uint32_t ms)
-{
+static bool getLocalTime(struct tm *info, uint32_t ms) {
     uint32_t start = millis();
     time_t now;
-    while ((millis() - start) <= ms)
-    {
+    while ((millis() - start) <= ms) {
         time(&now);
         localtime_r(&now, info);
-        if (info->tm_year >= (2021 - RTC_YEAR_BEGIN))
-        {
+        if (info->tm_year >= (2021 - RTC_YEAR_BEGIN)) {
             return true;
         }
         delay(10);
@@ -43,30 +53,21 @@ static bool getLocalTime(struct tm *info, uint32_t ms)
     return false;
 }
 #endif
-#endif
 
 ESPTimeSystem::ESPTimeSystem(/* args */)
-    : _rtcFile(new RtcFileHandler(NAND_FS_SYSTEM))
-{
-    _rtcSource = level_update_t::RTC_NON_UPDATE;
+: _rtcFile(NAND_FS_SYSTEM) {
+    _rtcSource = level_update_t::ESP_RTC_NON_UPDATE;
 }
 
-ESPTimeSystem::~ESPTimeSystem()
-{
-}
+ESPTimeSystem::~ESPTimeSystem() {}
 
-void ESPTimeSystem::load(void)
-{
+void ESPTimeSystem::load(void) {
     struct tm tmStruct;
-    rtc_time_t rtc;
+    esp_rtc_time_t rtc;
 
-    setTimeZone(-ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP());
-
-    if (!getLocalTime(&tmStruct, 1))
-    {
-        if (_rtcFile->sync(&rtc))
-        {
-            _rtcFile->remove();
+    if (!getLocalTime(&tmStruct, 5)) {
+        if (_rtcFile.sync(&rtc)) {
+            _rtcFile.remove();
             // rtc.year = 2020;
             // rtc.mon = 8;
             // rtc.mday = 2;
@@ -77,44 +78,52 @@ void ESPTimeSystem::load(void)
             RTC_TAG_CONSOLE("Update RTC from file system");
             set(&rtc);
         }
-        else
-        {
+        else {
             RTC_TAG_CONSOLE("Init build time system");
             const char *sysTime = "Tue " __DATE__ " " __TIME__ " GMT";
-            GMTStringUpdate(sysTime, level_update_t::RTC_NON_UPDATE);
+            GMTStringUpdate(sysTime, level_update_t::ESP_RTC_NON_UPDATE);
         }
+    }
+    else {
+#if (TIME_ZONE_TYPE_CFG == 1)
+        setTimeZone(-ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP());
+#else
+        setTzTime(ESPConfig.TzTime().c_str());
+#endif
     }
 
     RTC_TAG_CONSOLE("Time: %s", toString().c_str());
 }
 
-void ESPTimeSystem::saveToFileSystem()
-{
-    rtc_time_t rtc;
-    if (_rtcSource > level_update_t::RTC_NON_UPDATE)
-    {
-        RTC_TAG_CONSOLE("Save Time to File system");
-        rtc = get();
-        _rtcFile->save(&rtc);
-    }
+void ESPTimeSystem::saveToFileSystem() {
+    esp_rtc_time_t rtc;
+    RTC_TAG_CONSOLE("Save Time to File system");
+    rtc = get();
+    _rtcFile.save(&rtc);
 }
 
-void ESPTimeSystem::setSourceUpdate(level_update_t level)
-{
-    if (level >= _rtcSource)
-    {
+void ESPTimeSystem::setSourceUpdate(level_update_t level) {
+    if (level >= _rtcSource) {
+        esp_rtc_time_t rtc;
         RTC_TAG_CONSOLE("Access Update the level: %s", printSourceUpdate(level));
         _rtcSource = level;
+        rtc = get();
+        
+        ticker_once(&_logTicker, 1, [](void *arg){
+            time_level_update_log();
+        }, nullptr);
+        
+        if (_espTimeCallback) {
+            _espTimeCallback(level, &rtc);
+        }
     }
-    else
-    {
+    else {
         RTC_TAG_CONSOLE("Deny Update the level: %s", printSourceUpdate(level));
     }
 }
 
-void ESPTimeSystem::setTime(rtc_time_t *rtc)
-{
-    rtc_time_t g_rtc;
+void ESPTimeSystem::setTime(esp_rtc_time_t *rtc) {
+    esp_rtc_time_t g_rtc;
     g_rtc = get();
     g_rtc.hour = rtc->hour;
     g_rtc.min = rtc->min;
@@ -122,9 +131,8 @@ void ESPTimeSystem::setTime(rtc_time_t *rtc)
     set(&g_rtc);
 }
 
-void ESPTimeSystem::setDate(rtc_time_t *rtc)
-{
-    rtc_time_t g_rtc;
+void ESPTimeSystem::setDate(esp_rtc_time_t *rtc) {
+    esp_rtc_time_t g_rtc;
     g_rtc = get();
     g_rtc.year = rtc->year;
     g_rtc.mon = rtc->mon;
@@ -132,8 +140,7 @@ void ESPTimeSystem::setDate(rtc_time_t *rtc)
     set(&g_rtc);
 }
 
-void ESPTimeSystem::set(rtc_time_t *rtc)
-{
+void ESPTimeSystem::set(esp_rtc_time_t *rtc) {
     struct timeval t_val;
     time_t t_now = 0;
 
@@ -144,8 +151,7 @@ void ESPTimeSystem::set(rtc_time_t *rtc)
     RTC_FUNCTION_TAG_CONSOLE("RTC OUT");
 }
 
-void ESPTimeSystem::set(time_t t_now)
-{
+void ESPTimeSystem::set(time_t t_now) {
     struct timeval t_val;
     RTC_FUNCTION_TAG_CONSOLE("NOW IN");
     t_val = {.tv_sec = t_now};
@@ -154,10 +160,9 @@ void ESPTimeSystem::set(time_t t_now)
 }
 
 /* Convert t_now to rtc */
-rtc_time_t ESPTimeSystem::makeRtcFromNow(time_t t_now)
-{
+esp_rtc_time_t ESPTimeSystem::makeRtcFromNow(time_t t_now) {
     struct tm desired_tm;
-    rtc_time_t rtc;
+    esp_rtc_time_t rtc;
     localtime_r((time_t *)&t_now, &desired_tm);
     rtc.mon = desired_tm.tm_mon + 1;
     rtc.mday = desired_tm.tm_mday;
@@ -175,8 +180,7 @@ rtc_time_t ESPTimeSystem::makeRtcFromNow(time_t t_now)
 }
 
 /* Convert rtc to now */
-time_t ESPTimeSystem::makeNowFromRtc(rtc_time_t *rtc)
-{
+time_t ESPTimeSystem::makeNowFromRtc(esp_rtc_time_t *rtc) {
     struct tm desired_tm;
     time_t t_now = 0;
     memset(&desired_tm, 0, sizeof(struct tm));
@@ -196,8 +200,7 @@ time_t ESPTimeSystem::makeNowFromRtc(rtc_time_t *rtc)
     return t_now;
 }
 
-String ESPTimeSystem::toStringLog()
-{
+String ESPTimeSystem::toStringLog() {
     constexpr uint8_t BUFFER_TIME_LENGTH_MAX = 80;
     char buf[BUFFER_TIME_LENGTH_MAX];
     time_t now = time(nullptr);
@@ -206,8 +209,7 @@ String ESPTimeSystem::toStringLog()
     return String(buf);
 }
 
-String ESPTimeSystem::toString()
-{
+String ESPTimeSystem::toString() {
     constexpr uint8_t BUFFER_TIME_LENGTH_MAX = 80;
     char buf[BUFFER_TIME_LENGTH_MAX];
     time_t now = time(nullptr);
@@ -216,8 +218,7 @@ String ESPTimeSystem::toString()
     return String(buf);
 }
 
-String ESPTimeSystem::toString(rtc_time_t *rtc)
-{
+String ESPTimeSystem::toString(esp_rtc_time_t *rtc) {
     constexpr uint8_t BUFFER_TIME_LENGTH_MAX = 80;
     char buf[BUFFER_TIME_LENGTH_MAX];
 
@@ -231,8 +232,7 @@ String ESPTimeSystem::toString(rtc_time_t *rtc)
     return String(buf);
 }
 
-String ESPTimeSystem::toString(time_t t_now)
-{
+String ESPTimeSystem::toString(time_t t_now) {
     // ctime(&t_now);
     constexpr uint8_t BUFFER_TIME_LENGTH_MAX = 80;
     char buf[BUFFER_TIME_LENGTH_MAX];
@@ -242,49 +242,126 @@ String ESPTimeSystem::toString(time_t t_now)
     return String(buf);
 }
 
-time_t ESPTimeSystem::now()
-{
+time_t ESPTimeSystem::now() {
     time_t now = time(nullptr);
     // RTC_TAG_CONSOLE("now = %lu", now);
     return now;
 }
 
-rtc_time_t ESPTimeSystem::get()
-{
-    rtc_time_t rtc;
+esp_rtc_time_t ESPTimeSystem::get() {
+    esp_rtc_time_t rtc = RTC_TIME_DEFAULT;
     struct tm tmStruct;
-    getLocalTime(&tmStruct, 1);
-    
-    rtc.hour = tmStruct.tm_hour;
-    rtc.min = tmStruct.tm_min;
-    rtc.sec = tmStruct.tm_sec;
-    rtc.year = tmStruct.tm_year + RTC_YEAR_BEGIN;
-    rtc.mon = tmStruct.tm_mon + 1;
-    rtc.mday = tmStruct.tm_mday;
-    rtc.wday = tmStruct.tm_wday;
-    RTC_TAG_CONSOLE("Get Time: %s", toString(&rtc).c_str());
+
+    if (getLocalTime(&tmStruct, 1)) {
+        rtc.hour = tmStruct.tm_hour;
+        rtc.min = tmStruct.tm_min;
+        rtc.sec = tmStruct.tm_sec;
+        rtc.year = tmStruct.tm_year + RTC_YEAR_BEGIN;
+        rtc.mon = tmStruct.tm_mon + 1;
+        rtc.mday = tmStruct.tm_mday;
+        rtc.wday = tmStruct.tm_wday;
+        // RTC_TAG_CONSOLE("Get Time: %s", toString(&rtc).c_str());
+    }
 
     return rtc;
 }
 
+uint32_t ESPTimeSystem::hhMMssGet() {
+    esp_rtc_time_t rtc = get();
+    return hhmmssFormat(&rtc);
+}
+
+uint32_t ESPTimeSystem::ddmmyyGet() {
+    esp_rtc_time_t rtc = get();
+    return ddmmyyFormat(&rtc);
+}
+
 /** 15:22:13 is formated with numerical value 152213*/
-uint32_t ESPTimeSystem::hhmmssFormat(rtc_time_t *rtc)
-{
+uint32_t ESPTimeSystem::hhmmssFormat(esp_rtc_time_t *rtc) {
     uint32_t t = rtc->hour * 10000 + rtc->min * 100 + rtc->sec;
     return t;
 }
 
 /** 15/03/2021 is formated with numerical value 150321*/
-uint32_t ESPTimeSystem::ddmmyyFormat(rtc_time_t *rtc)
-{
+uint32_t ESPTimeSystem::ddmmyyFormat(esp_rtc_time_t *rtc) {
     uint32_t d = rtc->mday * 10000 + rtc->mon * 100 + rtc->year % 100;
     return d;
 }
 
+uint32_t ESPTimeSystem::yyyymmddFormat(esp_rtc_time_t *rtc) {
+    //yyyymmdd
+    uint32_t d = rtc->year * 10000 + rtc->mon * 100 + rtc->mday;
+    return d;
+}
+
+/**
+ * @brief Convert number hhmmss to string format hh:MM:ss
+ * @param in n : hhmmss
+ * @return string hh:MM:ss
+*/
+String ESPTimeSystem::hhmmssStr(uint32_t n) {
+    int hour, min, sec;
+    hour = n / 10000;
+    min = (n % 10000) / 100;
+    sec = n % 100;
+
+    char str_time[9];
+    snprintf(str_time, 9, "%02u:%02u:%02u", hour, min, sec);
+
+    return String(str_time);
+}
+
+/**
+ * @brief Convert number ddmmyy to string format dd/mm/20yy
+ * @param in n : ddmmyy
+ * @return string dd/mm/20yy
+*/
+String ESPTimeSystem::ddmmyyStr(uint32_t n) {
+    int mday, month, year;
+    mday = n / 10000;
+    month = (n % 10000) / 100;
+    year = n % 100;
+
+    char str_date[11];
+    snprintf(str_date, 11, "%02u/%02u/20%02u", mday, month, year);
+
+    return String(str_date);
+}
+
+/**
+ * @brief Convert number ddmmyy to string format 20yy/mm/dd
+ * @param in n : ddmmyy
+ * @return string 20yy/mm/dd
+*/
+String ESPTimeSystem::yyyymmddStr(uint32_t n) {
+    int mday, month, year;
+    mday = n / 10000;
+    month = (n % 10000) / 100;
+    year = n % 100;
+
+    char str_date[11];
+    snprintf(str_date, 11, "20%02u/%02u/%02u", year, month, mday);
+
+    return String(str_date);
+}
+
+time_t ESPTimeSystem::nowFromDdmmyyhhmmss(uint32_t ddmmyy, uint32_t hhmmss) {
+    esp_rtc_time_t rtc;
+    rtc.hour = hhmmss / 10000;
+    rtc.min = (hhmmss % 10000) / 100;
+    rtc.sec = hhmmss % 100;
+
+    rtc.wday = 0;
+    rtc.mday = ddmmyy / 10000;
+    rtc.mon = (ddmmyy % 10000) / 100;
+    rtc.year = ddmmyy % 100 + 2000;
+
+    return makeNowFromRtc(&rtc);
+}
+
 /* "Thu Jan 25 2018 19:39:48 GMT+0700 (SE Asia Standard Time)" */
-bool ESPTimeSystem::GMTStringUpdate(const char *rtc_web, level_update_t level)
-{
-    rtc_time_t rtc = {0};
+bool ESPTimeSystem::GMTStringUpdate(const char *rtc_web, level_update_t level) {
+    esp_rtc_time_t rtc = {0};
 
     /** max length is 3 characters and 1 null terminal character */
     char wdayStr[4], monthStr[4];
@@ -303,34 +380,29 @@ bool ESPTimeSystem::GMTStringUpdate(const char *rtc_web, level_update_t level)
     RTC_TAG_CONSOLE("parsed number of field: %u", field);
 
     constexpr uint8_t FIELD_NUM_EXPECTED = 7;
-    if (FIELD_NUM_EXPECTED == field)
-    {
+    if (FIELD_NUM_EXPECTED == field) {
         RTC_TAG_CONSOLE("Number of filed expected true !");
 
         constexpr uint8_t MONTH_BEGIN_NUM = 1;
         constexpr uint8_t MONTH_END_NUM = 12;
 
         /** What is the month? */
-        for (rtc.mon = MONTH_BEGIN_NUM; rtc.mon <= MONTH_END_NUM; ++rtc.mon)
-        {
-            if (!strcmp_P(monthStr, mon_list[rtc.mon]))
-            {
+        for (rtc.mon = MONTH_BEGIN_NUM; rtc.mon <= MONTH_END_NUM; ++rtc.mon) {
+            if (!strcmp_P(monthStr, mon_list[rtc.mon])) {
                 RTC_TAG_CONSOLE("The month is %u", rtc.mon);
                 break;
             }
         }
 
         /** Update source time level */
-        if (_rtcSource < level_update_t::RTC_SNTP_UPDATE)
-        {
+        if (_rtcSource < level_update_t::ESP_RTC_SNTP_UPDATE) {
             RTC_TAG_CONSOLE("Allowed to update source time level");
             _rtcSource = level;
 
             set(&rtc);
             RTC_TAG_CONSOLE("Time: %s", toString().c_str());
         }
-        else
-        {
+        else {
             RTC_TAG_CONSOLE("Rejected update source time, "
             "because the level is lowest priority");
         }
@@ -341,18 +413,68 @@ bool ESPTimeSystem::GMTStringUpdate(const char *rtc_web, level_update_t level)
     return result;
 }
 
+// https://github.com/espressif/arduino-esp32/blob/master/libraries/ESP32/examples/Time/SimpleTime/SimpleTime.ino
+void ESPTimeSystem::setTimeZone(long offset, int daylight) {
+    char cst[17] = {0};
+    char cdt[17] = "DST";
+    char tz[33] = {0};
+
+    if(offset % 3600) {
+        sprintf(cst, "UTC%ld:%02u:%02u", offset / 3600, abs((offset % 3600) / 60), abs(offset % 60));
+    } else {
+        sprintf(cst, "UTC%ld", offset / 3600);
+    }
+    if(daylight != 3600){
+        long tz_dst = offset - daylight;
+        if(tz_dst % 3600) {
+            sprintf(cdt, "DST%ld:%02u:%02u", tz_dst / 3600, abs((tz_dst % 3600) / 60), abs(tz_dst % 60));
+        } else {
+            sprintf(cdt, "DST%ld", tz_dst / 3600);
+        }
+    }
+    sprintf(tz, "%s%s", cst, cdt);
+    RTC_TAG_CONSOLE("tz: %s", tz);
+    setenv("TZ", tz, 1);
+    tzset();
+}
+
+void ESPTimeSystem::setTzTime(const char* tz) {
+    RTC_TAG_CONSOLE("tz: %s", tz);
+    setenv("TZ", tz, 1);
+    tzset();
+}
+
+const char* ESPTimeSystem::printSourceUpdate(level_update_t level)
+  {
+    const char *str;
+    switch (level)
+    {
+    case ESP_RTC_NON_UPDATE:
+      str = (const char *)"ESP_RTC_NON_UPDATE";
+      break;
+
+    case ESP_RTC_WEB_UPDATE:
+      str = (const char *)"ESP_RTC_WEB_UPDATE";
+      break;
+
+    case ESP_RTC_SNTP_UPDATE:
+      str = (const char *)"ESP_RTC_SNTP_UPDATE";
+      break;
+
+    default:
+      str = (const char *)"RTC_UNKNOW_UPDATE";
+      break;
+    }
+
+    return (const char *)str;
+  }
+
 /* RtcFileHandler object handle -------------------------------------------------*/
-RtcFileHandler::RtcFileHandler(fs::FS &fs)
-    : _fs(&fs)
-{
-}
+RtcFileHandler::RtcFileHandler(FS &fs) : _fs(&fs) {}
 
-RtcFileHandler::~RtcFileHandler()
-{
-}
+RtcFileHandler::~RtcFileHandler() {}
 
-void RtcFileHandler::save(rtc_time_t *rtc)
-{
+void RtcFileHandler::save(esp_rtc_time_t *rtc) {
     File fs_handle;
     DynamicJsonBuffer djBuffer;
     JsonObject &root = djBuffer.createObject();
@@ -367,17 +489,15 @@ void RtcFileHandler::save(rtc_time_t *rtc)
     RTC_DATA_TAG_CONSOLE("Json created: ");
     root.prettyPrintTo(RTC_DATA_CONSOLE_PORT);
 
-    fs_handle = _fs->open(RTC_FILE_PATH, "w");
+    fs_handle = _fs->open(ESP_RTC_FILE_PATH, "w");
     root.prettyPrintTo(fs_handle);
     fs_handle.close();
     RTC_DATA_TAG_CONSOLE("save succeed!");
 }
 
-bool RtcFileHandler::sync(rtc_time_t *rtc)
-{
+bool RtcFileHandler::sync(esp_rtc_time_t *rtc) {
     File fs_handle;
-    if (!_fs->exists(RTC_FILE_PATH))
-    {
+    if (!_fs->exists(ESP_RTC_FILE_PATH)) {
         RTC_DATA_TAG_CONSOLE("File is not exist");
         /** Don't need to create new file default
          * Because the next start up won't ever update Rtc system with wrong time
@@ -385,14 +505,13 @@ bool RtcFileHandler::sync(rtc_time_t *rtc)
         return false;
     }
 
-    fs_handle = _fs->open(RTC_FILE_PATH, "r");
+    fs_handle = _fs->open(ESP_RTC_FILE_PATH, "r");
 
     DynamicJsonBuffer djBuffer;
     JsonObject &root = djBuffer.parseObject(fs_handle);
     fs_handle.close();
 
-    if (!root.success())
-    {
+    if (!root.success()) {
         RTC_DATA_TAG_CONSOLE("JSON parsing failed!");
         return false;
     }
@@ -408,39 +527,12 @@ bool RtcFileHandler::sync(rtc_time_t *rtc)
     return true;
 }
 
-void ESPTimeSystem::setTimeZone(long offset, int daylight)
-{
-    char cst[17] = {0};
-    char cdt[17] = "DST";
-    char tz[33] = {0};
-
-    if(offset % 3600){
-        sprintf(cst, "UTC%ld:%02u:%02u", offset / 3600, abs((offset % 3600) / 60), abs(offset % 60));
-    } else {
-        sprintf(cst, "UTC%ld", offset / 3600);
+void RtcFileHandler::remove(void) {
+    if (_fs->remove(ESP_RTC_FILE_PATH)) {
+        RTC_DATA_TAG_CONSOLE("- %s file is deleted\r\n", ESP_RTC_FILE_PATH);
     }
-    if(daylight != 3600){
-        long tz_dst = offset - daylight;
-        if(tz_dst % 3600){
-            sprintf(cdt, "DST%ld:%02u:%02u", tz_dst / 3600, abs((tz_dst % 3600) / 60), abs(tz_dst % 60));
-        } else {
-            sprintf(cdt, "DST%ld", tz_dst / 3600);
-        }
-    }
-    sprintf(tz, "%s%s", cst, cdt);
-    setenv("TZ", tz, 1);
-    tzset();
-}
-
-void RtcFileHandler::remove(void)
-{
-    if (_fs->remove(RTC_FILE_PATH))
-    {
-        RTC_DATA_TAG_CONSOLE("- %s file is deleted\r\n", RTC_FILE_PATH);
-    }
-    else
-    {
-        RTC_DATA_TAG_CONSOLE("- %s delete failed\r\n", RTC_FILE_PATH);
+    else {
+        RTC_DATA_TAG_CONSOLE("- %s delete failed\r\n", ESP_RTC_FILE_PATH);
     }
 }
 

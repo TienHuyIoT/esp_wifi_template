@@ -33,11 +33,11 @@ extern "C" {
 #define FRAME_SIZE_MAX             (LENGTH_FIELD_SIZE_MAX + START_LENGTH_STOP_NUM)   /*!< 258 bytes */
 #define FRAME_SIZE_MIN             (START_BYTE_NUM + LENGTH_BYTE_NUM + CMD_BYTE_NUM + CRC_BYTE_NUM + STOP_BYTE_NUM)  /*!< 5 bytes */
 
-/* x: lenght of frame buffer */
+/* x: length of frame buffer */
 #define LENGTH_FIELD_SIZE(x)  (x - START_LENGTH_STOP_NUM) /*!< - (1byte start + 1byte stop + 1byte length) */
-/* x: lenght field size */
+/* x: length field size */
 #define DATA_FIELD_SIZE(x)    (x - LENGTH_FIELD_SIZE_MIN) /*!< length of data field */
-/* x: lenght field size */
+/* x: length field size */
 #define FRAME_SIZE(x)         (START_LENGTH_STOP_NUM + x) /*!< + (1byte start + 1byte stop + 1byte length) */
 
 #define FRAME_START_BYTE      0x7E

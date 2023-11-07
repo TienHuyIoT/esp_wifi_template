@@ -1,11 +1,11 @@
 #include <ArduinoJson.h>
-#include "THIoT_ESPConfig.h"
 #include "THIoT_ESPSysParams.h"
+#include "THIoT_ESPConfig.h"
+#include "THIoT_PFTimeZone.h"
 #include "THIoT_PFSerialTrace.h"
 
-#define WIFI_FILE_PORT SERIAL_PORT
-#define WIFI_DATA_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)
-#define WIFI_DATA_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[WIFI DATA]", __VA_ARGS__)
+#define SYS_PARAM_PORT              SERIAL_PORT
+#define SYS_PARAM_TAG_CONSOLE(...)  SERIAL_TAG_LOGI("[SYS_PARAM]", __VA_ARGS__)
 
 const char espSysParamsDefault[] PROGMEM = R"=====(
 {
@@ -62,7 +62,7 @@ const char espSysParamsDefault[] PROGMEM = R"=====(
         "domain": "tienhuyiot.ddns.net",
         "user": "tienhuyiot",
         "pass": "123456789",
-        "sync_time": 30,
+        "sync_time": 120,
         "disable":1
     },
     "sntp":{
@@ -71,12 +71,13 @@ const char espSysParamsDefault[] PROGMEM = R"=====(
         "server3": "time.windows.com",
         "gmtOffset": 7,
         "daylightOffset": 0,
+        "TzTime": "<+07>-7",
         "interval": 3600
     }
 }
 )=====" ;
 
-ESPSysParams::ESPSysParams(fs::FS &fs)
+ESPSysParams::ESPSysParams(FS &fs)
 :_fs(&fs)
 {
 }
@@ -85,7 +86,7 @@ ESPSysParams::~ESPSysParams()
 {
 }
 
-void ESPSysParams::load(fs::FS* fs)
+void ESPSysParams::load(FS* fs)
 {
     if (fs != nullptr)
     {
@@ -96,14 +97,15 @@ void ESPSysParams::load(fs::FS* fs)
 
 void ESPSysParams::resetPassword()
 {
-    strncpy(_sys_prams.auth_admin.user, (const char *)"admin", AUTH_LENGHT_MAX);
-    strncpy(_sys_prams.auth_admin.pass, (const char *)"admin", AUTH_LENGHT_MAX);
-    strncpy(_sys_prams.auth_user.user, (const char *)"admin", AUTH_LENGHT_MAX);
-    strncpy(_sys_prams.auth_user.pass, (const char *)"12345", AUTH_LENGHT_MAX);
+    strncpy(_sys_prams.auth_admin.user, (const char *)"admin", AUTH_LENGTH_MAX);
+    strncpy(_sys_prams.auth_admin.pass, (const char *)"admin", AUTH_LENGTH_MAX);
+    strncpy(_sys_prams.auth_user.user, (const char *)"admin", AUTH_LENGTH_MAX);
+    strncpy(_sys_prams.auth_user.pass, (const char *)"12345", AUTH_LENGTH_MAX);
     _sys_prams.confirm[CONFIRM_COMMON] = PASS_COMMON_DEFAULT;
-    _sys_prams.confirm[CONFIRM_PU3] = PASS_PU3_DEFAULT;
-    _sys_prams.confirm[CONFIRM_COST] = PASS_COST_DEFAULT;
-    _sys_prams.confirm[CONFIRM_LOGFILE] = PASS_LOGFILE_DEFAULT;
+    _sys_prams.confirm[CONFIRM_EX1] = PASS_EX1_DEFAULT;
+    _sys_prams.confirm[CONFIRM_EX2] = PASS_EX2_DEFAULT;
+    _sys_prams.confirm[CONFIRM_EX3] = PASS_EX3_DEFAULT;
+    _sys_prams.confirm[CONFIRM_EX4] = PASS_EX4_DEFAULT;
     saveToFileSystem();
 }
 
@@ -125,8 +127,9 @@ bool ESPSysParams::passConfirmIsOK(const String &pass, passConfirm_t type)
 void ESPSysParams::saveToFileSystem()
 {
     File fs_handle;
-    DynamicJsonBuffer djbco;
-    JsonObject& root = djbco.createObject();
+    const size_t capacity = JSON_ARRAY_SIZE(5) + 2*JSON_OBJECT_SIZE(2) + 2*JSON_OBJECT_SIZE(3) + 2*JSON_OBJECT_SIZE(7) + JSON_OBJECT_SIZE(8) + JSON_OBJECT_SIZE(9) + JSON_OBJECT_SIZE(10);
+    DynamicJsonBuffer jsonBuffer(capacity);
+    JsonObject& root = jsonBuffer.createObject();
 
     JsonObject& port = root.createNestedObject("port");
     port["udp"].set(_sys_prams.port.udp);
@@ -186,17 +189,18 @@ void ESPSysParams::saveToFileSystem()
     JsonObject& sntp = root.createNestedObject("sntp");
     sntp["server1"].set(_sys_prams.sntp.server1);
     sntp["server2"].set(_sys_prams.sntp.server2);
-    sntp["server3"].set(_sys_prams.sntp.server3);    
+    sntp["server3"].set(_sys_prams.sntp.server3);
+    sntp["TzTime"].set(_sys_prams.sntp.TzTime); 
     sntp["gmtOffset"].set(_sys_prams.sntp.gmtOffset); 
     sntp["daylightOffset"].set(_sys_prams.sntp.daylightOffset);
     sntp["interval"].set(_sys_prams.sntp.interval);
 
-    WIFI_DATA_TAG_CONSOLE("Json created:");
-    // root.prettyPrintTo(WIFI_FILE_PORT);
-    fs_handle = _fs->open(ESP_SYSTEM_PARAMS, "w");
-    root.prettyPrintTo(fs_handle);
+    SYS_PARAM_TAG_CONSOLE("Json created:");
+    // root.prettyPrintTo(SYS_PARAM_PORT);
+    fs_handle = _fs->open(ESP_SYSTEM_PARAMS, FILE_WRITE);
+    root.prettyPrintTo<File>(fs_handle);
     fs_handle.close();    
-    WIFI_DATA_TAG_CONSOLE("wifi json info updated"); 
+    SYS_PARAM_TAG_CONSOLE("wifi json info updated"); 
 }
 
 void ESPSysParams::syncFromFileSystem()
@@ -205,20 +209,20 @@ void ESPSysParams::syncFromFileSystem()
 
     if (!_fs->exists(ESP_SYSTEM_PARAMS))
     {
-        fs_handle = _fs->open(ESP_SYSTEM_PARAMS, "w");
+        fs_handle = _fs->open(ESP_SYSTEM_PARAMS, FILE_WRITE);
         fs_handle.printf_P(espSysParamsDefault);
         fs_handle.close();
     }
 
-    fs_handle = _fs->open(ESP_SYSTEM_PARAMS, "r");    
-    
-    DynamicJsonBuffer djbpo;
-    JsonObject &root = djbpo.parseObject(fs_handle);
+    fs_handle = _fs->open(ESP_SYSTEM_PARAMS, FILE_READ);    
+    const size_t capacity = JSON_ARRAY_SIZE(5) + 2*JSON_OBJECT_SIZE(2) + 2*JSON_OBJECT_SIZE(3) + 2*JSON_OBJECT_SIZE(7) + JSON_OBJECT_SIZE(8) + JSON_OBJECT_SIZE(9) + JSON_OBJECT_SIZE(10) + 1024;
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject &root = jsonBuffer.parseObject(fs_handle);
     fs_handle.close();
     
     if (!root.success())
     {
-        WIFI_DATA_TAG_CONSOLE("JSON parsing failed!");
+        SYS_PARAM_TAG_CONSOLE("JSON parsing failed!");
         return;
     }
 
@@ -233,23 +237,23 @@ void ESPSysParams::syncFromFileSystem()
     JsonObject& device = root["device"];
     if (device.success())
     {
-        device["name"].as<String>().toCharArray(_sys_prams.device.name, DEVICENAME_LENGHT_MAX + 1);
-        device["addr"].as<String>().toCharArray(_sys_prams.device.addr, DEVICE_ADDR_LENGHT_MAX + 1);
-        device["tell"].as<String>().toCharArray(_sys_prams.device.tell, DEVICE_TELL_LENGHT_MAX + 1);
+        device["name"].as<String>().toCharArray(_sys_prams.device.name, DEVICE_NAME_LENGTH_MAX + 1);
+        device["addr"].as<String>().toCharArray(_sys_prams.device.addr, DEVICE_ADDR_LENGTH_MAX + 1);
+        device["tell"].as<String>().toCharArray(_sys_prams.device.tell, DEVICE_TELL_LENGTH_MAX + 1);
     }
 
     JsonObject& auth_admin = root["auth_admin"];
     if (auth_admin.success())
     {
-        auth_admin["user"].as<String>().toCharArray(_sys_prams.auth_admin.user, AUTH_LENGHT_MAX + 1);
-        auth_admin["pass"].as<String>().toCharArray(_sys_prams.auth_admin.pass, AUTH_LENGHT_MAX + 1);
+        auth_admin["user"].as<String>().toCharArray(_sys_prams.auth_admin.user, AUTH_LENGTH_MAX + 1);
+        auth_admin["pass"].as<String>().toCharArray(_sys_prams.auth_admin.pass, AUTH_LENGTH_MAX + 1);
     }
 
     JsonObject& auth_user = root["auth_user"];
     if (auth_user.success())
     {
-        auth_user["user"].as<String>().toCharArray(_sys_prams.auth_user.user, AUTH_LENGHT_MAX + 1);
-        auth_user["pass"].as<String>().toCharArray(_sys_prams.auth_user.pass, AUTH_LENGHT_MAX + 1);
+        auth_user["user"].as<String>().toCharArray(_sys_prams.auth_user.user, AUTH_LENGTH_MAX + 1);
+        auth_user["pass"].as<String>().toCharArray(_sys_prams.auth_user.pass, AUTH_LENGTH_MAX + 1);
     }
 
     JsonArray& confirm = root["confirm"];
@@ -269,9 +273,9 @@ void ESPSysParams::syncFromFileSystem()
         _sys_prams.sta.gw.fromString(sta["gw"].as<String>());
         _sys_prams.sta.sn.fromString(sta["sn"].as<String>());
         _sys_prams.sta.dns.fromString(sta["dns"].as<String>());
-        sta["ssid"].as<String>().toCharArray(_sys_prams.sta.ssid, SSID_LENGHT_MAX + 1);
-        sta["psk"].as<String>().toCharArray(_sys_prams.sta.pass, PASS_LENGHT_MAX + 1);
-        sta["hostname"].as<String>().toCharArray(_sys_prams.sta.hostname, HOSTNAME_LENGHT_MAX + 1); 
+        sta["ssid"].as<String>().toCharArray(_sys_prams.sta.ssid, SSID_LENGTH_MAX + 1);
+        sta["psk"].as<String>().toCharArray(_sys_prams.sta.pass, PASS_LENGTH_MAX + 1);
+        sta["hostname"].as<String>().toCharArray(_sys_prams.sta.hostname, HOSTNAME_LENGTH_MAX + 1); 
         _sys_prams.sta.dhcp      = sta["dhcp"].as<int>();  
         _sys_prams.sta.disable   = sta["disable"].as<int>();
         _sys_prams.sta.smart_cfg = sta["smart_cfg"].as<int>();
@@ -282,9 +286,9 @@ void ESPSysParams::syncFromFileSystem()
     {
         _sys_prams.ap.ip.fromString(ap["ip"].as<String>());
         _sys_prams.ap.sn.fromString(ap["sn"].as<String>()); 
-        ap["ssid"].as<String>().toCharArray(_sys_prams.ap.ssid, SSID_LENGHT_MAX + 1);
-        ap["psk"].as<String>().toCharArray(_sys_prams.ap.pass, PASS_LENGHT_MAX + 1);       
-        ap["dns_name"].as<String>().toCharArray(_sys_prams.ap.dns_name, HOSTNAME_LENGHT_MAX + 1);
+        ap["ssid"].as<String>().toCharArray(_sys_prams.ap.ssid, SSID_LENGTH_MAX + 1);
+        ap["psk"].as<String>().toCharArray(_sys_prams.ap.pass, PASS_LENGTH_MAX + 1);       
+        ap["dns_name"].as<String>().toCharArray(_sys_prams.ap.dns_name, HOSTNAME_LENGTH_MAX + 1);
         _sys_prams.ap.disable = ap["disable"].as<int>();  
         _sys_prams.ap.channel = ap["channel"].as<int>();
         _sys_prams.ap.hidden  = ap["hidden"].as<int>(); 
@@ -305,15 +309,16 @@ void ESPSysParams::syncFromFileSystem()
     JsonObject& sntp = root["sntp"];
     if (sntp.success())
     {
-        sntp["server1"].as<String>().toCharArray(_sys_prams.sntp.server1, SNTP_LENGTH_MAX + 1);
-        sntp["server2"].as<String>().toCharArray(_sys_prams.sntp.server2, SNTP_LENGTH_MAX + 1);
-        sntp["server3"].as<String>().toCharArray(_sys_prams.sntp.server3, SNTP_LENGTH_MAX + 1);
+        sntp["server1"].as<String>().toCharArray(_sys_prams.sntp.server1, SNTP_SERVER_LENGTH_MAX + 1);
+        sntp["server2"].as<String>().toCharArray(_sys_prams.sntp.server2, SNTP_SERVER_LENGTH_MAX + 1);
+        sntp["server3"].as<String>().toCharArray(_sys_prams.sntp.server3, SNTP_SERVER_LENGTH_MAX + 1);
+        sntp["TzTime"].as<String>().toCharArray(_sys_prams.sntp.TzTime, SNTP_TZ_LENGTH_MAX + 1);
         _sys_prams.sntp.gmtOffset = sntp["gmtOffset"].as<int>();
         _sys_prams.sntp.daylightOffset = sntp["daylightOffset"].as<int>();
         _sys_prams.sntp.interval = sntp["interval"].as<int>();
     } 
 
-    WIFI_DATA_TAG_CONSOLE("sync data succeed!");
+    SYS_PARAM_TAG_CONSOLE("sync data succeed!");
 }
 
 ESPSysParams ESPConfig(NAND_FS_SYSTEM);

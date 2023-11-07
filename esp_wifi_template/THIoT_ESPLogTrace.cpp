@@ -2,11 +2,12 @@
 #include "THIoT_ESPTimeSystem.h"
 #include "THIoT_PFSerialTrace.h"
 #include "THIoT_ESPLogTrace.h"
+#include "THIoT_ESPSDFSClass.h"
 
-#define LOG_TRACE_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[LOG_TRACE]", __VA_ARGS__)
-#define LOG_TRACE_FUNCTION_CONSOLE(...) SERIAL_FUNCTION_TAG_LOGI("[LOG_TRACE]", __VA_ARGS__)
+#define LOG_TRACE_TAG_CONSOLE(...)      //SERIAL_TAG_LOGI("[LOG_TRACE]", __VA_ARGS__)
+#define LOG_TRACE_FUNCTION_CONSOLE(...) //SERIAL_FUNCTION_TAG_LOGI("[LOG_TRACE]", __VA_ARGS__)
 
-ESPLogTrace::ESPLogTrace(fs::FS &fs, const char* fileName, size_t limitSize)
+ESPLogTrace::ESPLogTrace(FS &fs, const char* fileName, size_t limitSize)
 :_fs(&fs),_fileName(fileName), _limitSize(limitSize) {
     _enable = true;
 }
@@ -14,7 +15,7 @@ ESPLogTrace::ESPLogTrace(fs::FS &fs, const char* fileName, size_t limitSize)
 ESPLogTrace::~ESPLogTrace() {
 }
 
-void ESPLogTrace::assertOverSize(size_t limit) {
+void ESPLogTrace::assertOverSize() {
     File fs_handle = _fs->open(_fileName, "r");
     size_t size = fs_handle.size();
     fs_handle.close();
@@ -30,7 +31,13 @@ void ESPLogTrace::assertOverSize(size_t limit) {
 size_t ESPLogTrace::write(const uint8_t *buffer, size_t size) {
     if (_enable)
     {
-        assertOverSize(_limitSize);
+#if (SD_CARD_ENABLE == 1)
+        if (!SDCard.statusIsOk()) {
+            _fs = &NAND_FS_SYSTEM;
+            _limitSize = NAND_FS_LOG_SIZE_LIMIT;
+        }
+#endif
+        assertOverSize();
         String time = ESPTime.toStringLog();
         File fs_handle = _fs->open(_fileName, "a");
         fs_handle.print(time);
@@ -42,4 +49,4 @@ size_t ESPLogTrace::write(const uint8_t *buffer, size_t size) {
     return size;
 }
 
-ESPLogTrace ESPLOG(NAND_FS_SYSTEM);
+ESPLogTrace ESPLOG(LOG_TRACE_FS);

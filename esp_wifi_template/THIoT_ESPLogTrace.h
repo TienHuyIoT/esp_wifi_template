@@ -5,14 +5,25 @@
 #include <FS.h>
 #include "THIoT_ESPConfig.h"
 
+#if (SD_CARD_ENABLE == 1)
+#define LOG_TRACE_FS                SD_FS_SYSTEM
+#define LOG_TRACE_SIZE_LIMIT        1024*1024
+#else
+#define LOG_TRACE_FS                NAND_FS_SYSTEM
+#define LOG_TRACE_SIZE_LIMIT        100*1024
+#endif
+#define NAND_FS_LOG_SIZE_LIMIT      100*1024
+
 class ESPLogTrace : public Stream
 {
+    using File = fs::File;
+    using FS = fs::FS;
 private:
-    fs::FS* _fs;
+    FS* _fs;
     String _fileName;
     size_t _limitSize;
     bool _enable;
-    void assertOverSize(size_t limit);
+    void assertOverSize();
     String backupName() {
         int dotIndex = _fileName.indexOf(".");
         String name = _fileName.substring(0, dotIndex);
@@ -20,7 +31,7 @@ private:
         return name;
     }
 public:
-    ESPLogTrace(fs::FS &fs = NAND_FS_SYSTEM, const char* fileName = "/LOGTRACE.TXT", size_t limitSize = (200 * 1024));
+    ESPLogTrace(FS &fs = NAND_FS_SYSTEM, const char* fileName = "/LOGTRACE.TXT", size_t limitSize = LOG_TRACE_SIZE_LIMIT);
     ~ESPLogTrace();
 
     int available() override { return 0;}

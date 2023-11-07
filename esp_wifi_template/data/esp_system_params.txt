@@ -48,10 +48,11 @@
   },
   "ddns": {
     "service": "noip",
+    "ipUrl": "ifconfig.me/ip",
     "domain": "tienhuyiot.ddns.net",
     "user": "tienhuyiot",
     "pass": "123456789",
-    "sync_time": 30,
+    "sync_time": 120,
     "disable":1
   },
   "sntp":{
@@ -60,6 +61,7 @@
     "server3": "time.windows.com",
     "gmtOffset": 7,
     "daylightOffset": 0,
+    "TzTime": "<+07>-7",
     "interval": 3600
   }
 }

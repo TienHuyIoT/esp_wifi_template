@@ -4,10 +4,13 @@
 #include <Arduino.h>
 #include <functional> // std::function
 #include "THIoT_ESPConfig.h"
+#include "THIoT_APPConfig.h"
 #include "THIoT_ESPBoard.h"
+#include "THIoT_PFTicker.h"
 #include "THIoT_ESPEventSignal.h"
 
-typedef std::function<void(int type)> ETHLedStatusHandler;
+#define ETH_TIMEOUT_CONNECTION_RESET    15*60
+typedef std::function<void(int type)>   ETHLedStatusHandler;
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
 #ifdef ESP32
@@ -106,11 +109,15 @@ extern SPIEthernet ETH;
 class ESPEthernet
 {
 private:
-    bool _status;
+    boolean _enable;
 #ifdef ESP8266
     bool _connected;
 #endif
+#if (NETWORK_CONNECTION_TIMEOUT_RESET == 1)
+    ticker_function_handle_t _reconnectTicker;
+#endif
     static ETHLedStatusHandler _ledStatusFunc;
+    static boolean _IsConnected;
 
 public:
     ESPEthernet(/* args */);
@@ -118,12 +125,14 @@ public:
     bool begin();
     void enable();
     void disable();
-    bool isEnable();
+    boolean isEnable();
+#ifdef ESP8266
     void loop();
-    void onLedStatus(ETHLedStatusHandler handler)
-    {
-        _ledStatusFunc = handler;
-    }
+#endif
+    void OnLedStatus(ETHLedStatusHandler handler) { _ledStatusFunc = handler; }
+    boolean IsConnected() { return _IsConnected; }
+    boolean disconnectEvt();
+    boolean connectedEvt();
 };
 
 extern ESPEthernet Ethernet;

@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 #if (0)
 #include <iostream>
 #include <string_view>

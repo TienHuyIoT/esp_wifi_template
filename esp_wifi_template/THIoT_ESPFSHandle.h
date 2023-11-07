@@ -3,27 +3,30 @@
 
 #include <Arduino.h>
 #include <FS.h>
+#include "THIoT_ESPSDFSClass.h"
 
 class ESPFSHandle
 {
+    using File = fs::File;
+    using FS = fs::FS;
 private:
     /* data */
 public:
     ESPFSHandle(/* args */);
     ~ESPFSHandle();
 
-    void listDir(fs::FS &fs, const char *dirname, uint8_t levels);
-    void format(fs::FS &fs, const char *dirname);
-    void deleteFile(fs::FS &fs, const char *path);
-    void removeDir(fs::FS &fs, const char *path);
+    void listDir(FS &fs, const char *dirname, uint8_t levels);
+    void format(FS &fs, const char *dirname);
+    void deleteFile(FS &fs, const char *path);
+    void removeDir(FS &fs, const char *path);
     #if (0)
-    void createDir(fs::FS &fs, const char *path);
-    void removeDir(fs::FS &fs, const char *path);
-    void readFile(fs::FS &fs, const char *path);
-    void writeFile(fs::FS &fs, const char *path, const char *message);
-    void appendFile(fs::FS &fs, const char *path, const char *message);
-    void renameFile(fs::FS &fs, const char *path1, const char *path2);
-    void testFileIO(fs::FS &fs, const char *path);
+    void createDir(FS &fs, const char *path);
+    void removeDir(FS &fs, const char *path);
+    void readFile(FS &fs, const char *path);
+    void writeFile(FS &fs, const char *path, const char *message);
+    void appendFile(FS &fs, const char *path, const char *message);
+    void renameFile(FS &fs, const char *path1, const char *path2);
+    void testFileIO(FS &fs, const char *path);
     #endif // (0)
 };
 

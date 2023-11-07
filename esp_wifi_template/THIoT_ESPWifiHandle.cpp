@@ -53,213 +53,212 @@ uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 ()
 #include "THIoT_ESPLogTrace.h"
 #include "THIoT_ESPWifiHandle.h"
 #include "THIoT_PFLedStatus.h"
+#include "THIoT_ESPEthernet.h"
+#include "THIoT_ESPSoftReset.h"
 
-#define SNTP_CONSOLE_PORT SERIAL_PORT
-#define SNTP_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)
-#define SNTP_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[SNTP]", __VA_ARGS__)
+#define EASY_SNTP_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[EASY_NTP]", __VA_ARGS__)
 
 #define ESP_WIFI_PORT SERIAL_PORT
 #define ESP_WIFI_CONSOLE(...) SERIAL_LOGI(__VA_ARGS__)
 #define ESP_WIFI_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[WIFI]", __VA_ARGS__)
+#define ESP_ETH_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[ETH]", __VA_ARGS__)
 
-#define WIFI_TAG_LOG(...) FS_TAG_LOGI("[WIFI]", __VA_ARGS__)
-#define SNTP_TAG_LOG(...) FS_TAG_LOGI("[SNTP]", __VA_ARGS__)
-
-#ifdef ESP32
-static void sntp_sync_time_cb(struct timeval *tv) {
-    SNTP_TAG_CONSOLE("callback settimeofday(SNTP)");
-    SNTP_TAG_LOG("callback settimeofday(SNTP)");
-#elif defined(ESP8266)
-static void sntp_sync_time_cb(bool from_sntp /* <= this parameter is optional */) {
-    SNTP_TAG_CONSOLE("callback settimeofday(%s)", from_sntp ? "SNTP" : "USER");
-    SNTP_TAG_LOG("callback settimeofday(%s)", from_sntp ? "SNTP" : "USER");
-#endif 
-    SNTP_TAG_CONSOLE("callback now = %lu", ESPTime.now());
-    SNTP_TAG_CONSOLE("callback time: %s", ESPTime.toString().c_str());
-    ESPTime.setSourceUpdate(ESPTimeSystem::RTC_SNTP_UPDATE);
-}
-
-ESPSntpService::ESPSntpService() {}
-ESPSntpService::~ESPSntpService() {}
-String ESPSntpService::_server1 = String();
-String ESPSntpService::_server2 = String();
-
-void ESPSntpService::begin()
-{
-    _server1 = ESPConfig.server1SNTP();
-    _server2 = ESPConfig.server2SNTP();
-    SNTP_TAG_CONSOLE("configure time server");
-    SNTP_TAG_CONSOLE("gmtOffset: %u", ESPConfig.gmtOffsetSNTP());
-    SNTP_TAG_CONSOLE("daylightOffset: %u", ESPConfig.daylightOffsetSNTP());
-    SNTP_TAG_CONSOLE("server1: %s", _server1.c_str());
-    SNTP_TAG_CONSOLE("server2: %s", _server2.c_str());
-
-    SNTP_TAG_LOG("configTime(%ld, %d, %s, %s)"
-                , ESPConfig.gmtOffsetSNTP() * 3600
-                , ESPConfig.daylightOffsetSNTP()
-                , _server1.c_str()
-                , _server2.c_str()
-    );
-#ifdef ESP32
-    sntp_set_time_sync_notification_cb(sntp_sync_time_cb);
-    configTime(ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), _server1.c_str(), _server2.c_str());
-    // Using callback event instead to check sntp status
-    // while (sntp_get_sync_status() != SNTP_SYNC_STATUS_COMPLETED) {};
-#elif defined(ESP8266)
-    // install callback - called when settimeofday is called (by SNTP or user)
-    // once enabled (by DHCP), SNTP is updated every hour by default
-    // ** optional boolean in callback function is true when triggered by SNTP **
-    settimeofday_cb(sntp_sync_time_cb);
-    // OPTIONAL: disable obtaining SNTP servers from DHCP
-    sntp_servermode_dhcp(0);    
-    configTime(ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), _server1.c_str(), _server2.c_str());
-    // configTime(MYTZ, _server1.c_str(), _server2.c_str());
-
-    // Give now a chance to the settimeofday callback,
-    // because it is *always* deferred to the next yield()/loop()-call.
-    yield();
-#endif
-}
+#define ESP_WIFI_TAG_LOG(...) FS_TAG_LOGI("[WIFI]", __VA_ARGS__)
+#define ESP_ETH_TAG_LOG(...) FS_TAG_LOGI("[ETH]", __VA_ARGS__)
 
 /* ESPWifiHandle class --------------------------------------------------------
  -----------------------------------------------------------------------------
  ---------------------------------------------------------------------------*/
-ESPWifiHandle::ESPWifiHandle(/* args */)
-{
 #if (defined SNTP_SERVICE_SYSTEM) && (SNTP_SERVICE_SYSTEM == 1)  
-  _sntp = new ESPSntpService();
+ESPSntpService ESPWifiHandle::_sntp = ESPSntpService();
 #endif
 #if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1) 
-  _dnsServer = new DNSServer();
+DNSServer ESPWifiHandle::_dnsServer = DNSServer();
 #endif
-}
-
-ESPWifiHandle::~ESPWifiHandle()
-{
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
-  if (ddnsClient)
-  {
-    delete ddnsClient;
-  }
+ESPAsyncEasyDDNS* ESPWifiHandle::_DDNSService = nullptr;
 #endif
 
-#if (defined SNTP_SERVICE_SYSTEM) && (SNTP_SERVICE_SYSTEM == 1)  
-  delete _sntp;
-#endif
-
-#if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1) 
-  delete _dnsServer;
-#endif
-}
-
-#if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
-ESPAsyncEasyDDNS* ESPWifiHandle::ddnsClient = nullptr;
-#endif
-Ticker ESPWifiHandle::_reconnectTicker;
-bool ESPWifiHandle::_wifiConnected = false;
-bool ESPWifiHandle::_firstConnection = false;
+ticker_function_handle_t ESPWifiHandle::_reconnectTicker = {0};
+boolean ESPWifiHandle::_IsConnected = false;
+boolean ESPWifiHandle::_firstConnection = false;
+uint8_t ESPWifiHandle::_counterReconnect = 0;
+uint8_t ESPWifiHandle::_counterReset = 0;
+boolean ESPWifiHandle::_IsOTA = false;
 WiFiLedStatusHandler ESPWifiHandle::_ledStatusFunc = nullptr;
 
-void ESPWifiHandle::registerEventHandler()
-{
+ESPWifiHandle::ESPWifiHandle(/* args */) {}
+ESPWifiHandle::~ESPWifiHandle() {}
+
+void ESPWifiHandle::registerEventHandler() {
   ESP_WIFI_TAG_CONSOLE("registerEventHandler");
 #ifdef ESP32
-  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
-  {
-    _wifiConnected = true;
-    ESP_WIFI_TAG_CONSOLE("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
-    WIFI_TAG_LOG("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
-    if (_ledStatusFunc)
-    {
-      _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_WIFI_GOT_IP);
-    }
-#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
-    WIFI_TAG_LOG("[EASYNTP] begin(%ld, %d, %s, %u)"
-          , ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
-    EASYNTP.begin(ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
-#endif
-    /* Smart config enable */
-    if(ESPConfig.smartCfgSTA())
-    {
-      if(ESPConfig.ssidSTA() != WiFi.SSID()
-      || ESPConfig.passSTA() != WiFi.psk())
-      {
-        ESPConfig.ssidSTASet(WiFi.SSID());
-        ESPConfig.passSTASet(WiFi.psk());
-        ESPConfig.save();
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+    if (!_IsConnected) {
+      _IsConnected = true;
+      ticker_detach(&_reconnectTicker);
+      ESP_WIFI_TAG_CONSOLE("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
+      ESP_WIFI_TAG_LOG("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
+      if (_ledStatusFunc) {
+        _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_WIFI_GOT_IP);
       }
+#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
+#if (TIME_ZONE_TYPE_CFG == 1)
+      EASY_NTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
+#else
+      EASY_NTP.begin(ESPConfig.TzTime().c_str(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
+#endif
+#endif
+      /* Smart config enable */
+      if(ESPConfig.smartCfgSTA()) {
+        if(ESPConfig.ssidSTA() != WiFi.SSID()
+        || ESPConfig.passSTA() != WiFi.psk())
+        {
+          ESPConfig.ssidSTASet(WiFi.SSID());
+          ESPConfig.passSTASet(WiFi.psk());
+          ESPConfig.save();
+        }
+      }
+      /* Run DDNS service */
+      _DDNSService->updateTrigger();
     }
   }
   ,WiFiEvent_t::m_ESP32_EVENT_STA_GOT_IP);
 
-  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
-  {
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
 #if ESP_IDF_VERSION_MAJOR >= 4
     std::string ssid((const char*)info.wifi_sta_connected.ssid, info.wifi_sta_connected.ssid_len);
 #else
     std::string ssid((const char*)info.connected.ssid, info.connected.ssid_len);
 #endif
     ESP_WIFI_TAG_CONSOLE("[EVENT] connected to %s", ssid.c_str());
-    WIFI_TAG_LOG("[EVENT] connected to %s", ssid.c_str());
+    ESP_WIFI_TAG_LOG("[EVENT] connected to %s", ssid.c_str());
   }
   ,WiFiEvent_t::m_ESP32_EVENT_STA_CONNECTED);
 
-  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info)
-  {
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     int reason;
 #if ESP_IDF_VERSION_MAJOR >= 4
     reason = info.wifi_sta_disconnected.reason;
 #else
     reason = info.disconnected.reason;
 #endif
-    if (_wifiConnected)
-    {
-      _wifiConnected = false;
+    if (_IsConnected || !_firstConnection) {
+      _IsConnected = false;
+      _firstConnection = true;
       ESP_WIFI_TAG_CONSOLE("[EVENT] lost connection. Reason: %u", reason);
-      WIFI_TAG_LOG("[EVENT] lost connection. Reason: %u", reason);
-      if (_ledStatusFunc)
-      {
+      ESP_WIFI_TAG_LOG("[EVENT] lost connection. Reason: %u", reason);
+      if (_ledStatusFunc) {
         _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_WIFI_DISCONNECTED);
       }
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
-      EASYNTP.end();
+      EASY_NTP.end();
 #endif
+
+      /* Note: running setAutoReconnect(true) when module is already disconnected 
+      will not make it reconnect to the access point. Instead reconnect() 
+      should be used. 
+        We don't need call WiFi.reconnect() once loss connection, it is self reconnect after loss connection.
+      Reconnecting will be destroy, if executing scan network.
+      */
+      _counterReconnect = ESP_RECONNECTION_SECOND_NUM;
+      _counterReset = 0;
+      ticker_attach(&_reconnectTicker, INTERVAL_RECONNECT_SECOND_NUM, [](void *arg) {
+          WiFiClass *handler = (WiFiClass*)arg;
+          _counterReconnect += INTERVAL_RECONNECT_SECOND_NUM;
+          if (_counterReconnect >= ESP_RECONNECTION_SECOND_NUM) {
+            _counterReconnect = 0;
+
+            if (++_counterReset > COUNTER_RECONNECT_RESET_NUM) {
+              _counterReset = 0;
+#if (NETWORK_CONNECTION_TIMEOUT_RESET == 1)
+              SOFTReset.enable(500, ESPSoftReset::WIFI_RECONNECT_TYPE);
+#endif
+            }
+            else {
+              ESP_WIFI_TAG_CONSOLE("Reconnect");
+              handler->reconnect();
+            }
+          }
+      }, &WiFi);
     }
-    /* Note: running setAutoReconnect(true) when module is already disconnected 
-    will not make it reconnect to the access point. Instead reconnect() 
-    should be used. 
-      We don't need call WiFi.reconnect() once loss connection, it is self reconnect after loss connection.
-    Reconnecting will be destroy, if executing scan network.
-    */
-    // manual reconnect after an expired timeout
-    uint32_t tReconnect = ESP_RECONNECTION_SECOND_NUM;
-    if(!_firstConnection)
-    {
-      _firstConnection = true;
-      tReconnect = FIRST_RECONNECTION_SECOND_NUM;
-    }
-    _reconnectTicker.once(tReconnect, [](){
-      ESP_WIFI_TAG_CONSOLE("Reconnecting");
-      WiFi.reconnect();
-    });
   },
   WiFiEvent_t::m_ESP32_EVENT_STA_DISCONNECTED);
 
+  /**===================================================================
+   * =========================BEGIN ETH EVENT===========================
+   * ===================================================================
+  */
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+    ESP_ETH_TAG_CONSOLE("[EVENT] started");
+    ESP_ETH_TAG_LOG("[EVENT] started");
+    String ChipID = String((uint32_t)(ESP.getEfuseMac() >> 16), HEX);
+    ChipID.toUpperCase();
+    String hostName = "ETH_" + ESPConfig.hostNameSTA() + "_" + ChipID;
+    ETH.setHostname(hostName.c_str());
+  }
+  ,WiFiEvent_t::m_ESP32_EVENT_ETH_START);
+
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+    if (_IsConnected) {
+      _IsConnected = false;
+      Ethernet.disconnectEvt();
+      ESP_ETH_TAG_CONSOLE("[EVENT] stopped");
+      ESP_ETH_TAG_LOG("[EVENT] stopped");
+    }
+  }
+  ,WiFiEvent_t::m_ESP32_EVENT_ETH_STOP);
+
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+    if (!_IsConnected) {
+      _IsConnected = true;
+      ESP_ETH_TAG_CONSOLE("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
+      ESP_ETH_TAG_LOG("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
+      Ethernet.connectedEvt();
+
+      /* Run DDNS service */
+      _DDNSService->updateTrigger();
+    }
+  }
+  ,WiFiEvent_t::m_ESP32_EVENT_ETH_GOT_IP);
+
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+    ESP_ETH_TAG_CONSOLE("[EVENT] connected");
+    ESP_ETH_TAG_LOG("[EVENT] connected");
+  }
+  ,WiFiEvent_t::m_ESP32_EVENT_ETH_CONNECTED);
+
+  WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+    if (_IsConnected || _firstConnection) {
+      _IsConnected = false;
+      _firstConnection = true;
+      Ethernet.disconnectEvt();
+    }
+  }
+  ,WiFiEvent_t::m_ESP32_EVENT_ETH_DISCONNECTED);
+#endif
+  /**===================================================================
+   * =========================END ETH EVENT=============================
+   * ===================================================================
+  */
 #elif defined(ESP8266)
   // To register event, must be declare _accessPointGotIpHandler
   _accessPointGotIpHandler = WiFi.onStationModeGotIP(
     [](const WiFiEventStationModeGotIP& evt) {
-      _wifiConnected = true;
+      _IsConnected = true;
+      ticker_detach(&_reconnectTicker);
       ESP_WIFI_TAG_CONSOLE("[EVENT] got IP address: %s", evt.ip.toString().c_str());
-      WIFI_TAG_LOG("[EVENT] got IP address: %s", evt.ip.toString().c_str());
-      if (_ledStatusFunc)
-      {
+      ESP_WIFI_TAG_LOG("[EVENT] got IP address: %s", evt.ip.toString().c_str());
+      if (_ledStatusFunc) {
         _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_WIFI_GOT_IP);
       }
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
-      WIFI_TAG_LOG("[EASYNTP] begin(%ld, %d, %s, %u)"
-          , ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
-      EASYNTP.begin(ESPConfig.gmtOffsetSNTP() * 3600, ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
+#if (TIME_ZONE_TYPE_CFG == 1)
+      EASY_NTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
+#else
+      EASY_NTP.begin(ESPConfig.TzTime().c_str(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
+#endif
 #endif
       /* Smart config enable */
       if(ESPConfig.smartCfgSTA())
@@ -272,6 +271,9 @@ void ESPWifiHandle::registerEventHandler()
           ESPConfig.save();
         }
       }
+
+      /* Run DDNS service */
+      _DDNSService->updateTrigger();
     }
   );
 
@@ -279,26 +281,24 @@ void ESPWifiHandle::registerEventHandler()
   _accessPointConnectedHandler = WiFi.onStationModeConnected(
     [](const WiFiEventStationModeConnected& evt) {
       ESP_WIFI_TAG_CONSOLE("[EVENT] connected to %s", evt.ssid.c_str());
-      WIFI_TAG_LOG("[EVENT] connected to %s", evt.ssid.c_str());
+      ESP_WIFI_TAG_LOG("[EVENT] connected to %s", evt.ssid.c_str());
     }
   );
 
   // To register event, must be declare _accessPointDisconnectedHandler
   _accessPointDisconnectedHandler = WiFi.onStationModeDisconnected(
     [](const WiFiEventStationModeDisconnected& evt) {
-      if (_wifiConnected)
-      {
-        _wifiConnected = false;
+      if (_IsConnected) {
+        _IsConnected = false;
         ESP_WIFI_TAG_CONSOLE("[EVENT] lost connection to %s. Reason: %u",
                              evt.ssid.c_str(), evt.reason);
-        WIFI_TAG_LOG("[EVENT] lost connection to %s. Reason: %u",
+        ESP_WIFI_TAG_LOG("[EVENT] lost connection to %s. Reason: %u",
                              evt.ssid.c_str(), evt.reason);
-        if (_ledStatusFunc)
-        {
+        if (_ledStatusFunc) {
           _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_WIFI_DISCONNECTED);
         }
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
-        EASYNTP.end();
+        EASY_NTP.end();
 #endif
       }
       /* Note: running setAutoReconnect(true) when module is already disconnected 
@@ -307,37 +307,37 @@ void ESPWifiHandle::registerEventHandler()
         We don't need call WiFi.reconnect() once loss connection, it is self reconnect after loss connection.
       Reconnecting will be destroy, if executing scan network.
       */
-      // manual reconnect after an expired timeout
-      uint32_t tReconnect = ESP_RECONNECTION_SECOND_NUM;
-      if(!_firstConnection)
-      {
-        _firstConnection = true;
-        tReconnect = FIRST_RECONNECTION_SECOND_NUM;
-      }
-      _reconnectTicker.once(tReconnect, [](){
-        ESP_WIFI_TAG_CONSOLE("Reconnecting");
-        WiFi.reconnect();
-      });
+      _counterReconnect = ESP_RECONNECTION_SECOND_NUM;
+      _counterReset = 0;
+      ticker_attach(&_reconnectTicker, INTERVAL_RECONNECT_SECOND_NUM, [](void *arg) {
+          WiFiClass *handler = (WiFiClass*)arg;
+          _counterReconnect += INTERVAL_RECONNECT_SECOND_NUM;
+          if (_counterReconnect >= ESP_RECONNECTION_SECOND_NUM) {
+            _counterReconnect = 0;
+
+            if (++_counterReset > COUNTER_RECONNECT_RESET_NUM) {
+              _counterReset = 0;
+#if (NETWORK_CONNECTION_TIMEOUT_RESET == 1)
+              SOFTReset.enable(500, ESPSoftReset::WIFI_RECONNECT_TYPE);
+#endif
+            }
+            else {
+              ESP_WIFI_TAG_CONSOLE("Reconnect");
+              handler->reconnect();
+            }
+          }
+      }, &WiFi);
     }
   );
 #endif // ESP32
 }
 
 #if (defined DDNS_CLIENT_ENABLE) && (DDNS_CLIENT_ENABLE == 1)  
-void ESPWifiHandle::onDDNSclient()
-{
-  if (ESPConfig.disableDDNS())
-  {
+void ESPWifiHandle::onDDNSclient() {
+  if (ESPConfig.disableDDNS()) {
       ESP_WIFI_TAG_CONSOLE("[DDNS] client disable");
       return;
   }
-
-  if (ddnsClient)
-  {
-    return;
-  }
-  
-  ddnsClient = new ESPAsyncEasyDDNS();
     /*
     List of supported DDNS providers:
     - "duckdns"
@@ -352,40 +352,22 @@ void ESPWifiHandle::onDDNSclient()
     - "freemyip"
     - "afraid.org"
   */
-  ddnsClient->service(ESPConfig.serviceDDNS());
+  _DDNSService->service(ESPConfig.serviceDDNS());
+  _DDNSService->urlGetIp(ESPConfig.ipUrlDDNS());
 
   // Get Notified when your IP changes
-  ddnsClient->onUpdateIP([&](const char* oldIP, const char* newIP){
+  _DDNSService->onUpdateIP([&](const char* oldIP, const char* newIP) {
     ESP_WIFI_TAG_CONSOLE("[DDNS] AsyncEasyDDNS - IP Change Detected: %s", newIP);
   });
 
   /*
     For DDNS Providers where you get a token:
-      Use this: ddnsClient->begin("domain", "token");
+      Use this: _DDNSService->begin("domain", "token");
     
     For DDNS Providers where you get username and password: ( Leave the password field empty "" if not required )
-      Use this: ddnsClient->begin("domain", "username", "password");
+      Use this: _DDNSService->begin("domain", "username", "password");
   */
-  ddnsClient->begin(ESPConfig.domainDDNS(), ESPConfig.userDDNS(), ESPConfig.passDDNS());
-
-  constexpr uint8_t DDNS_SYNC_TIME_MIN = 10; // should not zero
-  constexpr uint8_t DDNS_SYNC_TIME_MAX = 60; // unlimited
-  if (ESPConfig.syncTimeDDNS() < DDNS_SYNC_TIME_MIN)
-  {
-    ESPConfig.syncTimeDDNSSet(DDNS_SYNC_TIME_MIN);
-  }
-
-  if (ESPConfig.syncTimeDDNS() > DDNS_SYNC_TIME_MAX)
-  {
-    ESPConfig.syncTimeDDNSSet(DDNS_SYNC_TIME_MAX);
-  }
-
-  _ddnsTicker.attach(ESPConfig.syncTimeDDNS(), [](){
-    if (!ESPConfig.disableDDNS())
-    {
-      ddnsClient->update();
-    }  
-  }); 
+  _DDNSService->begin(ESPConfig.domainDDNS(), ESPConfig.userDDNS(), ESPConfig.passDDNS(), ESPConfig.syncTimeDDNS());
 }
 #endif
 
@@ -418,8 +400,8 @@ void ESPWifiHandle::onMDNSService()
 void ESPWifiHandle::onDNSServer()
 {
   constexpr uint16_t DNS_SERVER_PORT = 53;
-  _dnsServer->setErrorReplyCode(DNSReplyCode::ServerFailure);
-  _dnsServer->start(DNS_SERVER_PORT, ESPConfig.dnsNameAP(), WiFi.softAPIP());  
+  _dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
+  _dnsServer.start(DNS_SERVER_PORT, ESPConfig.dnsNameAP(), WiFi.softAPIP());  
 }
 #endif
 
@@ -449,23 +431,23 @@ void ESPWifiHandle::onArduinoOTA()
           type = "filesystem";
           NAND_FS_SYSTEM.end();
         }
-
-        _reconnectTicker.detach(); // disable wifi auto reconnect access point
+        _IsOTA = true;
+        ticker_detach(&_reconnectTicker); // disable wifi auto reconnect access point
 
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
-        EASYNTP.end();
+        EASY_NTP.end();
 #endif
 
         /** NOTE: if updating SPIFFS this would be the place
          *  to unmount SPIFFS using SPIFFS.end() */
         ESP_WIFI_TAG_CONSOLE("[OTA] Start updating %s", type.c_str());
-        WIFI_TAG_LOG("[OTA] Start updating %s", type.c_str());
+        ESP_WIFI_TAG_LOG("[OTA] Start updating %s", type.c_str());
       });
 
   ArduinoOTA.onEnd([]()
                    { 
-                     ESP_WIFI_TAG_CONSOLE("[OTA] End");
-                     WIFI_TAG_LOG("[OTA] End");
+                     ESP_WIFI_TAG_CONSOLE("[OTA] Succeed");
+                     ESP_WIFI_TAG_LOG("[OTA] Succeed");
                    });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total)
@@ -483,7 +465,7 @@ void ESPWifiHandle::onArduinoOTA()
   ArduinoOTA.onError([](ota_error_t error)
                      {
                        ESP_WIFI_TAG_CONSOLE("[OTA] Error[%u]: ", error);
-                       WIFI_TAG_LOG("[OTA] Error[%u]: ", error);
+                       ESP_WIFI_TAG_LOG("[OTA] Error[%u]: ", error);
                        if (error == OTA_AUTH_ERROR)
                        {
                          ESP_WIFI_CONSOLE("Auth Failed");
@@ -504,6 +486,7 @@ void ESPWifiHandle::onArduinoOTA()
                        {
                          ESP_WIFI_CONSOLE("End Failed");
                        }
+                       _IsOTA = false;
                      });
 
   ArduinoOTA.setHostname(ESPConfig.hostNameSTA().c_str());
@@ -521,6 +504,10 @@ void ESPWifiHandle::loop()
 #if (defined OTA_ARDUINO_ENABLE) && (OTA_ARDUINO_ENABLE == 1)  
   ArduinoOTA.handle();
 #endif
+
+#if (defined DNS_SERVER_ENABLE) && (DNS_SERVER_ENABLE == 1)
+  _dnsServer.processNextRequest();
+#endif
 }
 
 void ESPWifiHandle::begin(bool wifiON)
@@ -530,16 +517,15 @@ void ESPWifiHandle::begin(bool wifiON)
   ESP_WIFI_TAG_CONSOLE("Begin()");
 #if (defined SNTP_SERVICE_SYSTEM) && (SNTP_SERVICE_SYSTEM == 1)  
   // sntp service ON
-  _sntp->begin();
+  _sntp.begin();
 #endif
 
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
-  EASYNTP.onNTPSyncEvent([](struct timeval* val){
-    SNTP_TAG_CONSOLE("[EASYNTP][CB] Epoch/Unix system = %lu", ESPTime.now());
+  EASY_NTP.onNTPSyncEvent([](struct timeval* val){
+    EASY_SNTP_TAG_CONSOLE("[EASY_NTP][CB] Epoch/Unix system = %lu", ESPTime.now());
     ESPTime.set(val->tv_sec);    
-    SNTP_TAG_CONSOLE("[EASYNTP][CB] The UTC/GMT time is setting %s", ESPTime.toString().c_str());
-    ESPTime.setSourceUpdate(ESPTimeSystem::RTC_SNTP_UPDATE);
-    SNTP_TAG_LOG("[EASYNTP][CB] Epoch/Unix NTP = %lu", val->tv_sec);
+    EASY_SNTP_TAG_CONSOLE("[EASY_NTP][CB] The UTC/GMT time is setting %s", ESPTime.toString().c_str());
+    ESPTime.setSourceUpdate(ESPTimeSystem::ESP_RTC_SNTP_UPDATE);
   });
 #endif
 
@@ -602,7 +588,7 @@ void ESPWifiHandle::begin(bool wifiON)
       wf_mode = WIFI_AP_STA;
       ESP_WIFI_TAG_CONSOLE("Wifi Mode WIFI_AP_STA");
     }
-    /* Enable sta and Diasble ap */
+    /* Enable sta and Disable ap */
     else if (!ESPConfig.isDisableSTA() && ESPConfig.isDisableAP())
     {
       wf_mode = WIFI_STA;
@@ -637,6 +623,7 @@ void ESPWifiHandle::begin(bool wifiON)
       ESP_WIFI_TAG_CONSOLE("SetHostname: %s", hostName.c_str());
       WiFi.setHostname(hostName.c_str());
 
+      ESP_WIFI_TAG_CONSOLE("ssidSTA: %s", ESPConfig.ssidSTA().c_str());
       if (ESPConfig.ssidSTA().length() > 0) // not exist the access point 
       {
         if (!ESPConfig.dhcpSTA())

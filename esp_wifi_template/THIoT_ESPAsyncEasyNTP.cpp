@@ -37,14 +37,26 @@ ESPAsyncEasyNTP::~ESPAsyncEasyNTP()
     end();
 }
 
-void ESPAsyncEasyNTP::begin(long gmtOffset, int daylightOffset, const char *server, int interval)
+void ESPAsyncEasyNTP::begin(long gmtOffset_sec, int daylightOffset_sec, const char *server, int interval) {
+    _server = server;
+    _interval = interval;
+    ASYNC_NTP_TAG_CONSOLE("gtmOffset : %ld", gmtOffset_sec);
+    ASYNC_NTP_TAG_CONSOLE("daylightOffset : %d", daylightOffset_sec);
+    ASYNC_NTP_TAG_CONSOLE("server: %s", server);
+    ESPTime.setTimeZone(-gmtOffset_sec * 3600, daylightOffset_sec);
+
+    _udp.onPacket([](void * arg, AsyncUDPPacket& packet){ ((ESPAsyncEasyNTP*)(arg))->_onPacket(packet); }, this);
+    runAsync();
+}
+
+void ESPAsyncEasyNTP::begin(const char* tz, const char *server, int interval)
 {
     _server = server;
     _interval = interval;
-    ASYNC_NTP_TAG_CONSOLE("gmtOffset: %u", gmtOffset);
-    ASYNC_NTP_TAG_CONSOLE("daylightOffset: %u", daylightOffset);
+    ASYNC_NTP_TAG_CONSOLE("TzTime: %u", tz);
     ASYNC_NTP_TAG_CONSOLE("server: %s", server);
-    ESPTime.setTimeZone(-gmtOffset, daylightOffset);
+    ESPTime.setTzTime(tz);
+
     _udp.onPacket([](void * arg, AsyncUDPPacket& packet){ ((ESPAsyncEasyNTP*)(arg))->_onPacket(packet); }, this);
     runAsync();
 }
@@ -62,15 +74,11 @@ void ESPAsyncEasyNTP::runAsync(int interval)
     }
 
     ASYNC_NTP_FUNCTION_CONSOLE("interval %us", INTERVAL_MINIMUM);
-    // The first time running always is failed. So should be run here to reduce waiting time.
+    // The first time running is always failed. So should be run here to reduce waiting time.
     WiFi.hostByName(_server.c_str(), _ipServer);
-    _tickerRunAsync.detach();
-#ifdef ESP32
-    _tickerRunAsync.attach<void*>
-#elif defined(ESP8266)
-    _tickerRunAsync.attach<void (*)(void*), void*>
-#endif
-    (INTERVAL_MINIMUM, [](void* arg){((ESPAsyncEasyNTP*)(arg))->requestTime();}, this);
+    ticker_attach(&_tickerRunAsync, INTERVAL_MINIMUM, [](void* arg) {
+        ((ESPAsyncEasyNTP*)(arg))->requestTime();
+    }, this);
 }
 
 void ESPAsyncEasyNTP::requestTime()
@@ -136,14 +144,10 @@ void ESPAsyncEasyNTP::_onPacket(AsyncUDPPacket& packet){
             _onSyncEvent(&val);
         }
 
-        _tickerRunAsync.detach();
         ASYNC_NTP_FUNCTION_CONSOLE("runAsync after %us", _interval);
-#ifdef ESP32
-        _tickerRunAsync.once<void*>
-#elif defined(ESP8266)
-        _tickerRunAsync.once<void (*)(void*), void*>
-#endif        
-        (_interval, [](void* arg){((ESPAsyncEasyNTP*)(arg))->runAsync();}, this);
+        ticker_once(&_tickerRunAsync, _interval, [](void* arg) {
+            ((ESPAsyncEasyNTP*)(arg))->runAsync();
+        }, this);
     }
     ASYNC_NTP_TAG_CONSOLE("Close udp socket");
     _udp.close();
@@ -174,9 +178,9 @@ void ESPAsyncEasyNTP::end() {
     if(_udp.connected()) {
         _udp.close();
     }
-    _tickerRunAsync.detach();
+    ticker_detach(&_tickerRunAsync);
 }
 
 #if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_EASYNTP)
-ESPAsyncEasyNTP EASYNTP;
+ESPAsyncEasyNTP EASY_NTP;
 #endif

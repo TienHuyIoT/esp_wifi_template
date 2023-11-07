@@ -1,23 +1,11 @@
 /** Common include */
 #include <stdint.h>
 #include <stdbool.h>
+#include <Arduino.h>
 #include "THIoT_PFCommonUtil.h"
 #include "THIoT_PFAppFifoExtra.h"
 
-/* Brief: get number byte has been add into fifo
- * Return: 0 (fifo empty), otherwise fifo available
- * */
-uint32_t app_fifo_length(app_fifo_t * const fifo)
-{
-  uint32_t tmp = fifo->read_pos;
-  return fifo->write_pos - tmp;
-}
-
-/* Brief: get number byte be can push into fifo
- * Return: 0 (fifo full) that mean can not push data into fifo
- *         Otherwise fifo available
- * */
-uint32_t app_fifo_available(app_fifo_t * const fifo)
+uint32_t app_fifo_available_count(app_fifo_t * const fifo)
 {
   return (fifo->buf_size_mask - app_fifo_length(fifo) + 1);
 }

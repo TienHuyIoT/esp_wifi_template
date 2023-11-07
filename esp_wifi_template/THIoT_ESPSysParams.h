@@ -1,3 +1,8 @@
+/*
+Check json online: http://json.parser.online.fr/
+Json arduino assistant: https://arduinojson.org/v5/assistant/
+*/
+
 #ifndef	__ESP_SYS_PARAMS_H
 #define __ESP_SYS_PARAMS_H
 
@@ -6,44 +11,46 @@
 
 #define ESP_SYSTEM_PARAMS ((const char*)"/esp_system_params.txt")
 
-#define HOSTNAME_LENGHT_MAX     32
-#define SSID_LENGHT_MAX         32
-#define PASS_LENGHT_MAX         64
-#define AUTH_LENGHT_MAX         10
-#define DEVICENAME_LENGHT_MAX   127
-#define DEVICE_ADDR_LENGHT_MAX  127
-#define DEVICE_TELL_LENGHT_MAX  15
+#define HOSTNAME_LENGTH_MAX     32
+#define SSID_LENGTH_MAX         32
+#define PASS_LENGTH_MAX         64
+#define AUTH_LENGTH_MAX         10
+#define DEVICE_NAME_LENGTH_MAX  127
+#define DEVICE_ADDR_LENGTH_MAX  127
+#define DEVICE_TELL_LENGTH_MAX  15
 #define DDNS_SERVICE_LENGTH_MAX 15
 #define DDNS_DOMAIN_LENGTH_MAX  31
 #define DDNS_USER_LENGTH_MAX    15
 #define DDNS_PASS_LENGTH_MAX    15
 #define DDNS_IPURL_LENGTH_MAX   50
-#define SNTP_LENGTH_MAX         31
+#define SNTP_SERVER_LENGTH_MAX  31
+#define SNTP_TZ_LENGTH_MAX      40
 
 #define PASS_COMMON_DEFAULT     1234
-#define PASS_PU3_DEFAULT        1234
-#define PASS_COST_DEFAULT       1234
-#define PASS_LOGFILE_DEFAULT    1234
+#define PASS_EX1_DEFAULT        1234
+#define PASS_EX2_DEFAULT        1234
+#define PASS_EX3_DEFAULT        1234
+#define PASS_EX4_DEFAULT        1234
 #define CONFIRM_NUM_MAX         5
 
 typedef struct {
     struct {
         uint16_t 	udp;    /* Udp port, reserved */
-        uint16_t 	tcp;    /* tcp port for webserver */
+        uint16_t 	tcp;    /* tcp port for webServer */
         uint16_t    ws;     /* websocket port, not used */
     }port;    
     struct {
-        char        name[DEVICENAME_LENGHT_MAX + 1];
-        char        addr[DEVICE_ADDR_LENGHT_MAX + 1];
-        char        tell[DEVICE_TELL_LENGHT_MAX + 1];
+        char        name[DEVICE_NAME_LENGTH_MAX + 1];
+        char        addr[DEVICE_ADDR_LENGTH_MAX + 1];
+        char        tell[DEVICE_TELL_LENGTH_MAX + 1];
     }device;
     struct {
-        char        user[AUTH_LENGHT_MAX + 1];
-        char        pass[AUTH_LENGHT_MAX + 1];
+        char        user[AUTH_LENGTH_MAX + 1];
+        char        pass[AUTH_LENGTH_MAX + 1];
     }auth_admin;
     struct {
-        char        user[AUTH_LENGHT_MAX + 1];
-        char        pass[AUTH_LENGHT_MAX + 1];
+        char        user[AUTH_LENGTH_MAX + 1];
+        char        pass[AUTH_LENGTH_MAX + 1];
     }auth_user;
     
     uint16_t confirm[CONFIRM_NUM_MAX];
@@ -53,9 +60,9 @@ typedef struct {
         IPAddress 	gw;
         IPAddress 	sn;
         IPAddress 	dns;
-        char 		ssid[SSID_LENGHT_MAX + 1];
-        char 		pass[PASS_LENGHT_MAX + 1];
-        char        hostname[HOSTNAME_LENGHT_MAX + 1];                
+        char 		ssid[SSID_LENGTH_MAX + 1];
+        char 		pass[PASS_LENGTH_MAX + 1];
+        char        hostname[HOSTNAME_LENGTH_MAX + 1];                
         uint8_t 	dhcp        : 1;
         uint8_t     disable     : 1;
         uint8_t     smart_cfg   : 1;
@@ -63,9 +70,9 @@ typedef struct {
     struct {
         IPAddress   ip;
         IPAddress   sn; 
-        char 		ssid[SSID_LENGHT_MAX + 1];
-        char 		pass[PASS_LENGHT_MAX + 1];
-        char        dns_name[HOSTNAME_LENGHT_MAX + 1];               
+        char 		ssid[SSID_LENGTH_MAX + 1];
+        char 		pass[PASS_LENGTH_MAX + 1];
+        char        dns_name[HOSTNAME_LENGTH_MAX + 1];               
         uint8_t 	channel : 4;
         uint8_t 	hidden  : 1;
         uint8_t     disable : 1;
@@ -80,9 +87,10 @@ typedef struct {
         uint8_t     disable : 1;
     }ddns;
     struct {
-        char        server1[SNTP_LENGTH_MAX + 1];
-        char        server2[SNTP_LENGTH_MAX + 1];
-        char        server3[SNTP_LENGTH_MAX + 1];
+        char        server1[SNTP_SERVER_LENGTH_MAX + 1];
+        char        server2[SNTP_SERVER_LENGTH_MAX + 1];
+        char        server3[SNTP_SERVER_LENGTH_MAX + 1];
+        char        TzTime[SNTP_TZ_LENGTH_MAX + 1];
         long        gmtOffset;
         int         daylightOffset;
         int         interval;
@@ -91,25 +99,27 @@ typedef struct {
 
 class ESPSysParams
 {
+    using File = fs::File;
+    using FS = fs::FS;
 public:
     typedef enum : uint8_t {
         CONFIRM_COMMON = 0,
-        CONFIRM_PU3,
-        CONFIRM_COST,
-        CONFIRM_LOGFILE,
-        CONFIRM_RESERVE
+        CONFIRM_EX1,
+        CONFIRM_EX2,
+        CONFIRM_EX3,
+        CONFIRM_EX4
     } passConfirm_t;
 
 private:
-    fs::FS *_fs;
+    FS *_fs;
     esp_sys_params_t _sys_prams;
     void syncFromFileSystem();
     void saveToFileSystem();
 public:
-    ESPSysParams(fs::FS &fs);
+    ESPSysParams(FS &fs);
     ~ESPSysParams();
 
-    void load(fs::FS* fs = nullptr);
+    void load(FS *fs = nullptr);
     void save() { saveToFileSystem(); }
     void setDefault() { _fs->remove(ESP_SYSTEM_PARAMS); }
     void resetPassword();
@@ -126,13 +136,13 @@ public:
     String addrDevice() { return _sys_prams.device.addr; }
     String tellDevice() { return _sys_prams.device.tell; }
     void nameDeviceSet(const String &name) { 
-        name.toCharArray(_sys_prams.device.name, DEVICENAME_LENGHT_MAX + 1);
+        name.toCharArray(_sys_prams.device.name, DEVICE_NAME_LENGTH_MAX + 1);
     }
     void addrDeviceSet(const String &addr) { 
-        addr.toCharArray(_sys_prams.device.addr, DEVICE_ADDR_LENGHT_MAX + 1);
+        addr.toCharArray(_sys_prams.device.addr, DEVICE_ADDR_LENGTH_MAX + 1);
     }
     void tellDeviceSet(const String &tell) { 
-        tell.toCharArray(_sys_prams.device.tell, DEVICE_TELL_LENGHT_MAX + 1);
+        tell.toCharArray(_sys_prams.device.tell, DEVICE_TELL_LENGTH_MAX + 1);
     }
     /* Auth API */
     String authAdminUser() { return _sys_prams.auth_admin.user; }
@@ -140,16 +150,16 @@ public:
     String authUserUser() { return _sys_prams.auth_user.user; }
     String authUserPass() { return _sys_prams.auth_user.pass; }
     void authAdminUserSet(const String &user) { 
-        user.toCharArray(_sys_prams.auth_admin.user, AUTH_LENGHT_MAX + 1);
+        user.toCharArray(_sys_prams.auth_admin.user, AUTH_LENGTH_MAX + 1);
     }
     void authAdminPassSet(const String &pass) { 
-        pass.toCharArray(_sys_prams.auth_admin.pass, AUTH_LENGHT_MAX + 1);
+        pass.toCharArray(_sys_prams.auth_admin.pass, AUTH_LENGTH_MAX + 1);
     }
     void authUserUserSet(const String &user) { 
-        user.toCharArray(_sys_prams.auth_user.user, AUTH_LENGHT_MAX + 1);
+        user.toCharArray(_sys_prams.auth_user.user, AUTH_LENGTH_MAX + 1);
     }
     void authUserPassSet(const String &pass) { 
-        pass.toCharArray(_sys_prams.auth_user.pass, AUTH_LENGHT_MAX + 1);
+        pass.toCharArray(_sys_prams.auth_user.pass, AUTH_LENGTH_MAX + 1);
     }
     /* Confirm pass */
     bool passConfirmIsOK(const String &pass, passConfirm_t type);
@@ -179,13 +189,13 @@ public:
     void dnsSTASet(IPAddress dns) { _sys_prams.sta.dns = dns; }
     void dnsSTASet(const String &address) { _sys_prams.sta.dns.fromString(address); }
     void ssidSTASet(const String &ssid) { 
-        ssid.toCharArray(_sys_prams.sta.ssid, SSID_LENGHT_MAX + 1);
+        ssid.toCharArray(_sys_prams.sta.ssid, SSID_LENGTH_MAX + 1);
     }
     void passSTASet(const String &pass) { 
-        pass.toCharArray(_sys_prams.sta.pass, PASS_LENGHT_MAX + 1);
+        pass.toCharArray(_sys_prams.sta.pass, PASS_LENGTH_MAX + 1);
     }
     void hostNameSTASet(const String &hostName) { 
-        hostName.toCharArray(_sys_prams.sta.hostname, HOSTNAME_LENGHT_MAX + 1);
+        hostName.toCharArray(_sys_prams.sta.hostname, HOSTNAME_LENGTH_MAX + 1);
     }
     void dhcpSTASet(uint8_t dhcp) { _sys_prams.sta.dhcp = dhcp; }
     void disableSTASet(uint8_t disable) { _sys_prams.sta.disable = disable; }
@@ -204,13 +214,13 @@ public:
     void snAPSet(IPAddress sn) { _sys_prams.ap.sn = sn; }
     void snAPSet(const String &address) { _sys_prams.ap.sn.fromString(address); }
     void ssidAPSet(const String &ssid) { 
-        ssid.toCharArray(_sys_prams.ap.ssid, SSID_LENGHT_MAX + 1);
+        ssid.toCharArray(_sys_prams.ap.ssid, SSID_LENGTH_MAX + 1);
     }
     void passAPSet(const String &pass) { 
-        pass.toCharArray(_sys_prams.ap.pass, PASS_LENGHT_MAX + 1);
+        pass.toCharArray(_sys_prams.ap.pass, PASS_LENGTH_MAX + 1);
     }
     void dnsNameAPSet(const String &dnsName) { 
-        dnsName.toCharArray(_sys_prams.ap.dns_name, HOSTNAME_LENGHT_MAX + 1);
+        dnsName.toCharArray(_sys_prams.ap.dns_name, HOSTNAME_LENGTH_MAX + 1);
     }
     void channelAPSet(uint8_t channel) { _sys_prams.ap.channel = channel; }
     void hiddenAPSet(uint8_t hidden) { _sys_prams.ap.hidden = hidden; }
@@ -244,17 +254,18 @@ public:
     String server1SNTP() { return _sys_prams.sntp.server1; }
     String server2SNTP() { return _sys_prams.sntp.server2; }
     String server3SNTP() { return _sys_prams.sntp.server3; }
+    String TzTime() { return _sys_prams.sntp.TzTime; }
     long gmtOffsetSNTP() { return _sys_prams.sntp.gmtOffset; }
     int daylightOffsetSNTP() { return _sys_prams.sntp.daylightOffset; }
     int intervalSNTP() { return _sys_prams.sntp.interval; }
     void server1SNTPSet(const String &server) { 
-        server.toCharArray(_sys_prams.sntp.server1, SNTP_LENGTH_MAX + 1);
+        server.toCharArray(_sys_prams.sntp.server1, SNTP_SERVER_LENGTH_MAX + 1);
     }
     void server2SNTPSet(const String &server) { 
-        server.toCharArray(_sys_prams.sntp.server2, SNTP_LENGTH_MAX + 1);
+        server.toCharArray(_sys_prams.sntp.server2, SNTP_SERVER_LENGTH_MAX + 1);
     }
     void server3SNTPSet(const String &server) { 
-        server.toCharArray(_sys_prams.sntp.server3, SNTP_LENGTH_MAX + 1);
+        server.toCharArray(_sys_prams.sntp.server3, SNTP_SERVER_LENGTH_MAX + 1);
     }
     void gmtOffsetSNTPSet(long gmtOffset) { _sys_prams.sntp.gmtOffset = gmtOffset; }
     void daylightOffsetSNTPSet(int daylightOffset) { _sys_prams.sntp.daylightOffset = daylightOffset; }

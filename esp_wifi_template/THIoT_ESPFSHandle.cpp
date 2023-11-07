@@ -1,5 +1,3 @@
-/* Includes ------------------------------------------------------------------*/
-
 #include <FS.h>
 #include "THIoT_ESPConfig.h"
 #include "THIoT_PFSerialTrace.h"
@@ -26,7 +24,7 @@ ESPFSHandle::~ESPFSHandle()
 {
 }
 
-void ESPFSHandle::listDir(fs::FS &fs, const char *dirname, uint8_t levels)
+void ESPFSHandle::listDir(FS &fs, const char *dirname, uint8_t levels)
 {
     FS_HANDLE_TAG_CONSOLE("Listing directory: %s", dirname);
     File root = fs.open(dirname, "r");
@@ -73,7 +71,7 @@ void ESPFSHandle::listDir(fs::FS &fs, const char *dirname, uint8_t levels)
 }
 
 /* format(SD_FS_SYSTEM, "/"); */
-void ESPFSHandle::format(fs::FS &fs, const char *dirname)
+void ESPFSHandle::format(FS &fs, const char *dirname)
 {
   FS_HANDLE_TAG_CONSOLE("Listing directory: %s", dirname);
 
@@ -108,7 +106,7 @@ void ESPFSHandle::format(fs::FS &fs, const char *dirname)
   }
 }
 
-void ESPFSHandle::deleteFile(fs::FS &fs, const char *path)
+void ESPFSHandle::deleteFile(FS &fs, const char *path)
 {
   FS_HANDLE_TAG_CONSOLE("Deleting file: %s", path);
   if (fs.remove(path))
@@ -121,7 +119,7 @@ void ESPFSHandle::deleteFile(fs::FS &fs, const char *path)
   }
 }
 
-void ESPFSHandle::removeDir(fs::FS &fs, const char *path)
+void ESPFSHandle::removeDir(FS &fs, const char *path)
 {
   FS_HANDLE_TAG_CONSOLE("Removing Dir: %s", path);
   if (fs.rmdir(path))
@@ -135,7 +133,7 @@ void ESPFSHandle::removeDir(fs::FS &fs, const char *path)
 }
 
 #if (0)
-void ESPFSHandle::createDir(fs::FS &fs, const char *path)
+void ESPFSHandle::createDir(FS &fs, const char *path)
 {
   FS_HANDLE_TAG_CONSOLE("Creating Dir: %s", path);
   if (fs.mkdir(path))
@@ -148,7 +146,7 @@ void ESPFSHandle::createDir(fs::FS &fs, const char *path)
   }
 }
 
-void ESPFSHandle::readFile(fs::FS &fs, const char *path)
+void ESPFSHandle::readFile(FS &fs, const char *path)
 {
   FS_HANDLE_TAG_CONSOLE("Reading file: %s", path);
 
@@ -166,7 +164,7 @@ void ESPFSHandle::readFile(fs::FS &fs, const char *path)
   }
 }
 
-void ESPFSHandle::writeFile(fs::FS &fs, const char *path, const char *message)
+void ESPFSHandle::writeFile(FS &fs, const char *path, const char *message)
 {
   FS_HANDLE_TAG_CONSOLE("Writing file: %s", path);
 
@@ -186,7 +184,7 @@ void ESPFSHandle::writeFile(fs::FS &fs, const char *path, const char *message)
   }
 }
 
-void ESPFSHandle::appendFile(fs::FS &fs, const char *path, const char *message)
+void ESPFSHandle::appendFile(FS &fs, const char *path, const char *message)
 {
   FS_HANDLE_TAG_CONSOLE("Appending to file: %s", path);
 
@@ -206,7 +204,7 @@ void ESPFSHandle::appendFile(fs::FS &fs, const char *path, const char *message)
   }
 }
 
-void ESPFSHandle::renameFile(fs::FS &fs, const char *path1, const char *path2)
+void ESPFSHandle::renameFile(FS &fs, const char *path1, const char *path2)
 {
   FS_HANDLE_TAG_CONSOLE("Renaming file %s to %s", path1, path2);
   if (fs.rename(path1, path2))
@@ -219,7 +217,7 @@ void ESPFSHandle::renameFile(fs::FS &fs, const char *path1, const char *path2)
   }
 }
 
-void ESPFSHandle::testFileIO(fs::FS &fs, const char *path)
+void ESPFSHandle::testFileIO(FS &fs, const char *path)
 {
   File file = fs.open(path);
   static uint8_t buf[512];

@@ -1,4 +1,4 @@
-#include <arduino.h>
+#include <Arduino.h>
 #include "THIoT_PFFrame.h"
 
 #if (defined FRAME_DEBUG_ENABLE) && (FRAME_DEBUG_ENABLE == 1)
@@ -25,7 +25,7 @@ void frame_data_test_case1(void)
 	/* fill fields of frame into buff */
 	if(FRAME_OK == frame_data_fill_buff(&frame_create, buff, &length))
 	{
-		/* Parse buff and lenght of buff has been fill above*/
+		/* Parse buff and length of buff has been fill above*/
 		if(FRAME_OK == frame_data_parse(&frame_parse, buff, length))
 		{
 			if(frame_parse.crc == frame_create.crc)
@@ -74,7 +74,7 @@ frame_parse_result_t frame_data_fill_buff(frame_data_t *frame, uint8_t *buff, ui
 
     // size of buffer after fill
     *length = FRAME_SIZE(frame->length);
-    FRAME_TAG_PRINTF("fill buffer lenght %u\r\n", *length);
+    FRAME_TAG_PRINTF("fill buffer length %u\r\n", *length);
 
     // all thing is OK
     return FRAME_OK;

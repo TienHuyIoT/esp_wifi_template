@@ -5,8 +5,7 @@
 #include "THIoT_PFcUtil.h"
 #include "THIoT_PFSerialTrace.h"
 
-#define FS_UTILITY_TAG_CONSOLE(...) //SERIAL_FUNCTION_TAG_LOGI("[FS_UTILITY]", __VA_ARGS__)
-
+#define FS_UTILITY_TAG_CONSOLE(...) //SERIAL_TAG_LOGI("[FS_UTILITY]", __VA_ARGS__)
 FSULogService::FSULogService(const FS &fs, int logLength, const char *path, size_t headerLength)
     : _fs(fs),
       _path(path),

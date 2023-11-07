@@ -1,3 +1,4 @@
+#include <driver/sdmmc_types.h>
 #include "THIoT_ESPConfig.h"
 #include "THIoT_ESPFSHandle.h"
 #include "THIoT_PFSerialTrace.h"
@@ -21,7 +22,7 @@
 #define SD_FS_PRINTFLN(...) SERIAL_TAG_LOGI("[SD]", __VA_ARGS__)
 
 #ifdef ESP8266
-#if(HTH_SFDS_HANDLE)
+#if(HTH_SDFS_HANDLE)
 SDFSClass::SDFSClass()
 : fs::FS(FSImplPtr(new sdfs::SDFSImpl()))
 {
@@ -73,9 +74,9 @@ ESPSdCard::~ESPSdCard()
 }
 
 #if (defined SD_SPI_INTERFACE) && (SD_SPI_INTERFACE == 1) && (defined ESP32)
-void ESPSdCard::begin(SPIClass &spi)
+boolean ESPSdCard::begin(SPIClass &spi)
 #else
-void ESPSdCard::begin()
+boolean ESPSdCard::begin()
 #endif
 {
   uint8_t cardType;
@@ -90,11 +91,15 @@ void ESPSdCard::begin()
   delay(10); // add timeout to supply power to sd card
 #endif
 #if (defined SD_SPI_INTERFACE) && (SD_SPI_INTERFACE == 0)
+#if (ESP_IDF_VERSION_MAJOR >= 4)
+  if (!SD_FS_SYSTEM.begin("/sdcard", false, false, SDMMC_FREQ_52M))
+#else
   if (!SD_FS_SYSTEM.begin())
+#endif
   {
     SD_FS_PRINTFLN("Card Mount Failed");
     _sdCardStatus = false;
-    return;
+    return false;
   }
 #else
   SD_NSS_PINMODE_INIT();
@@ -109,7 +114,7 @@ void ESPSdCard::begin()
   {
     SD_FS_PRINTFLN("Card Mount Failed");
     _sdCardStatus = false;
-    return;
+    return false;
   }
 #endif
   SD_FS_PRINTFLN("Card Mount Succeed");
@@ -120,7 +125,7 @@ void ESPSdCard::begin()
   usedBytes = SD_FS_SYSTEM.usedBytes() / (1024ULL * 1024ULL);
   cardType = SD_FS_SYSTEM.cardType();  
 #elif defined(ESP8266)
-#if(HTH_SFDS_HANDLE)
+#if(HTH_SDFS_HANDLE)
   FSInfo64 fs_info;
   SD_FS_SYSTEM.info64(fs_info);
   cardSize = fs_info.totalBytes / (1024ULL * 1024ULL);
@@ -137,7 +142,7 @@ void ESPSdCard::begin()
   if (cardType == CARD_NONE)
   {
     SD_FS_PRINTFLN("No SD_FS_SYSTEM card attached");
-    return;
+    return false;
   }
 
   if (cardType == CARD_MMC)
@@ -157,8 +162,8 @@ void ESPSdCard::begin()
     SD_FS_PRINTF("Type: UNKNOWN");
   }
 
-  SD_FS_PRINTFLN("Card Size: %lluMB\r\n", cardSize);
-  SD_FS_PRINTFLN("Card Space: %lluMB\r\n", usedBytes);
+  SD_FS_PRINTFLN("Card Size: %lluMB", cardSize);
+  SD_FS_PRINTFLN("Card used: %lluMB\r\n", usedBytes);
 
 #if (0)
   FSHandle.createDir(SD_FS_SYSTEM, "/mydir");
@@ -173,8 +178,9 @@ void ESPSdCard::begin()
   FSHandle.readFile(SD_FS_SYSTEM, "/foo.txt");
   FSHandle.testFileIO(SD_FS_SYSTEM, "/test.txt");
 #endif
+  return true;
 }
 
-ESPSdCard HTH_sdCard;
+ESPSdCard SDCard;
 
 #endif // (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)

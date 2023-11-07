@@ -24,13 +24,13 @@ typedef std::function<void(AsyncWebServerRequest *)> asyncHttpHandler;
 typedef std::function<void(void)> scanNetworkHandler;
 typedef std::function<void(const char *, const char *)> eventSocketHandler;
 
-class WebserverURLHandleCallbacks {
+class WebServerURLHandleCallbacks {
 private:
   scanNetworkHandler _pScanNetworkCb;
   eventSocketHandler _pEventSocketCb;
 public:
-  WebserverURLHandleCallbacks();
-	virtual ~WebserverURLHandleCallbacks();
+  WebServerURLHandleCallbacks();
+	virtual ~WebServerURLHandleCallbacks();
   /**
   * Handler called after once request with method GET and authenticated.
   */
@@ -85,7 +85,7 @@ public:
   }
 };
 
-class ESPWebserver
+class ESPWebServer
 {
 private:
   static constexpr uint16_t SERVER_PORT_DEFAULT = 25123;
@@ -94,7 +94,7 @@ private:
   static ESPFSEditor* _spiffsEditor;
   static ESPFsPart* _spiffsPart;
   static ESPWebsocket* _wsHandler;
-  static std::vector<WebserverURLHandleCallbacks*> _pUrlCallbacks;
+  static std::vector<WebServerURLHandleCallbacks*> _pUrlCallbacks;
   static asyncHttpHandler _httpGetAuthHandler;
   static asyncHttpHandler _httpGetHandler;
   static asyncHttpHandler _httpPostAuthHandler;
@@ -110,6 +110,7 @@ private:
   static uint32_t _spiffsUploadPercent;
   static uint32_t _flashUpdatePercent;
   static size_t _updateProgress;
+  static boolean _IsUpdate;
   String _uriHttpGetAuth;
   String _uriHttpGet;
   String _uriHttpPostAuth;
@@ -124,11 +125,15 @@ private:
   static void printHandleRequest(AsyncWebServerRequest *request);
 
 public:
-  ESPWebserver(/* args */);
-  ~ESPWebserver();
+  ESPWebServer(/* args */);
+  ~ESPWebServer();
 
-  void begin();
+  void begin(ESPWebsocket* ws);
   void loop();
+
+  boolean IsUpdate() { return _IsUpdate; }
+  void UpdateStart() { _IsUpdate = true; }
+  void UpdateStop() { _IsUpdate = false; }
   
   void onHttpGetAuth(asyncHttpHandler handler, const char* uri = "/get")
   {
@@ -148,7 +153,7 @@ public:
     _uriHttpPostAuth = uri;
   }
 
-  void onUrlHandle(WebserverURLHandleCallbacks* pCallbacks);
+  void onUrlHandle(WebServerURLHandleCallbacks* pCallbacks);
 
   void syncSsidNetworkToEvents();
 
@@ -170,11 +175,7 @@ public:
       delete _spiffsEditor;
     }
 
-    if (_spiffsPart) {
-      delete _spiffsPart;
-    }
-
-    delete _wsHandler;
+    _wsHandler = nullptr;
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
     if (_sdCardEditor) {
       delete _sdCardEditor;
