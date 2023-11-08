@@ -38,6 +38,7 @@ public:
         uint8_t minute;
         uint8_t second;
         boolean enable;
+        uint8_t alarmID;
     } calendar_t;
 
 protected:

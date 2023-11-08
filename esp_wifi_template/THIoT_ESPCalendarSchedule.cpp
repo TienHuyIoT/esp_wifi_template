@@ -8,7 +8,7 @@
 #include "THIoT_ESPLogTrace.h"
 
 #define CALENDAR_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[CALENDAR]", __VA_ARGS__)
-#define CALENDAR_SCHEDULE_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[CALENDAR_SCHEDULE]", __VA_ARGS__)
+#define CALENDAR_FILE_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[CALENDAR_FILE]", __VA_ARGS__)
 
 #define CALENDAR_TAG_LOG(...) FS_TAG_LOGI("[CALENDAR]", __VA_ARGS__)
 
@@ -30,8 +30,8 @@
 */
 const char calendarScheduleDefault[] PROGMEM = R"=====(
 [
-    [0,3000,0,04,0,0,0],
-    [0,3000,0,12,0,0,0],
+    [0,3000,0,04,0,0,1],
+    [0,3000,0,12,0,0,1],
     [0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0],
@@ -96,14 +96,20 @@ void ESPCalendarSchedule::_loadSchedule() {
                    * If the current time < this alarm time: Event shall be trigger in day
                    * Else the Event shall be trigger in the next day.
                   */
-                _timeAlarm.alarmRepeat(calendar->hour, calendar->minute, calendar->second,
+                calendar->alarmID = _timeAlarm.alarmRepeat(calendar->hour, calendar->minute, calendar->second,
                                        std::bind(&ESPCalendarSchedule::_execution, this, calendar));
+                CALENDAR_TAG_CONSOLE("NextTrigger[%u] %s",
+                                     calendar->alarmID,
+                                     ESPTime.toString(_timeAlarm.getNextTrigger(calendar->alarmID)).c_str());
             }
             else {
                 CALENDAR_TAG_CONSOLE("Weekly at wday(%u) %02u:%02u:%02u", calendar->wday, calendar->hour, calendar->minute, calendar->second);
                   // trigger weekly at a specific day and time
-                _timeAlarm.alarmRepeat(calendar->wday, calendar->hour, calendar->minute, calendar->second,
+                calendar->alarmID = _timeAlarm.alarmRepeat(calendar->wday, calendar->hour, calendar->minute, calendar->second,
                                        std::bind(&ESPCalendarSchedule::_execution, this, calendar));
+                CALENDAR_TAG_CONSOLE("NextTrigger[%u] %s",
+                                     calendar->alarmID,
+                                     ESPTime.toString(_timeAlarm.getNextTrigger(calendar->alarmID)).c_str()); 
             }
         }
     }
@@ -121,22 +127,46 @@ void ESPCalendarSchedule::_execution(calendar_t* calendar) {
      * the system's rtc
     */
     if (ESPTime.getSourceUpdate() == ESPTimeSystem::ESP_RTC_NON_UPDATE) {
-        CALENDAR_SCHEDULE_TAG_CONSOLE("Alarm enable failure");
+        CALENDAR_FILE_TAG_CONSOLE("Alarm enable failure");
         return;
     }
 #endif
-
+    CALENDAR_TAG_CONSOLE("Schedule[%u] %u-%u at %02u:%02u:%02u",
+                         calendar->alarmID,
+                         calendar->type,
+                         calendar->arg,
+                         calendar->hour,
+                         calendar->minute,
+                         calendar->second);
+    
     if (DAILY_RESET_TRIGGER_TYPE == calendar->type) {
         uint32_t timeout = calendar->arg;
-        CALENDAR_TAG_LOG("Daily restart at %02u:%02u:%02u", calendar->hour, calendar->minute, calendar->second);
+        CALENDAR_TAG_LOG("Daily[%u] restart at %02u:%02u:%02u",
+                         calendar->alarmID,
+                         calendar->hour,
+                         calendar->minute,
+                         calendar->second);
+        
         SOFTReset.enable(timeout, ESPSoftReset::SCHEDULE_DAILY_TYPE);
     }
 
     if (WEEKLY_RESET_TRIGGER_TYPE == calendar->type) {
         uint32_t timeout = calendar->arg;
-        CALENDAR_TAG_LOG("Weekly restart at wday(%u) %02u:%02u:%02u", calendar->wday, calendar->hour, calendar->minute, calendar->second);
+        CALENDAR_TAG_LOG("Weekly[%u] restart at wday(%u) %02u:%02u:%02u",
+                         calendar->alarmID,
+                         calendar->wday,
+                         calendar->hour,
+                         calendar->minute,
+                         calendar->second);
         SOFTReset.enable(timeout, ESPSoftReset::SCHEDULE_WEEKLY_TYPE);
     }
+
+    CALENDAR_TAG_CONSOLE("NextTrigger[%u] %s",
+                         calendar->alarmID,
+                         ESPTime.toString(_timeAlarm.getNextTrigger(calendar->alarmID)).c_str());
+    CALENDAR_TAG_LOG("NextTrigger[%u] %s",
+                     calendar->alarmID,
+                     ESPTime.toString(_timeAlarm.getNextTrigger(calendar->alarmID)).c_str());
 }
 
 /* CalendarScheduleFileHandler object handle -------------------------------------------------*/
@@ -181,7 +211,7 @@ void CalendarScheduleFileHandler::saveToFileSystem() {
     root.prettyPrintTo<File>(fs_handle);
     fs_handle.close();
 
-    CALENDAR_SCHEDULE_TAG_CONSOLE("Save to file system");
+    CALENDAR_FILE_TAG_CONSOLE("Save to file system");
 }
 
 void CalendarScheduleFileHandler::syncFromFileSystem() {
@@ -191,7 +221,7 @@ void CalendarScheduleFileHandler::syncFromFileSystem() {
         fs_handle = _fs->open(CALENDAR_SCHEDULE_PATH, "w");
         fs_handle.printf_P(calendarScheduleDefault);
         fs_handle.close();
-        CALENDAR_SCHEDULE_TAG_CONSOLE("Init data succeed!");
+        CALENDAR_FILE_TAG_CONSOLE("Init data succeed!");
     }
 
     fs_handle = _fs->open(CALENDAR_SCHEDULE_PATH, "r");    
@@ -202,7 +232,7 @@ void CalendarScheduleFileHandler::syncFromFileSystem() {
     fs_handle.close();
 
     if (!root.success()) {
-        CALENDAR_SCHEDULE_TAG_CONSOLE("JSON parsing failed!");
+        CALENDAR_FILE_TAG_CONSOLE("JSON parsing failed!");
         return;
     }
 
@@ -216,7 +246,7 @@ void CalendarScheduleFileHandler::syncFromFileSystem() {
         _calendar[i].second = element[CALENDAR_SCHEDULE_SECOND_JSON_ARRAY_INDEX].as<uint8_t>();
         _calendar[i].enable = element[CALENDAR_SCHEDULE_ENABLE_JSON_ARRAY_INDEX].as<uint8_t>();
     }
-    CALENDAR_SCHEDULE_TAG_CONSOLE("sync data succeed!");
+    CALENDAR_FILE_TAG_CONSOLE("sync data succeed!");
 }
 
 ESPCalendarSchedule CalendarSchedule;
