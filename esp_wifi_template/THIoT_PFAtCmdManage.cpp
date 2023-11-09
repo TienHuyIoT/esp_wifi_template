@@ -27,7 +27,7 @@ typedef enum {
 
 /* Private function prototypes -----------------------------------------------*/
 
-void at_control_init(at_cmd_cxt_t *cxt, at_buffer_t *p_buffer, at_funcation_t *table, uint8_t size)
+void at_control_init(at_cmd_cxt_t *cxt, at_buffer_t *p_buffer, at_function_t *table, uint8_t size)
 {
     cxt->cmd_table = table;
     cxt->cmd_num = size;

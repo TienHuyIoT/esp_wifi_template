@@ -25,12 +25,12 @@ typedef struct
  *  used for define at command
  *
  */
-struct at_funcation;
-typedef void (*at_test_callback)(struct at_funcation*);
-typedef void (*at_query_callback)(struct at_funcation*);
-typedef void (*at_exe_callback)(struct at_funcation*);
-typedef void (*at_setup_callback)(struct at_funcation*, char *);
-typedef struct at_funcation {
+struct at_function;
+typedef void (*at_test_callback)(struct at_function*);
+typedef void (*at_query_callback)(struct at_function*);
+typedef void (*at_exe_callback)(struct at_function*);
+typedef void (*at_setup_callback)(struct at_function*, char *);
+typedef struct at_function {
     const char *cmd_name;                            /*!< at command name */
     int8_t cmd_len;                            /*!< at command length */
     at_test_callback test_cmd;   /*!< Test Command function pointer AT+<CMD>=?\r */
@@ -39,13 +39,13 @@ typedef struct at_funcation {
     at_exe_callback exe_cmd;     /*!< Execute Command function pointer AT+<CMD>\r */
     at_tx_cb write;                            /*!< Execute write to framework output */
     void* arg;
-} at_funcation_t;
+} at_function_t;
 
 typedef struct
 {
   at_rx_cb input_cb;
   at_tx_cb output_cb;
-  at_funcation_t* cmd_table;
+  at_function_t* cmd_table;
   size_t cmd_num;
   ticker_t timeout;
   size_t size;        /* Size of buffer */

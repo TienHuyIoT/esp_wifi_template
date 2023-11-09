@@ -16,9 +16,10 @@
 
 #define AT_CMD_RESP(f_, ...)    vspfunc(at->output_cb, (f_), ##__VA_ARGS__)
 
+#define AT_ERROR_RESP         0 /*1. Response error if the command has a wrong format */
 #define AT_END_OF_CHAR        '\r'
 #define CHAR_CAPTURE_LIMIT    30
-#define AT_CAPTURE_TIMEOUT    50 /* ms */
+#define AT_CAPTURE_TIMEOUT    100 /* ms */
 
 const char at_head[]          = "06AT";
 const uint8_t AT_HEAD_LENGTH  = 4;
@@ -130,7 +131,7 @@ static int at_cmd_get_length(at_cmd_cxt_t *at)
 static void at_cmd_parse(at_cmd_cxt_t* at)
 {
   char* s;
-  at_funcation_t* p_cmd_handle;
+  at_function_t* p_cmd_handle;
   int i;
   int cmd_length;
   int cmd_index = -1;
@@ -155,7 +156,7 @@ static void at_cmd_parse(at_cmd_cxt_t* at)
 
   if(cmd_index != -1)
   {
-    p_cmd_handle = (at_funcation_t*)&at->cmd_table[cmd_index];
+    p_cmd_handle = (at_function_t*)&at->cmd_table[cmd_index];
     AT_TAG_PRINT("Process Command AT%s", p_cmd_handle->cmd_name);
     /* Add write pointer to output callback */
     p_cmd_handle->write = at->output_cb;
@@ -167,10 +168,12 @@ static void at_cmd_parse(at_cmd_cxt_t* at)
       {
         p_cmd_handle->exe_cmd(p_cmd_handle);
       }
+#if (AT_ERROR_RESP == 1)
       else
       {   
         at->output_cb((const uint8_t*)at_cmd_error, AT_ERROR_LENGTH);
       }
+#endif
     }
     else if(s[0] == '?' && (s[1] == '\r'))
     {
@@ -178,10 +181,12 @@ static void at_cmd_parse(at_cmd_cxt_t* at)
       {
         p_cmd_handle->query_cmd(p_cmd_handle);
       }
+#if (AT_ERROR_RESP == 1)
       else
       {
         at->output_cb((const uint8_t*)at_cmd_error, AT_ERROR_LENGTH);
       }
+#endif
     }
     else if((s[0] == '=') && (s[1] == '?') && (s[2] == '\r'))
     {
@@ -189,10 +194,12 @@ static void at_cmd_parse(at_cmd_cxt_t* at)
       {
         p_cmd_handle->test_cmd(p_cmd_handle);
       }
+#if (AT_ERROR_RESP == 1)
       else
       {
         at->output_cb((const uint8_t*)at_cmd_error, AT_ERROR_LENGTH);
       }
+#endif
     }
     else if(((s[0] >= '0') && (s[0] <= '9')) || (s[0] == '='))
     {
@@ -206,20 +213,25 @@ static void at_cmd_parse(at_cmd_cxt_t* at)
         ++s;
         p_cmd_handle->setup_cmd(p_cmd_handle, s);
       }
+#if (AT_ERROR_RESP == 1)
       else
       {
         at->output_cb((const uint8_t*)at_cmd_error, AT_ERROR_LENGTH);
       }
+#endif
     }
+#if (AT_ERROR_RESP == 1)
     else
     {
       at->output_cb((const uint8_t*)at_cmd_error, AT_ERROR_LENGTH);
     }
+#endif
   }
+#if (AT_ERROR_RESP == 1)
   else
   {
     at->output_cb((const uint8_t*)at_cmd_error, AT_ERROR_LENGTH);
   }
-
+#endif
   AT_PRINT("\r\n");
 }
