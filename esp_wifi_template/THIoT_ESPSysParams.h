@@ -25,6 +25,11 @@ Json arduino assistant: https://arduinojson.org/v5/assistant/
 #define DDNS_IPURL_LENGTH_MAX   50
 #define SNTP_SERVER_LENGTH_MAX  31
 #define SNTP_TZ_LENGTH_MAX      40
+#define PING_HOST_LENGTH_MAX    31
+
+#define PING_HOST1_INDEX        0
+#define PING_HOST2_INDEX        1
+#define PING_HOST_NUM           2
 
 #define PASS_COMMON_DEFAULT     1234
 #define PASS_EX1_DEFAULT        1234
@@ -95,6 +100,13 @@ typedef struct {
         int         daylightOffset;
         int         interval;
     }sntp;
+    struct {
+        char        host[PING_HOST_NUM][PING_HOST_LENGTH_MAX + 1];
+        int         timeout[PING_HOST_NUM]; /*<! timeout to reset if ping error*/
+        int         interval[PING_HOST_NUM];/*<! interval ping */
+        int         type[PING_HOST_NUM];    /*<! 0: None, 1: reset enable*/
+        bool        enable[PING_HOST_NUM];  /*<! 1: enable, 0: disable*/
+    }ping;
 } esp_sys_params_t;
 
 class ESPSysParams
@@ -270,6 +282,19 @@ public:
     void gmtOffsetSNTPSet(long gmtOffset) { _sys_prams.sntp.gmtOffset = gmtOffset; }
     void daylightOffsetSNTPSet(int daylightOffset) { _sys_prams.sntp.daylightOffset = daylightOffset; }
     void intervalSNTPSet(int interval) { _sys_prams.sntp.interval = interval; }
+    /* ping API */
+    String pingHost(int id) { return _sys_prams.ping.host[id]; }
+    int pingTimeout(int id) { return _sys_prams.ping.timeout[id]; }
+    int pingInterval(int id) { return _sys_prams.ping.interval[id]; }
+    int pingType(int id) { return _sys_prams.ping.type[id]; }
+    bool pingEnable(int id) { return _sys_prams.ping.enable[id]; }
+    void pingHostSet(const String &host, int id) { 
+        host.toCharArray(_sys_prams.ping.host[id], PING_HOST_LENGTH_MAX + 1);
+    }
+    void pingTimeoutSet(int timeout, int id) { _sys_prams.ping.timeout[id] = timeout; }
+    void pingIntervalSet(int interval, int id) { _sys_prams.ping.interval[id] = interval; }
+    void pingTypeSet(int type, int id) { _sys_prams.ping.type[id] = type; }
+    void pingEnableSet(bool enable, int id) { _sys_prams.ping.enable[id] = enable; }
 };
 
 extern ESPSysParams ESPConfig;

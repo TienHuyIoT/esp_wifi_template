@@ -63,5 +63,9 @@
     "daylightOffset": 0,
     "TzTime": "<+07>-7",
     "interval": 3600
-  }
+  },
+  "ping":[
+      {"host": "gateway", "timeout": 120, "interval": 30, "type": 1, "enable": 1},
+      {"host": "google.com", "timeout": 120, "interval": 30, "type": 0, "enable": 0}
+  ]
 }

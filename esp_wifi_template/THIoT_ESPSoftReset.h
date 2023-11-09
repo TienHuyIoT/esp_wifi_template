@@ -22,7 +22,8 @@ public:
         SCHEDULE_DAILY_TYPE,
         SCHEDULE_WEEKLY_TYPE,
         WIFI_RECONNECT_TYPE,
-        ETH_DISCONNECT_TYPE
+        ETH_DISCONNECT_TYPE,
+        PING_GATEWAY_FAIL_TYPE
     } resetSource_t;
 private:
     ticker_function_handle_t _resetTick;

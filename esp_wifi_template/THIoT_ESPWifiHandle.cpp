@@ -86,6 +86,7 @@ uint8_t ESPWifiHandle::_counterReconnect = 0;
 uint8_t ESPWifiHandle::_counterReset = 0;
 boolean ESPWifiHandle::_IsOTA = false;
 WiFiLedStatusHandler ESPWifiHandle::_ledStatusFunc = nullptr;
+WiFiConnectionHandler ESPWifiHandle::_connectionFunc = nullptr;
 
 ESPWifiHandle::ESPWifiHandle(/* args */) {}
 ESPWifiHandle::~ESPWifiHandle() {}
@@ -96,11 +97,15 @@ void ESPWifiHandle::registerEventHandler() {
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     if (!_IsConnected) {
       _IsConnected = true;
+      
       ticker_detach(&_reconnectTicker);
       ESP_WIFI_TAG_CONSOLE("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
       ESP_WIFI_TAG_LOG("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
       if (_ledStatusFunc) {
         _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_WIFI_GOT_IP);
+      }
+      if (_connectionFunc) {
+        _connectionFunc(true, IPAddress(info.got_ip.ip_info.gw.addr));
       }
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
 #if (TIME_ZONE_TYPE_CFG == 1)
@@ -146,10 +151,14 @@ void ESPWifiHandle::registerEventHandler() {
     if (_IsConnected || !_firstConnection) {
       _IsConnected = false;
       _firstConnection = true;
+      
       ESP_WIFI_TAG_CONSOLE("[EVENT] lost connection. Reason: %u", reason);
       ESP_WIFI_TAG_LOG("[EVENT] lost connection. Reason: %u", reason);
       if (_ledStatusFunc) {
         _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_WIFI_DISCONNECTED);
+      }
+      if (_connectionFunc) {
+        _connectionFunc(false, IPAddress(0U));
       }
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
       EASY_NTP.end();
@@ -203,9 +212,13 @@ void ESPWifiHandle::registerEventHandler() {
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     if (_IsConnected) {
       _IsConnected = false;
+      
       Ethernet.disconnectEvt();
       ESP_ETH_TAG_CONSOLE("[EVENT] stopped");
       ESP_ETH_TAG_LOG("[EVENT] stopped");
+      if (_connectionFunc) {
+        _connectionFunc(false, IPAddress(0U));
+      }
     }
   }
   ,WiFiEvent_t::m_ESP32_EVENT_ETH_STOP);
@@ -213,10 +226,13 @@ void ESPWifiHandle::registerEventHandler() {
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     if (!_IsConnected) {
       _IsConnected = true;
+      
       ESP_ETH_TAG_CONSOLE("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
       ESP_ETH_TAG_LOG("[EVENT] got IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
       Ethernet.connectedEvt();
-
+      if (_connectionFunc) {
+        _connectionFunc(true, IPAddress(info.got_ip.ip_info.gw.addr));
+      }
       /* Run DDNS service */
       _DDNSService->updateTrigger();
     }
@@ -230,10 +246,14 @@ void ESPWifiHandle::registerEventHandler() {
   ,WiFiEvent_t::m_ESP32_EVENT_ETH_CONNECTED);
 
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
-    if (_IsConnected || _firstConnection) {
+    if (_IsConnected || !_firstConnection) {
       _IsConnected = false;
       _firstConnection = true;
+      
       Ethernet.disconnectEvt();
+      if (_connectionFunc) {
+        _connectionFunc(false, IPAddress(0U));
+      }
     }
   }
   ,WiFiEvent_t::m_ESP32_EVENT_ETH_DISCONNECTED);
@@ -246,34 +266,40 @@ void ESPWifiHandle::registerEventHandler() {
   // To register event, must be declare _accessPointGotIpHandler
   _accessPointGotIpHandler = WiFi.onStationModeGotIP(
     [](const WiFiEventStationModeGotIP& evt) {
-      _IsConnected = true;
-      ticker_detach(&_reconnectTicker);
-      ESP_WIFI_TAG_CONSOLE("[EVENT] got IP address: %s", evt.ip.toString().c_str());
-      ESP_WIFI_TAG_LOG("[EVENT] got IP address: %s", evt.ip.toString().c_str());
-      if (_ledStatusFunc) {
-        _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_WIFI_GOT_IP);
-      }
-#if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
-#if (TIME_ZONE_TYPE_CFG == 1)
-      EASY_NTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
-#else
-      EASY_NTP.begin(ESPConfig.TzTime().c_str(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
-#endif
-#endif
-      /* Smart config enable */
-      if(ESPConfig.smartCfgSTA())
-      {
-        if(ESPConfig.ssidSTA() != WiFi.SSID()
-        || ESPConfig.passSTA() != WiFi.psk())
-        {
-          ESPConfig.ssidSTASet(WiFi.SSID());
-          ESPConfig.passSTASet(WiFi.psk());
-          ESPConfig.save();
+      if (!_IsConnected) {
+        _IsConnected = true;
+        
+        ticker_detach(&_reconnectTicker);
+        ESP_WIFI_TAG_CONSOLE("[EVENT] got IP address: %s", evt.ip.toString().c_str());
+        ESP_WIFI_TAG_LOG("[EVENT] got IP address: %s", evt.ip.toString().c_str());
+        if (_ledStatusFunc) {
+          _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_WIFI_GOT_IP);
         }
-      }
+        if (_connectionFunc) {
+          _connectionFunc(true, evt.gw);
+        }
+  #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
+  #if (TIME_ZONE_TYPE_CFG == 1)
+        EASY_NTP.begin(ESPConfig.gmtOffsetSNTP(), ESPConfig.daylightOffsetSNTP(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
+  #else
+        EASY_NTP.begin(ESPConfig.TzTime().c_str(), ESPConfig.server1SNTP().c_str(), ESPConfig.intervalSNTP());
+  #endif
+  #endif
+        /* Smart config enable */
+        if(ESPConfig.smartCfgSTA())
+        {
+          if(ESPConfig.ssidSTA() != WiFi.SSID()
+          || ESPConfig.passSTA() != WiFi.psk())
+          {
+            ESPConfig.ssidSTASet(WiFi.SSID());
+            ESPConfig.passSTASet(WiFi.psk());
+            ESPConfig.save();
+          }
+        }
 
-      /* Run DDNS service */
-      _DDNSService->updateTrigger();
+        /* Run DDNS service */
+        _DDNSService->updateTrigger();
+      }
     }
   );
 
@@ -290,12 +316,16 @@ void ESPWifiHandle::registerEventHandler() {
     [](const WiFiEventStationModeDisconnected& evt) {
       if (_IsConnected) {
         _IsConnected = false;
+        
         ESP_WIFI_TAG_CONSOLE("[EVENT] lost connection to %s. Reason: %u",
                              evt.ssid.c_str(), evt.reason);
         ESP_WIFI_TAG_LOG("[EVENT] lost connection to %s. Reason: %u",
                              evt.ssid.c_str(), evt.reason);
         if (_ledStatusFunc) {
           _ledStatusFunc(ESPLedCycleBlinkCallbacks::BLINK_WIFI_DISCONNECTED);
+        }
+        if (_connectionFunc) {
+          _connectionFunc(false, IPAddress(0U));
         }
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
         EASY_NTP.end();
@@ -542,7 +572,7 @@ void ESPWifiHandle::begin(bool wifiON)
 
      Default is false
     */
-    WiFi.persistent(false);
+    WiFi.persistent(true);
 #ifdef ESP32
     esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B);
     /*

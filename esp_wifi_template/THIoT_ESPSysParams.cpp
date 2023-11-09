@@ -73,7 +73,11 @@ const char espSysParamsDefault[] PROGMEM = R"=====(
         "daylightOffset": 0,
         "TzTime": "<+07>-7",
         "interval": 3600
-    }
+    },
+    "ping":[
+        {"host": "gateway", "timeout": 120, "interval": 30, "type": 1, "enable": 1},
+        {"host": "google.com", "timeout": 120, "interval": 30, "type": 1, "enable": 0}
+    ]
 }
 )=====" ;
 
@@ -127,7 +131,7 @@ bool ESPSysParams::passConfirmIsOK(const String &pass, passConfirm_t type)
 void ESPSysParams::saveToFileSystem()
 {
     File fs_handle;
-    const size_t capacity = JSON_ARRAY_SIZE(5) + 2*JSON_OBJECT_SIZE(2) + 2*JSON_OBJECT_SIZE(3) + 2*JSON_OBJECT_SIZE(7) + JSON_OBJECT_SIZE(8) + JSON_OBJECT_SIZE(9) + JSON_OBJECT_SIZE(10);
+    const size_t capacity = JSON_ARRAY_SIZE(2) + JSON_ARRAY_SIZE(5) + 2*JSON_OBJECT_SIZE(2) + 2*JSON_OBJECT_SIZE(3) + 2*JSON_OBJECT_SIZE(5) + 2*JSON_OBJECT_SIZE(7) + JSON_OBJECT_SIZE(8) + 2*JSON_OBJECT_SIZE(10);
     DynamicJsonBuffer jsonBuffer(capacity);
     JsonObject& root = jsonBuffer.createObject();
 
@@ -195,6 +199,20 @@ void ESPSysParams::saveToFileSystem()
     sntp["daylightOffset"].set(_sys_prams.sntp.daylightOffset);
     sntp["interval"].set(_sys_prams.sntp.interval);
 
+    JsonArray& ping = root.createNestedArray("ping");
+    JsonObject& ping_0 = ping.createNestedObject();
+    JsonObject& ping_1 = ping.createNestedObject();
+    ping_0["host"].set(_sys_prams.ping.host[PING_HOST1_INDEX]);
+    ping_1["host"].set(_sys_prams.ping.host[PING_HOST2_INDEX]);
+    ping_0["timeout"].set(_sys_prams.ping.timeout[PING_HOST1_INDEX]);
+    ping_1["timeout"].set(_sys_prams.ping.timeout[PING_HOST2_INDEX]);
+    ping_0["interval"].set(_sys_prams.ping.interval[PING_HOST1_INDEX]);
+    ping_1["interval"].set(_sys_prams.ping.interval[PING_HOST2_INDEX]);
+    ping_0["type"].set(_sys_prams.ping.type[PING_HOST1_INDEX]);
+    ping_1["type"].set(_sys_prams.ping.type[PING_HOST2_INDEX]);
+    ping_0["enable"].set(_sys_prams.ping.enable[PING_HOST1_INDEX]);
+    ping_1["enable"].set(_sys_prams.ping.enable[PING_HOST2_INDEX]);
+
     SYS_PARAM_TAG_CONSOLE("Json created:");
     // root.prettyPrintTo(SYS_PARAM_PORT);
     fs_handle = _fs->open(ESP_SYSTEM_PARAMS, FILE_WRITE);
@@ -214,9 +232,9 @@ void ESPSysParams::syncFromFileSystem()
         fs_handle.close();
     }
 
+    const size_t capacity = JSON_ARRAY_SIZE(2) + JSON_ARRAY_SIZE(5) + 2*JSON_OBJECT_SIZE(2) + 2*JSON_OBJECT_SIZE(3) + 2*JSON_OBJECT_SIZE(5) + 2*JSON_OBJECT_SIZE(7) + JSON_OBJECT_SIZE(8) + 2*JSON_OBJECT_SIZE(10) + 1300;
+    DynamicJsonBuffer jsonBuffer(capacity);
     fs_handle = _fs->open(ESP_SYSTEM_PARAMS, FILE_READ);    
-    const size_t capacity = JSON_ARRAY_SIZE(5) + 2*JSON_OBJECT_SIZE(2) + 2*JSON_OBJECT_SIZE(3) + 2*JSON_OBJECT_SIZE(7) + JSON_OBJECT_SIZE(8) + JSON_OBJECT_SIZE(9) + JSON_OBJECT_SIZE(10) + 1024;
-    DynamicJsonBuffer jsonBuffer;
     JsonObject &root = jsonBuffer.parseObject(fs_handle);
     fs_handle.close();
     
@@ -269,6 +287,7 @@ void ESPSysParams::syncFromFileSystem()
     JsonObject& sta = root["sta"];
     if (sta.success())
     {
+        SYS_PARAM_TAG_CONSOLE("Load sta information");
         _sys_prams.sta.ip.fromString(sta["ip"].as<String>());
         _sys_prams.sta.gw.fromString(sta["gw"].as<String>());
         _sys_prams.sta.sn.fromString(sta["sn"].as<String>());
@@ -284,6 +303,7 @@ void ESPSysParams::syncFromFileSystem()
     JsonObject& ap = root["ap"];
     if (ap.success())
     {
+        SYS_PARAM_TAG_CONSOLE("Load ap information");
         _sys_prams.ap.ip.fromString(ap["ip"].as<String>());
         _sys_prams.ap.sn.fromString(ap["sn"].as<String>()); 
         ap["ssid"].as<String>().toCharArray(_sys_prams.ap.ssid, SSID_LENGTH_MAX + 1);
@@ -297,6 +317,7 @@ void ESPSysParams::syncFromFileSystem()
     JsonObject& ddns = root["ddns"];
     if (ddns.success())
     {
+        SYS_PARAM_TAG_CONSOLE("Load ddns information");
         ddns["service"].as<String>().toCharArray(_sys_prams.ddns.service, DDNS_SERVICE_LENGTH_MAX + 1);
         ddns["domain"].as<String>().toCharArray(_sys_prams.ddns.domain, DDNS_DOMAIN_LENGTH_MAX + 1);
         ddns["user"].as<String>().toCharArray(_sys_prams.ddns.user, DDNS_USER_LENGTH_MAX + 1);
@@ -309,6 +330,7 @@ void ESPSysParams::syncFromFileSystem()
     JsonObject& sntp = root["sntp"];
     if (sntp.success())
     {
+        SYS_PARAM_TAG_CONSOLE("Load sntp information");
         sntp["server1"].as<String>().toCharArray(_sys_prams.sntp.server1, SNTP_SERVER_LENGTH_MAX + 1);
         sntp["server2"].as<String>().toCharArray(_sys_prams.sntp.server2, SNTP_SERVER_LENGTH_MAX + 1);
         sntp["server3"].as<String>().toCharArray(_sys_prams.sntp.server3, SNTP_SERVER_LENGTH_MAX + 1);
@@ -317,6 +339,23 @@ void ESPSysParams::syncFromFileSystem()
         _sys_prams.sntp.daylightOffset = sntp["daylightOffset"].as<int>();
         _sys_prams.sntp.interval = sntp["interval"].as<int>();
     } 
+
+    JsonObject& ping_0 = root["ping"][PING_HOST1_INDEX];
+    JsonObject& ping_1 = root["ping"][PING_HOST2_INDEX];
+    if (ping_0.success() && ping_1.success())
+    {
+        SYS_PARAM_TAG_CONSOLE("Load ping information");
+        ping_0["host"].as<String>().toCharArray(_sys_prams.ping.host[PING_HOST1_INDEX], PING_HOST_LENGTH_MAX + 1);
+        ping_1["host"].as<String>().toCharArray(_sys_prams.ping.host[PING_HOST2_INDEX], PING_HOST_LENGTH_MAX + 1);
+        _sys_prams.ping.timeout[PING_HOST1_INDEX] = ping_0["timeout"].as<int>();
+        _sys_prams.ping.timeout[PING_HOST2_INDEX] = ping_1["timeout"].as<int>();
+        _sys_prams.ping.interval[PING_HOST1_INDEX] = ping_0["interval"].as<int>();
+        _sys_prams.ping.interval[PING_HOST2_INDEX] = ping_1["interval"].as<int>();
+        _sys_prams.ping.type[PING_HOST1_INDEX] = ping_0["type"].as<int>();
+        _sys_prams.ping.type[PING_HOST2_INDEX] = ping_1["type"].as<int>();
+        _sys_prams.ping.enable[PING_HOST1_INDEX] = ping_0["enable"].as<bool>();
+        _sys_prams.ping.enable[PING_HOST2_INDEX] = ping_1["enable"].as<bool>();
+    }
 
     SYS_PARAM_TAG_CONSOLE("sync data succeed!");
 }

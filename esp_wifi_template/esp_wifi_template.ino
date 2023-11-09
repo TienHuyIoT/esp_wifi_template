@@ -74,6 +74,7 @@
 #include "THIoT_APPButtonService.h"
 #include "THIoT_ESPSoftReset.h"
 #include "THIoT_ESPCalendarSchedule.h"
+#include "THIoT_ESPPingService.h"
 
 /* Private macro -------------------------------------------------------------*/
 #if CONFIG_FREERTOS_UNICORE
@@ -92,6 +93,10 @@
 
 /* Private variables ---------------------------------------------------------*/
 const char *build_time = "Thu " __DATE__ " " __TIME__ " GMT";
+#define PING_GATEWAY_ID         PING_HOST1_INDEX
+#define PING_INTERNET_ID        PING_HOST2_INDEX
+ESPPingService pingGateway;
+ESPPingService pingInternet;
 ESPWebServer webServer;
 #if (defined FACTORY_INPUT_PIN) && (FACTORY_INPUT_PIN != -1)
 FactoryButton factorySysParams(FACTORY_INPUT_PIN);
@@ -202,9 +207,36 @@ void setup() {
         CalendarSchedule.begin(0); /* Run without timeout */
     });
 
-    /* Init wifi */
+    /* Ping service configure */
+    if (ESPConfig.pingType(PING_GATEWAY_ID) == ESPPingService::PING_ERROR_RESET &&
+        ESPConfig.pingEnable(PING_GATEWAY_ID)) {
+        pingGateway.errorResetTimeout(ESPConfig.pingTimeout(PING_GATEWAY_ID));
+    }
+    if (ESPConfig.pingType(PING_INTERNET_ID) == ESPPingService::PING_ERROR_RESET &&
+        ESPConfig.pingEnable(PING_INTERNET_ID)) {
+        pingInternet.errorResetTimeout(ESPConfig.pingTimeout(PING_INTERNET_ID));
+    }
+    /* Wifi Event connection */
+    ESPWifi.onConnection([](bool evt, IPAddress gw) {
+        if (evt) {
+            MAIN_TAG_CONSOLE("Ping service start");
+            if (ESPConfig.pingHost(PING_GATEWAY_ID) == "gateway" &&
+                ESPConfig.pingEnable(PING_GATEWAY_ID)) 
+            {
+                pingGateway.begin(gw.toString().c_str(), ESPConfig.pingInterval(PING_GATEWAY_ID));
+            }
+            if (ESPConfig.pingEnable(PING_INTERNET_ID)) {
+                pingInternet.begin(ESPConfig.pingHost(PING_INTERNET_ID).c_str(), ESPConfig.pingInterval(PING_INTERNET_ID));
+            }
+        }
+        else {
+            MAIN_TAG_CONSOLE("Ping service stop");
+            pingGateway.end();
+            pingInternet.end();
+        }
+    });
     ESPWifi.OnDDNSService(&EasyDDNS);
-    // Check starting condition of the ethernet.
+
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
 #if (defined ETH_GPIO_ENABLE) && (ETH_GPIO_ENABLE != -1)
     ETH_GPIO_ENABLE_INIT();

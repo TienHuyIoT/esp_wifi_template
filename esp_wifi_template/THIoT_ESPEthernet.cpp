@@ -51,6 +51,7 @@ ESPEthernet::~ESPEthernet()
 
 ETHLedStatusHandler ESPEthernet::_ledStatusFunc = nullptr;
 boolean ESPEthernet::_IsConnected = false;
+ETHConnectionHandler ESPEthernet::_connectionFunc = nullptr;
 
 bool ESPEthernet::begin()
 { 
@@ -104,12 +105,18 @@ void ESPEthernet::loop() {
         this->connectedEvt();
         /* Run DDNS service */
         EasyDDNS.updateTrigger();
+        if (_connectionFunc) {
+          _connectionFunc(true, ETH.gatewayIP()));
+        }
       }
     }
     else {
       if (_connected) {
         _connected = false;
         this->disconnectEvt();
+        if (_connectionFunc) {
+          _connectionFunc(false, IPAddress(0U));
+        }
       }
     }
   }
@@ -129,7 +136,7 @@ boolean ESPEthernet::disconnectEvt() {
 #endif
 
 #if (NETWORK_CONNECTION_TIMEOUT_RESET == 1)
-  ETH_TAG_CONSOLE("[EVENT] Enable timeout connection reset");
+  ETH_TAG_CONSOLE("[EVENT] Enable timeout connection reset: %u", ETH_TIMEOUT_CONNECTION_RESET);
   ticker_once(&_reconnectTicker, ETH_TIMEOUT_CONNECTION_RESET, [](void *arg) {
     ESPEthernet *handler = (ESPEthernet*)arg;
     ETH_TAG_CONSOLE("[EVENT] Timeout connection reset");

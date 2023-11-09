@@ -15,6 +15,7 @@
 #define INTERVAL_RECONNECT_SECOND_NUM   15
 
 typedef std::function<void(int type)> WiFiLedStatusHandler;
+typedef std::function<void(bool evt, IPAddress ip)> WiFiConnectionHandler;
 
 class ESPWifiHandle
 {
@@ -64,6 +65,7 @@ private:
     static boolean _IsConnected;
     static boolean _IsOTA;
     static WiFiLedStatusHandler _ledStatusFunc;
+    static WiFiConnectionHandler _connectionFunc;
 public:
     ESPWifiHandle(/* args */);
     ~ESPWifiHandle();
@@ -75,6 +77,7 @@ public:
     int ssidScan(String &json);
     void OnLedStatus(WiFiLedStatusHandler handler) { _ledStatusFunc = handler; }
     void OnDDNSService(ESPAsyncEasyDDNS* DDNSService) { _DDNSService = DDNSService; }
+    void onConnection(WiFiConnectionHandler handler) { _connectionFunc = handler; }
     boolean IsConnected() { return _IsConnected; }
     boolean IsOTA() { return _IsOTA; }
     void OTAStart() { _IsOTA = true; }

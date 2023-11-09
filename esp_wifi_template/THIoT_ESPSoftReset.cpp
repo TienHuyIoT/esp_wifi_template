@@ -22,7 +22,8 @@ const char * const reset_reason_type[] PROGMEM {
 /*08*/ "SCHEDULE_DAILY_TYPE",
 /*09*/ "SCHEDULE_WEEKLY_TYPE",
 /*10*/ "WIFI_RECONNECT_TYPE",
-/*11*/ "ETH_DISCONNECT_TYPE"
+/*11*/ "ETH_DISCONNECT_TYPE",
+/*12*/ "PING_GATEWAY_FAIL_TYPE"
 };
 
 ESPSoftReset::ESPSoftReset(/* args */) {}

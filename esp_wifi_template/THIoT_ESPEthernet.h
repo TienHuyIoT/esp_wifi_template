@@ -11,6 +11,8 @@
 
 #define ETH_TIMEOUT_CONNECTION_RESET    15*60
 typedef std::function<void(int type)>   ETHLedStatusHandler;
+typedef std::function<void(bool evt, IPAddress ip)> ETHConnectionHandler;
+
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
 #ifdef ESP32
@@ -118,6 +120,7 @@ private:
 #endif
     static ETHLedStatusHandler _ledStatusFunc;
     static boolean _IsConnected;
+    static ETHConnectionHandler _connectionFunc;
 
 public:
     ESPEthernet(/* args */);
@@ -133,6 +136,7 @@ public:
     boolean IsConnected() { return _IsConnected; }
     boolean disconnectEvt();
     boolean connectedEvt();
+    void onConnection(ETHConnectionHandler handler) { _connectionFunc = handler; }
 };
 
 extern ESPEthernet Ethernet;
