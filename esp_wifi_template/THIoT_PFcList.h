@@ -8,10 +8,6 @@
 #ifndef __C_LIST_H
 #define __C_LIST_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdint.h>
 
 #define LIST_MONITOR_HEAP_MEMORY 0
@@ -45,10 +41,6 @@ c_list_t *c_list_insert_before(c_list_t *pEntry, void *value);
 void *c_list_get_value(c_list_t *pList);
 #if (defined LIST_MONITOR_HEAP_MEMORY) && (LIST_MONITOR_HEAP_MEMORY == 1)
 size_t c_list_heap_size(void);
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif /* __C_LIST_H_ */

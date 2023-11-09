@@ -15,10 +15,6 @@
 /* Macro enable debug frame format */
 #define FRAME_DEBUG_ENABLE	0
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdint.h>
 /* size fields of frame */
 #define START_BYTE_NUM             1  /*!< 1 byte */
@@ -101,9 +97,5 @@ void frame_data_create(frame_data_t *frame, uint8_t cmd, uint8_t *p_data, uint16
  * Return: frame_parse_result_t
  * */
 frame_parse_result_t frame_data_parse(frame_data_t *frame, uint8_t *p_buff, uint16_t length);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* _FRAME_FORMAT_H */

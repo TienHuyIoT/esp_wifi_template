@@ -1,10 +1,6 @@
 #ifndef __IO_INPUT_H
 #define __IO_INPUT_H
 
-#ifdef __cplusplus
- extern "C" {
-#endif
-
 #include <stdint.h>
 
 #ifndef IO_LOW
@@ -66,9 +62,5 @@ uint8_t io_input_edge_get(io_input_cxt_t *io_input, uint8_t);
 void io_input_sample_high_cnt_set(io_input_cxt_t *io_input, uint16_t);
 void io_input_sample_low_cnt_set(io_input_cxt_t *io_input, uint16_t);
 void io_input_set_state_init(io_input_cxt_t *io_input, uint8_t);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

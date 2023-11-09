@@ -1,10 +1,6 @@
 #ifndef __INPUT_SERVICE_H
 #define __INPUT_SERVICE_H
 
-#ifdef __cplusplus
- extern "C" {
-#endif
-
 #include <stdint.h>
 #include "THIoT_PFIoInput.h"
 #include "THIoT_PFTicker.h"
@@ -62,9 +58,5 @@ typedef struct service_io_input_handle {
 
 void service_io_input_init(io_input_cxt_t *io_input, service_io_input_handle_t *service_instance);
 void service_io_input_ev_register(service_io_input_handle_t *service_cxt, fb_event_callback fp_register, void* arg);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // __INPUT_SERVICE_H

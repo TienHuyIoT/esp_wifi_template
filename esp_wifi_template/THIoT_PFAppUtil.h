@@ -5,10 +5,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**@brief Function for encoding a uint16 value.
  *
  * @param[in]   value            Value to be encoded.
@@ -216,10 +212,6 @@ static __INLINE uint64_t uint48_decode(const uint8_t * p_encoded_data)
              (((uint64_t)((uint8_t *)p_encoded_data)[4]) << 32) |
              (((uint64_t)((uint8_t *)p_encoded_data)[5]) << 40 ));
 }
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // APP_UTIL_H__
 

@@ -1,10 +1,6 @@
 #ifndef __TICKER_H
 #define __TICKER_H
 
-#ifdef __cplusplus
- extern "C" {
-#endif
-
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
 #include <Arduino.h>
@@ -87,10 +83,6 @@ void IRAM_ATTR ticker_schedule_handler(void);
 
 #if (MUTEX_PLATFORM_TICKER == 1)
 void ticker_schedule_init(void);
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 #endif	// __TICKER_H

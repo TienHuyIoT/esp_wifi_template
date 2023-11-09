@@ -1,10 +1,6 @@
 #ifndef __COMMON_UTIL_H
 #define __COMMON_UTIL_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**@brief Macro for checking if an integer is a power of two.
  *
  * @param[in]   A   Number to be tested.
@@ -143,9 +139,5 @@ extern "C" {
 #define UNUSED_VARIABLE(X)  ((void)(X))
 #define UNUSED_PARAMETER(X) UNUSED_VARIABLE(X)
 #define UNUSED_RETURN_VALUE(X) UNUSED_VARIABLE(X)
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // __COMMON_UTIL_H

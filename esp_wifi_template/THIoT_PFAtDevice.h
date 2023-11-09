@@ -1,10 +1,6 @@
 #ifndef __AT_CMD_H
 #define __AT_CMD_H
 
-#ifdef __cplusplus
- extern "C" {
-#endif
-
 #include <stdint.h>
 #include <stddef.h>
 #include "THIoT_PFTicker.h"
@@ -76,9 +72,5 @@ extern const uint8_t AT_ERROR_LENGTH;
 void at_device_init(at_cmd_cxt_t *at, at_buffer_t *p_buffer);
 
 void at_device_handle(at_cmd_cxt_t *at);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

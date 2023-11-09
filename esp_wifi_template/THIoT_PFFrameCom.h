@@ -4,10 +4,6 @@
 /* Macro enable debug frame communication */
 #define FRAME_COM_DEBUG_ENABLE	0
 
-#ifdef __cplusplus
- extern "C" {
-#endif
-
 #include <stdint.h>
 #include <stddef.h>
 #include "THIoT_PFTicker.h"
@@ -84,9 +80,5 @@ void frame_com_begin(frame_com_cxt_t *fc, frameCom_event_cb event_cb, fc_buffer_
 
 void frame_com_process(frame_com_cxt_t *fc);
 uint8_t frame_com_transmit(frame_com_cxt_t *fc, uint8_t cmd, uint8_t *data, uint16_t length);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* _FRAME_COM_ */

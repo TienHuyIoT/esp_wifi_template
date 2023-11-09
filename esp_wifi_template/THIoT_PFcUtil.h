@@ -1,11 +1,6 @@
 #ifndef __C_UTILITY_H
 #define __C_UTILITY_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
 #include <stdint.h>
 #include <stddef.h>
 
@@ -26,7 +21,4 @@ uint8_t crc_xor(const uint8_t *buff, uint32_t length);
 uint32_t swap_date(uint32_t date_in);
 int str_cmp_find_index(const char *const *literal, const char *strIn);
 
-#ifdef __cplusplus
-}
-#endif
 #endif // __C_UTILITY_H
