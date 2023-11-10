@@ -125,23 +125,8 @@ private:
 
 public:
   ESPTimeAlarmClass();
-//Translate Alarm time from localtime in to epoch time this will handle timezone things
-  int AlarmHMS(int H, int M, int S) {
-    time_t t1,t2;	
-    struct tm tma;
-    time(&t1);
-    localtime_r(&t1, &tma);
-    tma.tm_hour = H;
-    tma.tm_min = M;
-    tma.tm_sec = S;
-    t2 = mktime(&tma);
-    int diff = t2-previousMidnight(t1);
-    if (diff > SECS_PER_DAY) {
-      diff -= SECS_PER_DAY;
-    }
-    return diff;
-}
-  // functions to create alarms and timers
+  //Translate Alarm time from localtime in to epoch time this will handle timezone things
+  time_t AlarmHMS(int H, int M, int S);
 
   // trigger once at the given time in the future
   AlarmID_t triggerOnce(time_t value, OnTick_t onTickHandler) {

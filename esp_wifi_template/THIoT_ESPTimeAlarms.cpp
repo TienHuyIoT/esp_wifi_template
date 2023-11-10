@@ -19,6 +19,12 @@
 */
 
 #include "THIoT_ESPTimeAlarms.h"
+#include "THIoT_PFSerialTrace.h"
+#include "THIoT_ESPLogTrace.h"
+
+#define ALARM_TAG_CONSOLE(...)      SERIAL_TAG_LOGI("[ALARM]", __VA_ARGS__)
+#define TIME_ALARM_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[TIME_ALARM]", __VA_ARGS__)
+#define TIME_ALARM_TAG_LOG(...)     //FS_TAG_LOGI("[TIME_ALARM]", __VA_ARGS__)
 
 #define IS_ONESHOT  true   // constants used in arguments to create method
 #define IS_REPEAT   false
@@ -39,12 +45,10 @@ AlarmClass::AlarmClass()
 //**************************************************************
 //* Private Methods
 
-
 void AlarmClass::updateNextTrigger()
 {
   if (Mode.isEnabled) {
     time_t now = time(nullptr);
-    
     if (dtIsAlarm(Mode.alarmType) && nextTrigger <= now) {
       // update alarm if next trigger is not yet in the future
       if (Mode.alarmType == dtExplicitAlarm) {
@@ -54,18 +58,38 @@ void AlarmClass::updateNextTrigger()
         //if this is a daily alarm
         if (value + previousMidnight(now) <= now) {
           // if time has passed then set for tomorrow
-          nextTrigger = value + nextMidnight(now);
+          // Can use the condition if (now == nextTrigger)
+          // But it is a very strict comparison.
+          // So using abs instead of that
+          if (abs(now - nextTrigger) <= 2) {
+            nextTrigger += SECS_PER_DAY;
+          }
+          else {
+            // This case is only for the first time initiation
+            nextTrigger = value + nextMidnight(now);
+          }
         } else {
           // set the date to today and add the time given in value
+          // This case is only for the first time initiation
           nextTrigger = value + previousMidnight(now);
         }
       } else if (Mode.alarmType == dtWeeklyAlarm) {
         // if this is a weekly alarm
         if ((value + previousSunday(now)) <= now) {
           // if day has passed then set for the next week.
-          nextTrigger = value + nextSunday(now);
+          // Can use the condition if (now == nextTrigger)
+          // But it is a very strict comparison.
+          // So using abs instead of that
+          if (abs(now - nextTrigger) <= 2) {
+            nextTrigger += SECS_PER_WEEK;
+          }
+          else {
+            // This case is only for the first time initiation
+            nextTrigger = value + nextSunday(now);
+          }
         } else {
           // set the date to this week today and add the time given in value
+          // This case is only for the first time initiation
           nextTrigger = value + previousSunday(now);
         }
       } else {
@@ -89,6 +113,32 @@ ESPTimeAlarmClass::ESPTimeAlarmClass()
   for(uint8_t id = 0; id < dtNBR_ALARMS; id++) {
     freeID(id);   // ensure all Alarms are cleared and available for allocation
   }
+}
+
+/**
+ * GMT +7
+ * Friday 2023-11-10 22:01:36 UTC
+ * H = 4, M = 0, S = 0
+ * t1 = 1699628496, t2 = 1699563600, diff = -10800
+ * This is a special case.
+ * So the function updateNextTrigger() has a little bit update to fix
+ * nextTrigger value expected
+*/
+time_t ESPTimeAlarmClass::AlarmHMS(int H, int M, int S) {
+    time_t t1,t2;	
+    struct tm tma;
+    time(&t1);
+    localtime_r(&t1, &tma);
+    TIME_ALARM_TAG_CONSOLE("tm_hour = %u, tm_min = %u, tm_sec = %u, ",
+                           tma.tm_hour, tma.tm_min, tma.tm_sec);
+    tma.tm_hour = H;
+    tma.tm_min = M;
+    tma.tm_sec = S;
+    t2 = mktime(&tma);
+    time_t diff = t2-previousMidnight(t1);
+    TIME_ALARM_TAG_CONSOLE("H = %u, M = %u, S = %u, ", H, M, S);
+    TIME_ALARM_TAG_CONSOLE("t1 = %d, t2 = %d, diff = %d", t1, t2, diff);
+    return diff;
 }
 
 void ESPTimeAlarmClass::enable(AlarmID_t ID)
@@ -236,7 +286,7 @@ bool ESPTimeAlarmClass::getIsServicing() const
 void ESPTimeAlarmClass::serviceAlarms()
 {
   if (!isServicing) {
-  time_t now = time(nullptr);
+    time_t now = time(nullptr);
     isServicing = true;
     for (servicedAlarmId = 0; servicedAlarmId < dtNBR_ALARMS; servicedAlarmId++) {
       if (Alarm[servicedAlarmId].Mode.isEnabled && (now >= Alarm[servicedAlarmId].nextTrigger)) {
