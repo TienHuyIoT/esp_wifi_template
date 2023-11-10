@@ -67,6 +67,12 @@ https://github.com/boblemaire/asyncHTTPrequest
 */
 #define DDNS_CLIENT_ENABLE          1
 
+/* mDNS Server
+0: Disable
+1: Enable
+*/
+#define MDNS_SERVICE_ENABLE         0
+
 /* OTA Arduino
 0: Disable
 1: Enable
