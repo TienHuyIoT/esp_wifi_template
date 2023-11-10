@@ -574,7 +574,8 @@ void ESPWifiHandle::begin(bool wifiON)
     */
     WiFi.persistent(true);
 #ifdef ESP32
-    esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B);
+    /* Comment to default setting */
+    // esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B);
     /*
       typedef enum {
           WIFI_POWER_19_5dBm = 78,// 19.5dBm
@@ -591,7 +592,8 @@ void ESPWifiHandle::begin(bool wifiON)
           WIFI_POWER_MINUS_1dBm = -4// -1dBm
       } wifi_power_t;
       */
-    WiFi.setTxPower(WIFI_POWER_19_5dBm);
+    /* Comment to default setting */
+    // WiFi.setTxPower(WIFI_POWER_19_5dBm);
 #elif defined(ESP8266)
     WiFi.setPhyMode(WIFI_PHY_MODE_11B);
     WiFi.setOutputPower(20.5);
