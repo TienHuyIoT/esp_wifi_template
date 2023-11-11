@@ -287,6 +287,13 @@ void setup() {
     SOFTReset.onReset([](uint32_t timeout) {
         (void) timeout;
         MAIN_TAG_CONSOLE("onReset handler");
+#if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
+        if (Ethernet.isEnable()) {
+            Ethernet.disable();
+            esp_eth_disable();
+            esp_eth_deinit();
+        }
+#endif
     });
 
     /**
