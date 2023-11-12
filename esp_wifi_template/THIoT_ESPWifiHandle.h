@@ -16,6 +16,7 @@
 
 typedef std::function<void(int type)> WiFiLedStatusHandler;
 typedef std::function<void(bool evt, IPAddress ip)> WiFiConnectionHandler;
+typedef std::function<void(bool evt)> WiFiOTAHandler;
 
 class ESPWifiHandle
 {
@@ -66,6 +67,7 @@ private:
     static boolean _IsOTA;
     static WiFiLedStatusHandler _ledStatusFunc;
     static WiFiConnectionHandler _connectionFunc;
+    static WiFiOTAHandler _otaFunc;
 public:
     ESPWifiHandle(/* args */);
     ~ESPWifiHandle();
@@ -78,10 +80,11 @@ public:
     void OnLedStatus(WiFiLedStatusHandler handler) { _ledStatusFunc = handler; }
     void OnDDNSService(ESPAsyncEasyDDNS* DDNSService) { _DDNSService = DDNSService; }
     void onConnection(WiFiConnectionHandler handler) { _connectionFunc = handler; }
+    void onOTA(WiFiOTAHandler handler) { _otaFunc = handler; }
     boolean IsConnected() { return _IsConnected; }
     boolean IsOTA() { return _IsOTA; }
-    void OTAStart() { _IsOTA = true; }
-    void OTAStop() { _IsOTA = false; }
+    void OTAStart();
+    void OTAStop();
 };
 
 extern ESPWifiHandle ESPWifi;

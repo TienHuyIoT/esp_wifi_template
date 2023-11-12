@@ -235,6 +235,18 @@ void setup() {
             pingInternet.end();
         }
     });
+    ESPWifi.onOTA([](bool evt){
+        if (evt) {
+            MAIN_TAG_CONSOLE("Ping service stop");
+            pingGateway.pingStop();
+            pingInternet.pingStop();
+        }
+        else {
+            MAIN_TAG_CONSOLE("Ping service continue");
+            pingGateway.pingContinue();
+            pingInternet.pingContinue();
+        }
+    });
     ESPWifi.OnDDNSService(&EasyDDNS);
 
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
@@ -287,6 +299,8 @@ void setup() {
     SOFTReset.onReset([](uint32_t timeout) {
         (void) timeout;
         MAIN_TAG_CONSOLE("onReset handler");
+        pingGateway.end();
+        pingInternet.end();
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
         if (Ethernet.isEnable()) {
             Ethernet.disable();

@@ -87,6 +87,7 @@ uint8_t ESPWifiHandle::_counterReset = 0;
 boolean ESPWifiHandle::_IsOTA = false;
 WiFiLedStatusHandler ESPWifiHandle::_ledStatusFunc = nullptr;
 WiFiConnectionHandler ESPWifiHandle::_connectionFunc = nullptr;
+WiFiOTAHandler ESPWifiHandle::_otaFunc = nullptr;
 
 ESPWifiHandle::ESPWifiHandle(/* args */) {}
 ESPWifiHandle::~ESPWifiHandle() {}
@@ -449,7 +450,7 @@ uint32_t ESPWifiHandle::_otaArduinoPercent = 0;
 void ESPWifiHandle::onArduinoOTA()
 {
   ArduinoOTA.onStart(
-      []()
+      [&]()
       {
         String type;
         if (ArduinoOTA.getCommand() == U_FLASH)
@@ -461,7 +462,7 @@ void ESPWifiHandle::onArduinoOTA()
           type = "filesystem";
           NAND_FS_SYSTEM.end();
         }
-        _IsOTA = true;
+        OTAStart();
         ticker_detach(&_reconnectTicker); // disable wifi auto reconnect access point
 
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
@@ -492,7 +493,7 @@ void ESPWifiHandle::onArduinoOTA()
                           wdt_reset();
                         });
 
-  ArduinoOTA.onError([](ota_error_t error)
+  ArduinoOTA.onError([&](ota_error_t error)
                      {
                        ESP_WIFI_TAG_CONSOLE("[OTA] Error[%u]: ", error);
                        ESP_WIFI_TAG_LOG("[OTA] Error[%u]: ", error);
@@ -516,7 +517,7 @@ void ESPWifiHandle::onArduinoOTA()
                        {
                          ESP_WIFI_CONSOLE("End Failed");
                        }
-                       _IsOTA = false;
+                       OTAStop();
                      });
 
   ArduinoOTA.setHostname(ESPConfig.hostNameSTA().c_str());
@@ -739,6 +740,21 @@ void ESPWifiHandle::begin(bool wifiON)
     this->onDNSServer();
   }
 #endif
+}
+
+
+void ESPWifiHandle::OTAStart() { 
+  _IsOTA = true; 
+  if (_otaFunc) {
+    _otaFunc(true);
+  }
+}
+
+void ESPWifiHandle::OTAStop() { 
+  _IsOTA = false; 
+  if (_otaFunc) {
+    _otaFunc(false);
+  }
 }
 
 void ESPWifiHandle::end(void)

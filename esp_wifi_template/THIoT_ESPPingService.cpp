@@ -96,6 +96,7 @@ void ESPPingService::end() {
 }
 
 void ESPPingService::begin(const char *host, int interval) {
+    _enable = true;
     _host = host;
     _interval = interval;
     _resetCounter = 0;
@@ -109,8 +110,19 @@ void ESPPingService::begin(const char *host, int interval) {
     _start_ping_task();
 }
 
+void ESPPingService::pingStop() {
+    _enable = false;
+}
+
+void ESPPingService::pingContinue() {   
+    _enable = true;
+}
+
 void ESPPingService::pingRequest() {
     bool status;
+    if (!_enable) {
+        return;
+    }
     status = _ping.ping(_host.c_str(), 1);
     if (status) {
         PING_TAG_CONSOLE("Ping %s succeed with averageTime = %.2fms", _host.c_str(), _ping.averageTime());

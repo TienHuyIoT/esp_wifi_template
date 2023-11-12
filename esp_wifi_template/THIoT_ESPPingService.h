@@ -30,6 +30,7 @@ private:
     int _resetCounter;
     int _failCounter;
     int _timeoutReset;
+    bool _enable;
     bool _start_ping_task();
 public:
     ESPPingService();
@@ -39,6 +40,8 @@ public:
     void pingRequest();
     int pingInterval();
     void end();
+    void pingStop();
+    void pingContinue();
     void errorResetTimeout(int timeout) { _timeoutReset = timeout; }
     void errorResetCounter(int counter) { _failCounter = counter; _timeoutReset = 0;}
     void onSucceed(pingServiceHandler handler) { _succeedFunc = handler; }
