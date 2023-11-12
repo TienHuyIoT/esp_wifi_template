@@ -150,8 +150,18 @@ void ESPWifiHandle::registerEventHandler() {
     reason = info.disconnected.reason;
 #endif
     if (_IsConnected || !_firstConnection) {
-      _IsConnected = false;
-      _firstConnection = true;
+      if (!_firstConnection) {
+        _firstConnection = true;
+        _counterReset = 0;
+      }
+      else {
+        /**If before the status is connected then timeout reset connection 
+         * shall be shorter than the power on reset
+         * Setting 3 minutes
+        */
+        _IsConnected = false;
+        _counterReset = COUNTER_RECONNECT_RESET_NUM - 3;
+      }
       
       ESP_WIFI_TAG_CONSOLE("[EVENT] lost connection. Reason: %u", reason);
       ESP_WIFI_TAG_LOG("[EVENT] lost connection. Reason: %u", reason);
@@ -172,7 +182,6 @@ void ESPWifiHandle::registerEventHandler() {
       Reconnecting will be destroy, if executing scan network.
       */
       _counterReconnect = ESP_RECONNECTION_SECOND_NUM;
-      _counterReset = 0;
       ticker_attach(&_reconnectTicker, INTERVAL_RECONNECT_SECOND_NUM, [](void *arg) {
           WiFiClass *handler = (WiFiClass*)arg;
           _counterReconnect += INTERVAL_RECONNECT_SECOND_NUM;
@@ -315,8 +324,19 @@ void ESPWifiHandle::registerEventHandler() {
   // To register event, must be declare _accessPointDisconnectedHandler
   _accessPointDisconnectedHandler = WiFi.onStationModeDisconnected(
     [](const WiFiEventStationModeDisconnected& evt) {
-      if (_IsConnected) {
-        _IsConnected = false;
+      if (_IsConnected || !_firstConnection) {
+        if (!_firstConnection) {
+          _firstConnection = true;
+          _counterReset = 0;
+        }
+        else {
+          /**If before the status is connected then timeout reset connection 
+           * shall be shorter than the power on reset
+           * Setting 3 minutes
+          */
+          _IsConnected = false;
+          _counterReset = COUNTER_RECONNECT_RESET_NUM - 3;
+        }
         
         ESP_WIFI_TAG_CONSOLE("[EVENT] lost connection to %s. Reason: %u",
                              evt.ssid.c_str(), evt.reason);
@@ -331,33 +351,32 @@ void ESPWifiHandle::registerEventHandler() {
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
         EASY_NTP.end();
 #endif
-      }
-      /* Note: running setAutoReconnect(true) when module is already disconnected 
-      will not make it reconnect to the access point. Instead reconnect() 
-      should be used. 
-        We don't need call WiFi.reconnect() once loss connection, it is self reconnect after loss connection.
-      Reconnecting will be destroy, if executing scan network.
-      */
-      _counterReconnect = ESP_RECONNECTION_SECOND_NUM;
-      _counterReset = 0;
-      ticker_attach(&_reconnectTicker, INTERVAL_RECONNECT_SECOND_NUM, [](void *arg) {
-          WiFiClass *handler = (WiFiClass*)arg;
-          _counterReconnect += INTERVAL_RECONNECT_SECOND_NUM;
-          if (_counterReconnect >= ESP_RECONNECTION_SECOND_NUM) {
-            _counterReconnect = 0;
+        /* Note: running setAutoReconnect(true) when module is already disconnected 
+        will not make it reconnect to the access point. Instead reconnect() 
+        should be used. 
+          We don't need call WiFi.reconnect() once loss connection, it is self reconnect after loss connection.
+        Reconnecting will be destroy, if executing scan network.
+        */
+        _counterReconnect = ESP_RECONNECTION_SECOND_NUM;
+        ticker_attach(&_reconnectTicker, INTERVAL_RECONNECT_SECOND_NUM, [](void *arg) {
+            WiFiClass *handler = (WiFiClass*)arg;
+            _counterReconnect += INTERVAL_RECONNECT_SECOND_NUM;
+            if (_counterReconnect >= ESP_RECONNECTION_SECOND_NUM) {
+              _counterReconnect = 0;
 
-            if (++_counterReset > COUNTER_RECONNECT_RESET_NUM) {
-              _counterReset = 0;
+              if (++_counterReset > COUNTER_RECONNECT_RESET_NUM) {
+                _counterReset = 0;
 #if (NETWORK_CONNECTION_TIMEOUT_RESET == 1)
-              SOFTReset.enable(500, ESPSoftReset::WIFI_RECONNECT_TYPE);
+                SOFTReset.enable(500, ESPSoftReset::WIFI_RECONNECT_TYPE);
 #endif
+              }
+              else {
+                ESP_WIFI_TAG_CONSOLE("Reconnect");
+                handler->reconnect();
+              }
             }
-            else {
-              ESP_WIFI_TAG_CONSOLE("Reconnect");
-              handler->reconnect();
-            }
-          }
-      }, &WiFi);
+        }, &WiFi);
+      }
     }
   );
 #endif // ESP32

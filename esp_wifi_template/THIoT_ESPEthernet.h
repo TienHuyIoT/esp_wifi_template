@@ -134,7 +134,7 @@ public:
 #endif
     void OnLedStatus(ETHLedStatusHandler handler) { _ledStatusFunc = handler; }
     boolean IsConnected() { return _IsConnected; }
-    boolean disconnectEvt();
+    boolean disconnectEvt(bool first = 0);
     boolean connectedEvt();
     void onConnection(ETHConnectionHandler handler) { _connectionFunc = handler; }
 };

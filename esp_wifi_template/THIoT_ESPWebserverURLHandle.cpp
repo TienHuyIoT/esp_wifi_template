@@ -462,7 +462,7 @@ void restart_device_get(AsyncWebServerRequest *request, WebServerURLHandle* clie
         boolean status;
 
         if (device == "esp") {
-            value = max(300, value); /* Limited minimum value is 300ms */
+            value = max(500, value); /* Limited minimum value is 500ms */
             SOFTReset.enable(value, ESPSoftReset::HOME_PAGE_TYPE);
             resp = "Restart esp32";
         }

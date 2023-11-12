@@ -107,7 +107,7 @@ https://github.com/boblemaire/asyncHTTPrequest
 0: Disable
 1: Enable
 */
-#define ETH_ENABLE                  0
+#define ETH_ENABLE                  1
 #ifdef ESP32
 #define LAN_LAN8720                 1
 #define LAN_TLK110                  0

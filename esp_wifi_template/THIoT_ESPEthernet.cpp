@@ -60,7 +60,7 @@ bool ESPEthernet::begin()
     return false;
   }
   ETH_TAG_CONSOLE("ETH Start");
-  this->disconnectEvt(); /* Purpose: active timeout connection reset */
+  this->disconnectEvt(true); /* Purpose: active timeout connection reset */
 #ifdef ESP32
 #if (LAN_ENC28J60 == 1) || (LAN_W5500 == 1)
   ETH.begin( MISO_GPIO, MOSI_GPIO, SCLK_GPIO, CS_GPIO, INT_GPIO, SPI_CLOCK_MHZ, SPI_HOST);
@@ -123,7 +123,7 @@ void ESPEthernet::loop() {
 }
 #endif
 
-boolean ESPEthernet::disconnectEvt() { 
+boolean ESPEthernet::disconnectEvt(bool first) { 
   _IsConnected = false;
   ETH_TAG_CONSOLE("[EVENT] disconnect");
   ETH_TAG_LOG("[EVENT] disconnect");
@@ -136,8 +136,12 @@ boolean ESPEthernet::disconnectEvt() {
 #endif
 
 #if (NETWORK_CONNECTION_TIMEOUT_RESET == 1)
-  ETH_TAG_CONSOLE("[EVENT] Enable timeout connection reset: %u", ETH_TIMEOUT_CONNECTION_RESET);
-  ticker_once(&_reconnectTicker, ETH_TIMEOUT_CONNECTION_RESET, [](void *arg) {
+  int timeout = ETH_TIMEOUT_CONNECTION_RESET;
+  if (!first) {
+    timeout = 3;
+  }
+  ETH_TAG_CONSOLE("[EVENT] Enable timeout connection reset: %u", timeout);
+  ticker_once(&_reconnectTicker, timeout, [](void *arg) {
     ESPEthernet *handler = (ESPEthernet*)arg;
     ETH_TAG_CONSOLE("[EVENT] Timeout connection reset");
     SOFTReset.enable(500, ESPSoftReset::WIFI_RECONNECT_TYPE);

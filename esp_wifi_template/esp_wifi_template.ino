@@ -255,7 +255,7 @@ void setup() {
     if (ETH_STATUS_IS_ON()) { Ethernet.enable(); }
     else { Ethernet.disable(); }
 #else
-    Ethernet.enable();
+    Ethernet.disable();
 #endif
     // If the ethernet is enabled, the Wifi will not be allowed to initialize .
     ESPWifi.begin(!Ethernet.isEnable());
