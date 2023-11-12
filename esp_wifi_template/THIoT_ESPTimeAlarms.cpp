@@ -138,6 +138,8 @@ time_t ESPTimeAlarmClass::AlarmHMS(int H, int M, int S) {
     time_t diff = t2-previousMidnight(t1);
     TIME_ALARM_TAG_CONSOLE("H = %u, M = %u, S = %u, ", H, M, S);
     TIME_ALARM_TAG_CONSOLE("t1 = %d, t2 = %d, diff = %d", t1, t2, diff);
+    
+    diff %= SECS_PER_DAY;
     return diff;
 }
 

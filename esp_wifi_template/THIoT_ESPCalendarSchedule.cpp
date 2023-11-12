@@ -101,6 +101,9 @@ void ESPCalendarSchedule::_loadSchedule() {
                 CALENDAR_TAG_CONSOLE("NextTrigger[%u] %s",
                                      calendar->alarmID,
                                      ESPTime.toString(_timeAlarm.getNextTrigger(calendar->alarmID)).c_str());
+                CALENDAR_TAG_LOG("NextTrigger[%u] %s",
+                                     calendar->alarmID,
+                                     ESPTime.toString(_timeAlarm.getNextTrigger(calendar->alarmID)).c_str());
             }
             else {
                 CALENDAR_TAG_CONSOLE("Weekly at wday(%u) %02u:%02u:%02u", calendar->wday, calendar->hour, calendar->minute, calendar->second);
@@ -108,6 +111,9 @@ void ESPCalendarSchedule::_loadSchedule() {
                 calendar->alarmID = _timeAlarm.alarmRepeat(calendar->wday, calendar->hour, calendar->minute, calendar->second,
                                        std::bind(&ESPCalendarSchedule::_execution, this, calendar));
                 CALENDAR_TAG_CONSOLE("NextTrigger[%u] %s",
+                                     calendar->alarmID,
+                                     ESPTime.toString(_timeAlarm.getNextTrigger(calendar->alarmID)).c_str()); 
+                CALENDAR_TAG_LOG("NextTrigger[%u] %s",
                                      calendar->alarmID,
                                      ESPTime.toString(_timeAlarm.getNextTrigger(calendar->alarmID)).c_str()); 
             }
