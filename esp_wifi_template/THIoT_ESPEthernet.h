@@ -9,7 +9,8 @@
 #include "THIoT_PFTicker.h"
 #include "THIoT_ESPEventSignal.h"
 
-#define ETH_TIMEOUT_CONNECTION_RESET    15*60
+#define ETH_TIMEOUT_CONNECTION_RESET        15*60
+#define ETH_TIMEOUT_FIRST_CONNECTION_RESET  3*60
 typedef std::function<void(int type)>   ETHLedStatusHandler;
 typedef std::function<void(bool evt, IPAddress ip)> ETHConnectionHandler;
 

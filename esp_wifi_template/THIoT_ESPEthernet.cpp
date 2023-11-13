@@ -138,7 +138,7 @@ boolean ESPEthernet::disconnectEvt(bool first) {
 #if (NETWORK_CONNECTION_TIMEOUT_RESET == 1)
   int timeout = ETH_TIMEOUT_CONNECTION_RESET;
   if (!first) {
-    timeout = 3;
+    timeout = ETH_TIMEOUT_FIRST_CONNECTION_RESET;
   }
   ETH_TAG_CONSOLE("[EVENT] Enable timeout connection reset: %u", timeout);
   ticker_once(&_reconnectTicker, timeout, [](void *arg) {
