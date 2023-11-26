@@ -232,7 +232,7 @@ void CalendarScheduleFileHandler::syncFromFileSystem() {
 
     fs_handle = _fs->open(CALENDAR_SCHEDULE_PATH, "r");    
     
-    const size_t capacity = CALENDAR_SCHEDULE_ELEMENT_MAX*JSON_ARRAY_SIZE(7) + JSON_ARRAY_SIZE(CALENDAR_SCHEDULE_ELEMENT_MAX) + 50;
+    const size_t capacity = CALENDAR_SCHEDULE_ELEMENT_MAX*JSON_ARRAY_SIZE(7) + JSON_ARRAY_SIZE(CALENDAR_SCHEDULE_ELEMENT_MAX) + 512;
     DynamicJsonBuffer jsonBuffer(capacity);
     JsonArray& root = jsonBuffer.parseArray(fs_handle);
     fs_handle.close();

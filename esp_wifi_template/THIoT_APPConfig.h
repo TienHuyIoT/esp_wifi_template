@@ -9,7 +9,7 @@
 
 /** @brief Mutex memory PFTicker
 */
-#define MUTEX_PLATFORM_TICKER           1
+#define MUTEX_PLATFORM_TICKER           0 /* Should not use due to crash happen */
 
 /**
  * @brief reset esp after timeout if network disconnect
