@@ -520,6 +520,8 @@ void ESPWebServer::begin(ESPWebsocket* ws)
         AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", !Update.hasError() ? "Update OK" : "Update FAIL");
         response->addHeader("Connection", "close");
         request->send(response);
+        _IsUpdate = false;
+        ESPWifi.OTAStop();
         if (!Update.hasError())
         {
           updatePrintProgress(100, 100); // 100% --> Done
@@ -536,8 +538,6 @@ void ESPWebServer::begin(ESPWebsocket* ws)
         }
         else
         {
-          _IsUpdate = false;
-          ESPWifi.OTAStop();
           updatePrintProgress(101, 100); // 101% --> Fail
           WEB_TAG_LOG("[OTA] Failed");
         }
