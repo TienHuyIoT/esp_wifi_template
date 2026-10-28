@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WebSocket Console - debug trace</title>
+<style>
+  :root{--bg:#0f172a;--panel:#1e293b;--line:#334155;--fg:#e2e8f0;--ok:#166534;--bad:#7f1d1d;--acc:#2563eb}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg)}
+  header{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:var(--panel)}
+  h1{margin:0;font-size:15px;font-weight:600}
+  #state{font-size:12px;padding:3px 9px;border-radius:10px;background:var(--line)}
+  #state.ok{background:var(--ok)} #state.bad{background:var(--bad)}
+  main{padding:10px 14px}
+  pre{margin:0;height:62vh;overflow:auto;background:#020617;border:1px solid var(--line);border-radius:8px;
+      padding:10px;font:12px/1.45 ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+  .row{display:flex;gap:8px;margin-top:10px}
+  input{flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:#0b1220;color:var(--fg);
+        font:13px ui-monospace,Consolas,monospace}
+  button{padding:8px 14px;border:0;border-radius:8px;background:var(--acc);color:#fff;font-size:13px;cursor:pointer}
+  button.ghost{background:var(--line)}
+  small{opacity:.75;display:block;margin-top:8px;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>WebSocket Console (debug trace)</h1>
+  <span id="state" class="bad">Đứt kết nối</span>
+  <button class="ghost" id="btnReconnect">Kết nối lại</button>
+  <button class="ghost" id="btnClear">Clear</button>
+</header>
+<main>
+  <pre id="log"></pre>
+  <div class="row">
+    <input id="cmd" placeholder="Gõ lệnh rồi Enter (gõ exit / close để đóng phiên console)" autocomplete="off">
+    <button id="btnSend">Gửi</button>
+  </div>
+  <small>Trang này KHÔNG tự động reconnect: thiết bị chỉ phục vụ 2 WebSocket, tự động giành socket sẽ đá client khác ra.</small>
+</main>
+<script>
+/* Page id dùng chung với firmware: ws_page_connect_t (THIoT_ESPWebsocket.h) */
+const PAGE_WS_CONSOLE = 4;
+const logEl = document.getElementById('log');
+const stateEl = document.getElementById('state');
+let ws = null;
+
+function setState(ok, text) {
+  stateEl.textContent = text;
+  stateEl.className = ok ? 'ok' : 'bad';
+}
+function append(text) {
+  const atBottom = logEl.scrollTop + logEl.clientHeight >= logEl.scrollHeight - 24;
+  logEl.textContent += text;
+  if (atBottom) { logEl.scrollTop = logEl.scrollHeight; }
+}
+function connect() {
+  if (ws) { try { ws.close(); } catch (e) {} ws = null; }
+  const url = 'ws://' + location.host + '/ws';
+  append('\n--- connecting ' + url + ' ---\n');
+  ws = new WebSocket(url);
+  ws.onopen = function () {
+    setState(true, 'Đã kết nối');
+    /* Đăng ký trang console: firmware sẽ đẩy toàn bộ console trace vào socket này */
+    ws.send(JSON.stringify({ page: PAGE_WS_CONSOLE, cmd: 1 }));
+  };
+  ws.onmessage = function (ev) { append(ev.data); };
+  ws.onclose = function () { setState(false, 'Đứt kết nối'); append('\n--- closed ---\n'); };
+  ws.onerror = function () { append('\n--- socket error ---\n'); };
+}
+document.getElementById('btnReconnect').onclick = connect;
+document.getElementById('btnClear').onclick = function () { logEl.textContent = ''; };
+document.getElementById('btnSend').onclick = function () {
+  const input = document.getElementById('cmd');
+  if (!input.value || !ws || ws.readyState !== WebSocket.OPEN) { return; }
+  ws.send(input.value);
+  input.value = '';
+};
+document.getElementById('cmd').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') { document.getElementById('btnSend').click(); }
+});
+connect();
+</script>
+</body>
+</html>
