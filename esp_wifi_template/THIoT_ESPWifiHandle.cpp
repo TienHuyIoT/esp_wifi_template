@@ -82,6 +82,7 @@ ESPAsyncEasyDDNS* ESPWifiHandle::_DDNSService = nullptr;
 ticker_function_handle_t ESPWifiHandle::_reconnectTicker = {0};
 boolean ESPWifiHandle::_IsConnected = false;
 boolean ESPWifiHandle::_firstConnection = false;
+boolean ESPWifiHandle::_connectedEvent = false;
 uint8_t ESPWifiHandle::_counterReconnect = 0;
 uint8_t ESPWifiHandle::_counterReset = 0;
 boolean ESPWifiHandle::_IsOTA = false;
@@ -547,6 +548,23 @@ void ESPWifiHandle::onArduinoOTA()
 
 void ESPWifiHandle::loop()
 {
+  /* Services which need the network stack must be started only after the
+   * interface is up and an IP address has been obtained.  Starting SNTP before
+   * the lwIP tcpip thread exists makes configTime()/sntp_init() assert in
+   * tcpip_api_call() ("Invalid mbox") and the board reboots in a loop.
+   * Same order as the web485_v3 firmware (ESPWifiHandle::loop). */
+  if (_IsConnected)
+  {
+    if (!_connectedEvent)
+    {
+      _connectedEvent = true;
+#if (defined SNTP_SERVICE_SYSTEM) && (SNTP_SERVICE_SYSTEM == 1)
+      // sntp service ON
+      _sntp.begin();
+#endif
+    }
+  }
+
 #if (defined MDNS_SERVICE_ENABLE) && (MDNS_SERVICE_ENABLE == 1) && (defined ESP8266)
   MDNS.update();
 #endif
@@ -565,10 +583,11 @@ void ESPWifiHandle::begin(bool wifiON)
   WiFiMode_t wf_mode = WIFI_OFF;
 
   ESP_WIFI_TAG_CONSOLE("Begin()");
-#if (defined SNTP_SERVICE_SYSTEM) && (SNTP_SERVICE_SYSTEM == 1)  
-  // sntp service ON
-  _sntp.begin();
-#endif
+  /* NOTE: the SNTP service used to be started here, i.e. before any WiFi/lwIP
+   * initialisation.  configTime() -> sntp_init() -> tcpip_api_call() then hit
+   * "assert failed: tcpip_api_call (Invalid mbox)" and the board rebooted in a
+   * loop.  It is now started in loop() as soon as the connection is up (see
+   * ESPWifiHandle::loop), exactly like the web485_v3 firmware does. */
 
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
   EASY_NTP.onNTPSyncEvent([](struct timeval* val){

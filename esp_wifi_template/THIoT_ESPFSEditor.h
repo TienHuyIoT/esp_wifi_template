@@ -81,12 +81,17 @@ class ESPFSEditor: public AsyncWebHandler {
     ESPFSEditor& onStatus(fs_status fn);
     ESPFSEditor& setAuthentication(const char *username, const char *password){  _username = String(username);_password = String(password); return *this; };
     ESPFSEditor& onAuthenticate(fs_ArRequestAuthenticateFunction fn) {_onAuthenticate = fn; return *this;}
-    virtual bool canHandle(AsyncWebServerRequest *request) override final;
+    virtual bool canHandle(AsyncWebServerRequest *request) const override final;
     virtual void handleRequest(AsyncWebServerRequest *request) override final;
     virtual void handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) override final;
-    virtual bool isRequestHandlerTrivial() override final {return false;}
+    virtual bool isRequestHandlerTrivial() const override final {return false;}
     virtual void debug(AsyncWebServerRequest *request);
   private:
+    /* ESPAsyncWebServer 3.x declares canHandle() const, while this handler keeps the
+     * legacy behaviour of preparing the request (opening the file handle, resetting the
+     * upload counters) while matching.  The original implementation is kept here and
+     * forwarded from the const override so the runtime behaviour is unchanged. */
+    bool canHandleImpl(AsyncWebServerRequest *request);
     FS _fs;
     String _username;
     String _password; 

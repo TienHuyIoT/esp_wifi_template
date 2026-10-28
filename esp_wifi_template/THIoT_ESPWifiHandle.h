@@ -53,6 +53,7 @@ private:
 
     static ticker_function_handle_t _reconnectTicker;
     static boolean _firstConnection;
+    static boolean _connectedEvent;
     static uint8_t _counterReconnect;
     static uint8_t _counterReset;
 #ifdef ESP8266

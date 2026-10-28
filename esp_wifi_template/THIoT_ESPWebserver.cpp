@@ -35,8 +35,9 @@ public:
   RedirectUrlHandler() {}
   virtual ~RedirectUrlHandler() {}
 
-  bool canHandle(AsyncWebServerRequest *request)
+  bool canHandle(AsyncWebServerRequest *request) const override
   {
+    (void) request;
     return true;
   }
 
@@ -289,7 +290,7 @@ void ESPWebServer::printHandleRequest(AsyncWebServerRequest *request)
   message += "\n";
   for (uint8_t i = 0; i < request->params(); i++)
   {
-    AsyncWebParameter* p = request->getParam(i);
+    const AsyncWebParameter* p = request->getParam(i);
     message += " NAME:" + p->name() + "\n VALUE:" + p->value() + "\n";
   }
   request->send(200, "text/html", message);
@@ -642,14 +643,14 @@ void ESPWebServer::begin(ESPWebsocket* ws)
         int i;
         for (i = 0; i < headers; i++)
         {
-          AsyncWebHeader *h = request->getHeader(i);
+          const AsyncWebHeader *h = request->getHeader(i);
           WEB_SERVER_TAG_CONSOLE("_HEADER[%s]: %s", h->name().c_str(), h->value().c_str());
         }
 
         int params = request->params();
         for (i = 0; i < params; i++)
         {
-          AsyncWebParameter *p = request->getParam(i);
+          const AsyncWebParameter *p = request->getParam(i);
           if (p->isFile())
           {
             WEB_SERVER_TAG_CONSOLE("_FILE[%s]: %s, size: %u", p->name().c_str(), p->value().c_str(), p->size());

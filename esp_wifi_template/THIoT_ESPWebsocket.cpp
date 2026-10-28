@@ -23,8 +23,8 @@ ESPWebsocket::~ESPWebsocket()
 
 wsNewEventHandle ESPWebsocket::_wsNewEventCallback = nullptr;
 ticker_function_handle_t ESPWebsocket::_ws_ticker = {0};
-AsyncWebSocket ESPWebsocket::_asyncWs = AsyncWebSocket(wsUrl);
-AsyncEventSource ESPWebsocket::_asyncEvents = AsyncEventSource(eventUrl);
+AsyncWebSocket ESPWebsocket::_asyncWs(wsUrl);
+AsyncEventSource ESPWebsocket::_asyncEvents(eventUrl);
 WebsocketCallbacks* ESPWebsocket::_pCallbacks = nullptr;
 dataSocketHandler ESPWebsocket::_dataHandler = nullptr;
 ws_connection_info_t ESPWebsocket::_ws_connection[NUM_WS_CONNECTION_MAX] = {0};

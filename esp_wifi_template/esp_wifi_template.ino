@@ -304,8 +304,10 @@ void setup() {
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
         if (Ethernet.isEnable()) {
             Ethernet.disable();
-            esp_eth_disable();
-            esp_eth_deinit();
+            /* esp_eth_disable()/esp_eth_deinit() were removed from esp_eth.h in IDF 4.x
+               (legacy API), so they cannot be called any more.  ETH.end() performs the
+               same teardown: esp_eth_stop() + esp_eth_driver_uninstall(). */
+            ETH.end();
         }
 #endif
     });

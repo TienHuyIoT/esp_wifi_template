@@ -32,12 +32,17 @@ class ESPFsPart: public AsyncWebHandler {
     ESPFsPart& onStatus(fs_partStatus fn);
     ESPFsPart& setAuthentication(const char *username, const char *password){  _username = String(username);_password = String(password); return *this; };
     ESPFsPart& onAuthenticate(fs_partRequestAuthenticateFunction fn) {_onAuthenticate = fn; return *this;}
-    virtual bool canHandle(AsyncWebServerRequest *request) override final;
+    virtual bool canHandle(AsyncWebServerRequest *request) const override final;
     virtual void handleRequest(AsyncWebServerRequest *request) override final;
-    virtual bool isRequestHandlerTrivial() override final {return false;}
+    virtual bool isRequestHandlerTrivial() const override final {return false;}
     virtual void debug(AsyncWebServerRequest *request);
     size_t dataFileHandle(uint8_t* data, size_t len, size_t index);
   private:
+    /* ESPAsyncWebServer 3.x declares canHandle() const, while this handler keeps the
+     * legacy behaviour of preparing the request (opening the file handle, scanning the
+     * log file positions) while matching.  The original implementation is kept here and
+     * forwarded from the const override so the runtime behaviour is unchanged. */
+    bool canHandleImpl(AsyncWebServerRequest *request);
     fs::FS _fs;
     File _content;
     String _username;

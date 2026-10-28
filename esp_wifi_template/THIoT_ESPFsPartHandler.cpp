@@ -40,7 +40,11 @@ ESPFsPart& ESPFsPart::onStatus(fs_partStatus fn)
   return *this;
 }
 
-bool ESPFsPart::canHandle(AsyncWebServerRequest *request){ 
+bool ESPFsPart::canHandle(AsyncWebServerRequest *request) const { 
+  return const_cast<ESPFsPart *>(this)->canHandleImpl(request);
+}
+
+bool ESPFsPart::canHandleImpl(AsyncWebServerRequest *request){ 
   if(request->url().equalsIgnoreCase(_uri)){
     String path = "";
 #if (defined FS_PART_DEBUG) && (FS_PART_DEBUG == 1)
@@ -228,13 +232,13 @@ void ESPFsPart::debug(AsyncWebServerRequest *request) {
   int headers = request->headers();
   int i;
   for(i=0;i<headers;i++){
-    AsyncWebHeader* h = request->getHeader(i);
+    const AsyncWebHeader* h = request->getHeader(i);
     FS_PART_DBG_PRINTF("_HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
   }
 
   int params = request->params();
   for(i=0;i<params;i++){
-    AsyncWebParameter* p = request->getParam(i);
+    const AsyncWebParameter* p = request->getParam(i);
     if(p->isFile()){
       FS_PART_DBG_PRINTF("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
     } else if(p->isPost()){

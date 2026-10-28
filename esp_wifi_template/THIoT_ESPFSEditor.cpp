@@ -944,7 +944,11 @@ ESPFSEditor& ESPFSEditor::onStatus(fs_status fn)
   return *this;
 }
 
-bool ESPFSEditor::canHandle(AsyncWebServerRequest *request){ 
+bool ESPFSEditor::canHandle(AsyncWebServerRequest *request) const { 
+  return const_cast<ESPFSEditor *>(this)->canHandleImpl(request);
+}
+
+bool ESPFSEditor::canHandleImpl(AsyncWebServerRequest *request){ 
   if(request->url().equalsIgnoreCase(_uri)){
     String path = "";
 #if (defined FS_EDITOR_DEBUG) && (FS_EDITOR_DEBUG == 1)
@@ -1238,13 +1242,13 @@ void ESPFSEditor::debug(AsyncWebServerRequest *request) {
   int headers = request->headers();
   int i;
   for(i=0;i<headers;i++){
-    AsyncWebHeader* h = request->getHeader(i);
+    const AsyncWebHeader* h = request->getHeader(i);
     FSEDITOR_DBG_PRINTF("_HEADER[%s]: %s\n", h->name().c_str(), h->value().c_str());
   }
 
   int params = request->params();
   for(i=0;i<params;i++){
-    AsyncWebParameter* p = request->getParam(i);
+    const AsyncWebParameter* p = request->getParam(i);
     if(p->isFile()){
       FSEDITOR_DBG_PRINTF("_FILE[%s]: %s, size: %u\n", p->name().c_str(), p->value().c_str(), p->size());
     } else if(p->isPost()){

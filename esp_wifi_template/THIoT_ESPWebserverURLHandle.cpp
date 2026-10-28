@@ -102,7 +102,7 @@ int WebServerURLHandle::onHttpGetAuth(AsyncWebServerRequest* request)
      * using argName(0) = "param_wifi" is parameter to get wifi information 
      * using arg(0) is parameter to find callback_post
      */
-    AsyncWebParameter* p = request->getParam(0);
+    const AsyncWebParameter* p = request->getParam(0);
     if (p->name() == _argName)
     {              
         for (uint8_t i = 0; i < DATA_GET_HANDLE_NUM; ++i)
@@ -143,7 +143,7 @@ int WebServerURLHandle::onHttpPostAuth(AsyncWebServerRequest* request)
      * using argName(0) is parameter to find callback_post
      * using arg(0) is data
      */
-    AsyncWebParameter* p = request->getParam(0);
+    const AsyncWebParameter* p = request->getParam(0);
     for (uint8_t i = 0; i < DATA_POST_HANDLE_NUM; ++i)
     {
         if (p->name() == client_post_handle[i].path_arg)
@@ -615,7 +615,7 @@ void sta_ap_info_post(AsyncWebServerRequest *request, WebServerURLHandle* client
 */
 void sta_network_post(AsyncWebServerRequest *request, WebServerURLHandle* client) 
 {
-    AsyncWebParameter* p = request->getParam(0);
+    const AsyncWebParameter* p = request->getParam(0);
 
     DynamicJsonBuffer djbpo;
     JsonObject& root = djbpo.parseObject(p->value());
@@ -646,7 +646,7 @@ void sta_network_post(AsyncWebServerRequest *request, WebServerURLHandle* client
 
 void sta_setting_post(AsyncWebServerRequest *request, WebServerURLHandle* client)
 {
-    AsyncWebParameter* p = request->getParam(0);  
+    const AsyncWebParameter* p = request->getParam(0);  
 
     DynamicJsonBuffer djbpo;
     JsonObject& root = djbpo.parseObject(p->value());
@@ -686,7 +686,7 @@ void sta_setting_post(AsyncWebServerRequest *request, WebServerURLHandle* client
 
 void ap_setting_post(AsyncWebServerRequest *request, WebServerURLHandle* client) 
 { 
-    AsyncWebParameter* p = request->getParam(0);
+    const AsyncWebParameter* p = request->getParam(0);
 
     DynamicJsonBuffer djbpo;
     JsonObject& root = djbpo.parseObject(p->value());
@@ -719,7 +719,7 @@ void ap_setting_post(AsyncWebServerRequest *request, WebServerURLHandle* client)
 
 void sntp_setting_post(AsyncWebServerRequest *request, WebServerURLHandle* client) 
 {
-    AsyncWebParameter* p = request->getParam(0);
+    const AsyncWebParameter* p = request->getParam(0);
 
     DynamicJsonBuffer djbpo;
     JsonObject& root = djbpo.parseObject(p->value());
@@ -749,7 +749,7 @@ void sntp_setting_post(AsyncWebServerRequest *request, WebServerURLHandle* clien
 
 void device_info_post(AsyncWebServerRequest *request, WebServerURLHandle* client)
 {  
-    AsyncWebParameter* p = request->getParam(0);
+    const AsyncWebParameter* p = request->getParam(0);
 
     DynamicJsonBuffer djbpo;
     JsonObject& root = djbpo.parseObject(p->value());
@@ -778,7 +778,7 @@ void device_info_post(AsyncWebServerRequest *request, WebServerURLHandle* client
 
 void auth_access_post(AsyncWebServerRequest *request, WebServerURLHandle* client)
 {  
-    AsyncWebParameter* p = request->getParam(0);
+    const AsyncWebParameter* p = request->getParam(0);
 
     DynamicJsonBuffer djbpo;
     JsonObject& root = djbpo.parseObject(p->value());
@@ -811,7 +811,7 @@ void auth_access_post(AsyncWebServerRequest *request, WebServerURLHandle* client
 
 void time_setting_post(AsyncWebServerRequest *request, WebServerURLHandle* client)
 {    
-    AsyncWebParameter* p = request->getParam(0);
+    const AsyncWebParameter* p = request->getParam(0);
     const char *rtc_str = p->value().c_str();
     if (ESPTime.GMTStringUpdate(rtc_str, ESPTimeSystem::ESP_RTC_WEB_UPDATE))
     {
@@ -825,7 +825,7 @@ void time_setting_post(AsyncWebServerRequest *request, WebServerURLHandle* clien
 
 void ddns_client_post(AsyncWebServerRequest *request, WebServerURLHandle* client) 
 {   
-    AsyncWebParameter* p = request->getParam(0);
+    const AsyncWebParameter* p = request->getParam(0);
 
     DynamicJsonBuffer djbpo;
     JsonObject& root = djbpo.parseObject(p->value());
@@ -861,7 +861,7 @@ void ddns_client_post(AsyncWebServerRequest *request, WebServerURLHandle* client
 
 void auth_user_access_post(AsyncWebServerRequest *request, WebServerURLHandle* client)
 {  
-    AsyncWebParameter* p = request->getParam(0);
+    const AsyncWebParameter* p = request->getParam(0);
 
     DynamicJsonBuffer djbpo;
     JsonObject& root = djbpo.parseObject(p->value());
@@ -896,7 +896,7 @@ void auth_user_access_post(AsyncWebServerRequest *request, WebServerURLHandle* c
 
 void pass_common_post(AsyncWebServerRequest *request, WebServerURLHandle* client)
 { 
-    AsyncWebParameter* p = request->getParam(0);
+    const AsyncWebParameter* p = request->getParam(0);
 
     DynamicJsonBuffer djbpo;
     JsonObject& root = djbpo.parseObject(p->value());
@@ -930,7 +930,7 @@ void print_handleRequest(AsyncWebServerRequest *request, String &message)
   message += "\n";
   for (uint8_t i = 0; i < request->params(); i++)
   {
-    AsyncWebParameter* p = request->getParam(i);
+    const AsyncWebParameter* p = request->getParam(i);
     message += " NAME:" + p->name() + "\n VALUE:" + p->value() + "\n";
   }
   SERVER_DATA_PORT.println(message);
