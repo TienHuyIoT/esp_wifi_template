@@ -10,9 +10,9 @@
 #include "THIoT_PFLedStatus.h"
 #include "THIoT_ESPSoftReset.h"
 
-#define ESP_ETH_PORT SERIAL_PORT
-#define ETH_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[ETH]", __VA_ARGS__)
-#define ETH_TAG_LOG(...) FS_TAG_LOGI("[ETH]", __VA_ARGS__)
+#define ESP_ETH_PORT          SERIAL_PORT
+#define ETH_TAG_CONSOLE(...)  CONSOLE_TAG_LOGI("[ETH]", __VA_ARGS__)
+#define ETH_TAG_LOG(...)      FS_TAG_LOGI("[ETH]", __VA_ARGS__)
 
 #ifdef EPS32
 #include <WiFi.h>
@@ -65,7 +65,11 @@ bool ESPEthernet::begin()
 #if (LAN_ENC28J60 == 1) || (LAN_W5500 == 1)
   ETH.begin( MISO_GPIO, MOSI_GPIO, SCLK_GPIO, CS_GPIO, INT_GPIO, SPI_CLOCK_MHZ, SPI_HOST);
 #else
+#if (ESP_IDF_VERSION_MAJOR >= 5)
+  ETH.begin(ETH_TYPE, ETH_ADDR, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_POWER_PIN, ETH_CLK_MODE);
+#else
   ETH.begin(ETH_ADDR, ETH_POWER_PIN, ETH_MDC_PIN, ETH_MDIO_PIN, ETH_TYPE, ETH_CLK_MODE);
+#endif
 #endif
 #endif
   if (!ESPConfig.dhcpSTA())
@@ -123,7 +127,7 @@ void ESPEthernet::loop() {
 }
 #endif
 
-boolean ESPEthernet::disconnectEvt(bool first) { 
+void ESPEthernet::disconnectEvt(bool first) { 
   _IsConnected = false;
   ETH_TAG_CONSOLE("[EVENT] disconnect");
   ETH_TAG_LOG("[EVENT] disconnect");
@@ -142,14 +146,13 @@ boolean ESPEthernet::disconnectEvt(bool first) {
   }
   ETH_TAG_CONSOLE("[EVENT] Enable timeout connection reset: %u", timeout);
   ticker_once(&_reconnectTicker, timeout, [](void *arg) {
-    ESPEthernet *handler = (ESPEthernet*)arg;
     ETH_TAG_CONSOLE("[EVENT] Timeout connection reset");
     SOFTReset.enable(500, ESPSoftReset::WIFI_RECONNECT_TYPE);
   }, this);
 #endif
 }
 
-boolean ESPEthernet::connectedEvt() { 
+void ESPEthernet::connectedEvt() { 
   _IsConnected = true; 
 #ifdef ESP32
   ETH_TAG_LOG("[EVENT] connected");

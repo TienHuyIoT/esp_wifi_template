@@ -1,7 +1,7 @@
 #include "THIoT_ESPBlinkGPIO.h"
 #include "THIoT_PFSerialTrace.h"
 
-#define BLINK_GPIO_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[BLINK_GPIO]", __VA_ARGS__)
+#define BLINK_GPIO_TAG_CONSOLE(...)     //CONSOLE_TAG_LOGI("[BLINK_GPIO]", __VA_ARGS__)
 
 ESPBlinkCycleCallbacks::~ESPBlinkCycleCallbacks(){}
 
@@ -10,22 +10,38 @@ cycleTimeMs_t ESPBlinkCycleCallbacks::getCycle(int type) {
     return cycleTimeMs(100, 900);
 }
 
-ESPBlinkGPIO::ESPBlinkGPIO(const int gpio, const bool stLevel)
+ESPBlinkGPIO::ESPBlinkGPIO( const bool stLevel, const int8_t gpio)
 : _gpio(gpio), _stLevel(stLevel)
 {
-    pinMode(_gpio, OUTPUT);
-    digitalWrite(_gpio, _stLevel);
+    if (_gpio != -1) {
+        pinMode(_gpio, OUTPUT);
+        digitalWrite(_gpio, _stLevel);
+    }
 }
 
 ESPBlinkGPIO::~ESPBlinkGPIO()
 {
 }
 
+void ESPBlinkGPIO::gpioSet(int8_t gpio) {
+    if (gpio != -1) {
+        _gpio = gpio;
+        pinMode(_gpio, OUTPUT);
+        digitalWrite(_gpio, _stLevel);
+    }
+}
+
+void ESPBlinkGPIO::stLevelSet(bool stLevel) {
+    _stLevel = stLevel;
+}
+
 void ESPBlinkGPIO::detach()
 {    
     _longTick.detach();
     _shortTick.detach();
-    digitalWrite(_gpio, _stLevel);
+    if (_gpio != -1) {
+        digitalWrite(_gpio, _stLevel);
+    }
     BLINK_GPIO_TAG_CONSOLE("stop");
 }
 
@@ -61,7 +77,9 @@ void ESPBlinkGPIO::attach(int firstHalf_ms, int endHalf_ms, int counter)
 
 void ESPBlinkGPIO::firstHalfLevel()
 {
-    digitalWrite(_gpio, !_stLevel);
+    if (_gpio != -1) {
+        digitalWrite(_gpio, !_stLevel);
+    }
     // make an one timeout with the first haft cycle ms
 #ifdef ESP32
     _shortTick.once_ms<void*>
@@ -75,7 +93,10 @@ void ESPBlinkGPIO::firstHalfLevel()
 
 void ESPBlinkGPIO::endHalfLevel() 
 {
-    digitalWrite(_gpio, _stLevel);
+    if (_gpio != -1) {
+        digitalWrite(_gpio, _stLevel);
+    }
+
     if (_counter > 0)
     {
         if (--_counter == 0)
@@ -85,4 +106,12 @@ void ESPBlinkGPIO::endHalfLevel()
             BLINK_GPIO_TAG_CONSOLE("end");
         }
     }
+}
+
+void ESPBlinkGPIO::activeState() {
+    digitalWrite(_gpio, _stLevel);
+}
+
+void ESPBlinkGPIO::deactiveState() {
+    digitalWrite(_gpio, !_stLevel);
 }

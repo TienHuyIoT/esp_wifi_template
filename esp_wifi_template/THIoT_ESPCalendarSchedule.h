@@ -3,8 +3,12 @@
 
 #include <Arduino.h>
 #include <functional>
+#include "THIoT_ESPConfig.h"
+#include "THIoT_APPConfig.h"
 #include "THIoT_PFTicker.h"
 #include "THIoT_ESPTimeAlarms.h"
+
+#if (defined CALENDAR_SCHEDULE_ENABLE) && (CALENDAR_SCHEDULE_ENABLE == 1)
 
 #define CALENDAR_SCHEDULE_PATH ((const char*)"/calendar_schedule.txt")
 #define CALENDAR_SCHEDULE_ELEMENT_MAX   dtNBR_ALARMS
@@ -17,7 +21,6 @@
 #define CALENDAR_SCHEDULE_SECOND_JSON_ARRAY_INDEX  5
 #define CALENDAR_SCHEDULE_ENABLE_JSON_ARRAY_INDEX  6
 
-typedef std::function<void(uint32_t)> CalendarResetHandler;
 using namespace espTimeAlarm;
 class CalendarScheduleFileHandler
 {
@@ -57,7 +60,7 @@ public:
     ~CalendarScheduleFileHandler();
 
     void load(FS *fs = nullptr);
-    void save() { saveToFileSystem(); }
+    void save() { ticker_detach(&_saveTicker); saveToFileSystem(); }
     void saveLatency(int timeout = 2);
     void setDefault() { _fs->remove(CALENDAR_SCHEDULE_PATH); }
 
@@ -104,9 +107,11 @@ private:
 public:
     ESPCalendarSchedule();
     ~ESPCalendarSchedule() {}
-    void begin(uint32_t timeout = 30);
+    void begin(uint32_t timeout = 45);
 };
 
 extern ESPCalendarSchedule CalendarSchedule;
+
+#endif // #if (defined CALENDAR_SCHEDULE_ENABLE) && (CALENDAR_SCHEDULE_ENABLE == 1)
 
 #endif // __ESP_CALENDAR_SCHEDULE_H

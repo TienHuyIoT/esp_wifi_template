@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 #include <time.h>
+#include "THIoT_APPConfig.h"
+
+#if (defined CALENDAR_SCHEDULE_ENABLE) && (CALENDAR_SCHEDULE_ENABLE == 1)
 
 #if !defined(dtNBR_ALARMS )
 #if defined(__AVR__)
@@ -241,4 +244,5 @@ private:  // the following methods are for testing and are not documented as par
 #define waitHourRollover()   waitForRollover(dtMinute)
 #define waitDayRollover()    waitForRollover(dtHour)
 
+#endif // #if (defined CALENDAR_SCHEDULE_ENABLE) && (CALENDAR_SCHEDULE_ENABLE == 1)
 #endif /* __ESP_TIME_ALARM_H */

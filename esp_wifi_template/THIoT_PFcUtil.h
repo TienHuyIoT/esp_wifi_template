@@ -18,7 +18,10 @@ int find_char_rev(char *buff, char dat, int start_id);
 char check_strncmp(const char *str, char dat, unsigned char *index, unsigned char len);
 void convert_num2str_fpu(int32_t num, char *buff, uint8_t cmd);
 uint8_t crc_xor(const uint8_t *buff, uint32_t length);
+uint32_t crc_u32_check(uint32_t u32);
+uint32_t crc_u32_update(uint32_t u32);
 uint32_t swap_date(uint32_t date_in);
 int str_cmp_find_index(const char *const *literal, const char *strIn);
+uint8_t long_strtok(char* str, const char* delimiters, long* array, uint8_t length);
 
 #endif // __C_UTILITY_H

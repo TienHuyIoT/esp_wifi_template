@@ -784,23 +784,25 @@ void ESPWifiHandle::begin(bool wifiON)
 void ESPWifiHandle::OTAStart() { 
   _IsOTA = true; 
   if (_otaFunc) {
-    _otaFunc(true);
+    _otaFunc(OTA_START);
   }
 }
 
 void ESPWifiHandle::OTAStop() { 
   _IsOTA = false; 
   if (_otaFunc) {
-    _otaFunc(false);
+    _otaFunc(OTA_STOP);
   }
 }
 
 /* A firmware update completed successfully.  The web update handler calls this
- * to leave the OTA state and to let the application know that the image on the
- * flash is complete (the reference firmware reports a dedicated OTA_SUCCESS
- * state here). */
+ * to leave the OTA state and to report OTA_SUCCESS to the application (see the
+ * OTA state enum in THIoT_ESPWifiHandle.h). */
 void ESPWifiHandle::OTASuccess() {
-  OTAStop();
+  _IsOTA = false;
+  if (_otaFunc) {
+    _otaFunc(OTA_SUCCESS);
+  }
 }
 
 void ESPWifiHandle::end(void)

@@ -1,16 +1,25 @@
+/* NOTE: the enable flag lives in THIoT_APPConfig.h, so it has to be included
+ * before the guard below - otherwise CALENDAR_SCHEDULE_ENABLE is not defined yet
+ * and the whole translation unit is skipped (undefined references to
+ * CalendarSchedule). */
+#include "THIoT_APPConfig.h"
+
+#if (defined CALENDAR_SCHEDULE_ENABLE) && (CALENDAR_SCHEDULE_ENABLE == 1)
+
 #include <Esp.h>
 #include <ArduinoJson.h>
 #include "THIoT_ESPConfig.h"
+#include "THIoT_ESPSysParams.h"
 #include "THIoT_ESPTimeSystem.h"
 #include "THIoT_ESPSoftReset.h"
 #include "THIoT_ESPCalendarSchedule.h"
 #include "THIoT_PFSerialTrace.h"
 #include "THIoT_ESPLogTrace.h"
 
-#define CALENDAR_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[CALENDAR]", __VA_ARGS__)
-#define CALENDAR_FILE_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[CALENDAR_FILE]", __VA_ARGS__)
+#define CALENDAR_TAG_CONSOLE(...)       //CONSOLE_TAG_LOGI("[CALENDAR]", __VA_ARGS__)
+#define CALENDAR_FILE_TAG_CONSOLE(...)  //CONSOLE_TAG_LOGI("[CALENDAR_FILE]", __VA_ARGS__)
 
-#define CALENDAR_TAG_LOG(...) FS_TAG_LOGI("[CALENDAR]", __VA_ARGS__)
+#define CALENDAR_TAG_LOG(...)           FS_TAG_LOGI("[CALENDAR]", __VA_ARGS__)
 
 /** @brief [type, arg, wday, hour, minute, second, enable]
  * @param type: typing handler: reset or execute a function
@@ -30,8 +39,8 @@
 */
 const char calendarScheduleDefault[] PROGMEM = R"=====(
 [
-    [0,3000,0,04,0,0,1],
-    [0,3000,0,12,0,0,1],
+    [0,3000,0,04,0,0,0],
+    [0,3000,0,12,0,0,0],
     [0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0],
@@ -84,7 +93,7 @@ void ESPCalendarSchedule::_loadSchedule() {
         return;
     }
     _isLoad = true;
-    CalendarScheduleFileHandler::load();
+    // CalendarScheduleFileHandler::load();
     CalendarScheduleFileHandler::calendar_t *calendar;
     for (int i = 0; i < CALENDAR_SCHEDULE_ELEMENT_MAX; ++i) {
         calendar = &_calendar[i];
@@ -214,6 +223,10 @@ void CalendarScheduleFileHandler::saveToFileSystem() {
 
     File fs_handle;
     fs_handle = _fs->open(CALENDAR_SCHEDULE_PATH, "w");
+    if (!fs_handle) {
+        CALENDAR_FILE_TAG_CONSOLE("Failed to open calendar schedule file for writing");
+        return;
+    }
     root.prettyPrintTo<File>(fs_handle);
     fs_handle.close();
 
@@ -225,12 +238,20 @@ void CalendarScheduleFileHandler::syncFromFileSystem() {
 
     if (!_fs->exists(CALENDAR_SCHEDULE_PATH)) {        
         fs_handle = _fs->open(CALENDAR_SCHEDULE_PATH, "w");
+        if (!fs_handle) {
+            CALENDAR_FILE_TAG_CONSOLE("Failed to open calendar schedule file for writing");
+            return;
+        }
         fs_handle.printf_P(calendarScheduleDefault);
         fs_handle.close();
         CALENDAR_FILE_TAG_CONSOLE("Init data succeed!");
     }
 
-    fs_handle = _fs->open(CALENDAR_SCHEDULE_PATH, "r");    
+    fs_handle = _fs->open(CALENDAR_SCHEDULE_PATH, "r"); 
+    if (!fs_handle) {
+        CALENDAR_FILE_TAG_CONSOLE("Failed to open calendar schedule file for reading");
+        return;
+    }   
     
     const size_t capacity = CALENDAR_SCHEDULE_ELEMENT_MAX*JSON_ARRAY_SIZE(7) + JSON_ARRAY_SIZE(CALENDAR_SCHEDULE_ELEMENT_MAX) + 512;
     DynamicJsonBuffer jsonBuffer(capacity);
@@ -256,3 +277,5 @@ void CalendarScheduleFileHandler::syncFromFileSystem() {
 }
 
 ESPCalendarSchedule CalendarSchedule;
+
+#endif // #if (defined CALENDAR_SCHEDULE_ENABLE) && (CALENDAR_SCHEDULE_ENABLE == 1)

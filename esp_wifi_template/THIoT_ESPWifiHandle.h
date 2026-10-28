@@ -16,7 +16,8 @@
 
 typedef std::function<void(int type)> WiFiLedStatusHandler;
 typedef std::function<void(bool evt, IPAddress ip)> WiFiConnectionHandler;
-typedef std::function<void(bool evt)> WiFiOTAHandler;
+/* OTA state reported to the application (see ESPWifiHandle::enum below) */
+typedef std::function<void(int evt)> WiFiOTAHandler;
 
 class ESPWifiHandle
 {
@@ -84,6 +85,15 @@ public:
     void onOTA(WiFiOTAHandler handler) { _otaFunc = handler; }
     boolean IsConnected() { return _IsConnected; }
     boolean IsOTA() { return _IsOTA; }
+public:
+    /* OTA state machine reported through onOTA() */
+    enum {
+        OTA_STOP = 0,
+        OTA_START = 1,
+        OTA_PROGRESS = 2,
+        OTA_SUCCESS = 3
+    };
+
     void OTAStart();
     void OTAStop();
     void OTASuccess();

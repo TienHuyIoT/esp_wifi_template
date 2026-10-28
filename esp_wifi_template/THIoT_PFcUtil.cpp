@@ -4,8 +4,12 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <Arduino.h>
+#include "THIoT_APPConfig.h"
 #include "THIoT_PFCommonUtil.h"
 #include "THIoT_PFcUtil.h"
+#include "THIoT_PFSerialTrace.h"
+
+#define UTILS_TAG_CONSOLE(...)  //CONSOLE_TAG_LOGI("[UTILS] ", __VA_ARGS__)
 
 #define V_BUFFER    256
 int vspfunc(size_t (*write_cb)(uint8_t*, size_t), const char *format, ...)
@@ -186,6 +190,41 @@ uint8_t crc_xor(const uint8_t *buff, uint32_t length)
   return crc;
 }
 
+uint32_t crc_u32_check(uint32_t u32) {
+  uint8_t crc, crc_cost;
+  crc_cost = (uint8_t)((u32 & 0xFF000000) >> 24);
+#if (LITTLE_ENDIAN_TYPE == 1)
+  crc = crc_xor((uint8_t*)&u32, sizeof(uint32_t) - 1);
+#else
+  crc = crc_xor((uint8_t*)&u32 + 1, sizeof(uint32_t) - 1);
+#endif
+  if (crc == crc_cost) {
+    return u32 & 0xFFFFFF;
+  }
+  return 0; // error
+}
+
+uint32_t crc_u32_update(uint32_t u32) {
+  uint32_t crc;
+#if (0)
+  uint8_t *pU32 = (uint8_t*)&u32;
+  UTILS_TAG_CONSOLE("u32 = %u, 0x%08lX, %02X %02X %02X %02X", u32, u32, pU32[0], pU32[1], pU32[2], pU32[3]);
+#endif
+  u32 &= 0xFFFFFF;
+  
+#if (LITTLE_ENDIAN_TYPE == 1)
+  crc = crc_xor((uint8_t*)&u32, sizeof(uint32_t) - 1);
+#else
+  crc = crc_xor((uint8_t*)&u32 + 1, sizeof(uint32_t) - 1);
+#endif
+  u32 |= (crc << 24);
+
+  UTILS_TAG_CONSOLE("crc = 0x%08lX", crc);
+  UTILS_TAG_CONSOLE("u32 = %u, 0x%08lX", u32, u32);
+  
+  return u32;
+}
+
 /* Brief: swap ddmmyy --> 20yymmdd
  * 
  */
@@ -211,4 +250,16 @@ int str_cmp_find_index(const char *const *literal, const char *strIn)
     }
 
     return index;
+}
+
+uint8_t long_strtok(char* str, const char* delimiters, long* array, uint8_t length) {
+  char *pch;
+  uint8_t fields = 0;
+  pch = strtok ((char*)str, delimiters);
+  while (pch != NULL && fields < length) {
+    array[fields++] = atol(pch);
+    pch = strtok (NULL, delimiters);
+  }
+
+  return fields;
 }

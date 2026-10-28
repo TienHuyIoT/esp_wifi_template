@@ -21,8 +21,8 @@ public:
 class ESPBlinkGPIO
 {
 private:
-    const int _gpio;
-    const bool _stLevel; // stable level
+    int8_t _gpio;
+    bool _stLevel; // stable level (OFF)
     int _firstHalf_ms;
     int _endHalf_ms;
     int _counter;
@@ -32,12 +32,16 @@ private:
     void firstHalfLevel();
     void endHalfLevel();
 public:
-    ESPBlinkGPIO(const int gpio, const bool stLevel);
+    ESPBlinkGPIO( const bool stLevel, const int8_t gpio = -1);
     ~ESPBlinkGPIO();
     void attach(int firstHalf_ms, int endHalf_ms, int counter = 0 /* Forever */);
     void detach();
     void statusUpdate(int source);
     void setCycleCallbacks(ESPBlinkCycleCallbacks* cb);
+    void gpioSet(int8_t gpio);
+    void stLevelSet(bool stLevel);
+    void activeState();
+    void deactiveState();
 };
 
 #endif // __ESP_BLINK_GPIO_H

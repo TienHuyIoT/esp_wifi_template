@@ -120,7 +120,7 @@ static void lwipTaskHandleCapture(void *ctx) {
 FactoryButton factorySysParams(FACTORY_INPUT_PIN);
 #endif
 #if (defined LED_STATUS_GPIO) && (LED_STATUS_GPIO != -1)
-ESPBlinkGPIO LEDStatus(LED_STATUS_GPIO, HIGH);
+ESPBlinkGPIO LEDStatus(HIGH, LED_STATUS_GPIO); /* v3 signature: (stable/off level, gpio) */
 #endif
 
 void setup() {
@@ -201,6 +201,17 @@ void setup() {
 
     /* Confirm the running image so the bootloader does not roll it back */
     esp_ota_confirm_image_rollback();
+
+#if defined(CORE_DUMP_TRACE_RECORD) && (CORE_DUMP_TRACE_RECORD == 1)
+    /* The file system is up at this point: record a pending core dump (if any)
+     * and reboot so the crash is not overwritten by the next one. */
+    if (gAppCoreDump.record()) {
+        MAIN_TAG_CONSOLE("Restart system after core dump record");
+        delay(100);
+        esp_restart();
+        return;
+    }
+#endif
 
     /* SoftReset configuration: heap guard + trace/console enable flags stored in
      * /SOFT_RESET.TXT (load() must run after the FS is mounted). */
@@ -308,11 +319,14 @@ void setup() {
             pingInternet.end();
         }
     });
-    ESPWifi.onOTA([](bool evt){
-        if (evt) {
+    ESPWifi.onOTA([](int evt){
+        if (evt == ESPWifiHandle::OTA_START) {
             MAIN_TAG_CONSOLE("Ping service stop");
             pingGateway.pingStop();
             pingInternet.pingStop();
+        }
+        else if (evt == ESPWifiHandle::OTA_SUCCESS) {
+            MAIN_TAG_CONSOLE("OTA succeed");
         }
         else {
             MAIN_TAG_CONSOLE("Ping service continue");

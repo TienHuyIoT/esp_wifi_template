@@ -122,7 +122,6 @@ private:
     static ETHLedStatusHandler _ledStatusFunc;
     static boolean _IsConnected;
     static ETHConnectionHandler _connectionFunc;
-
 public:
     ESPEthernet(/* args */);
     ~ESPEthernet();
@@ -135,8 +134,8 @@ public:
 #endif
     void OnLedStatus(ETHLedStatusHandler handler) { _ledStatusFunc = handler; }
     boolean IsConnected() { return _IsConnected; }
-    boolean disconnectEvt(bool first = 0);
-    boolean connectedEvt();
+    void disconnectEvt(bool first = false);
+    void connectedEvt();
     void onConnection(ETHConnectionHandler handler) { _connectionFunc = handler; }
 };
 

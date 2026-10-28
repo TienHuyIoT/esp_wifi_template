@@ -1,3 +1,9 @@
+/* NOTE: CALENDAR_SCHEDULE_ENABLE is defined in THIoT_APPConfig.h, so it must be
+ * included before the enable guard below (otherwise the whole translation unit
+ * is skipped and the ESPTimeAlarmClass methods stay undefined). */
+#include "THIoT_APPConfig.h"
+
+
 /*
   TimeAlarms.cpp - Arduino Time alarms for use with Time library
   Copyright (c) 2008-2011 Michael Margolis.
@@ -18,12 +24,14 @@
               - this fixes bug in repeating weekly alarms - thanks to Vincent Valdy and draythomp for testing
 */
 
+#if (defined CALENDAR_SCHEDULE_ENABLE) && (CALENDAR_SCHEDULE_ENABLE == 1)
+
 #include "THIoT_ESPTimeAlarms.h"
 #include "THIoT_PFSerialTrace.h"
 #include "THIoT_ESPLogTrace.h"
 
-#define ALARM_TAG_CONSOLE(...)      SERIAL_TAG_LOGI("[ALARM]", __VA_ARGS__)
-#define TIME_ALARM_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[TIME_ALARM]", __VA_ARGS__)
+#define ALARM_TAG_CONSOLE(...)      //CONSOLE_TAG_LOGI("[ALARM]", __VA_ARGS__)
+#define TIME_ALARM_TAG_CONSOLE(...) //CONSOLE_TAG_LOGI("[TIME_ALARM]", __VA_ARGS__)
 #define TIME_ALARM_TAG_LOG(...)     //FS_TAG_LOGI("[TIME_ALARM]", __VA_ARGS__)
 
 #define IS_ONESHOT  true   // constants used in arguments to create method
@@ -138,7 +146,7 @@ time_t ESPTimeAlarmClass::AlarmHMS(int H, int M, int S) {
     time_t diff = t2-previousMidnight(t1);
     TIME_ALARM_TAG_CONSOLE("H = %u, M = %u, S = %u, ", H, M, S);
     TIME_ALARM_TAG_CONSOLE("t1 = %d, t2 = %d, diff = %d", t1, t2, diff);
-    
+
     diff %= SECS_PER_DAY;
     return diff;
 }
@@ -353,3 +361,5 @@ AlarmID_t ESPTimeAlarmClass::create(time_t value, OnTick_t onTickHandler, uint8_
 }
 
 } // namespace espTimeAlarm
+
+#endif // #if (defined CALENDAR_SCHEDULE_ENABLE) && (CALENDAR_SCHEDULE_ENABLE == 1)
