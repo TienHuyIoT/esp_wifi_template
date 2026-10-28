@@ -107,6 +107,7 @@ void THIoT_ESPTaskMonitor::begin(size_t interval) {
 #if (CONSOLE_TRACE_TASK_ENABLE == 1)
             self->addTask(&_console_trace_task_handle);
 #endif
+            self->addTask(&_ping_service_task_handle);
             self->addTask(&_lwIP_TaskHandle);
             self->addTask(&loopTaskHandle);
             self->log();

@@ -5,6 +5,7 @@
 #include <WiFi.h>
 #include <WiFiType.h>
 #include <Update.h>
+#include "esp_task_wdt.h"
 #include "THIoT_ESPEventSignal.h"
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>
@@ -12,6 +13,9 @@
 #include "flash_hal.h"
 #endif
 #include "THIoT_ESPConfig.h"
+#include "THIoT_APPConfig.h"
+#include "THIoT_ESPEEPromParams.h"
+#include "THIoT_PFTicker.h"
 #include "THIoT_ESPWifiHandle.h"
 #include "THIoT_PFSerialTrace.h"
 #include "THIoT_ESPSysParams.h"
@@ -21,11 +25,24 @@
 #include "THIoT_ESPLogTrace.h"
 #include "THIoT_ESPWebserver.h"
 
-
 #define WEB_SERVER_DBG_PORT         SERIAL_PORT
-#define WEB_SERVER_DBG_PRINTF(...)  SERIAL_LOGI(__VA_ARGS__)
-#define WEB_SERVER_TAG_CONSOLE(...) SERIAL_TAG_LOGI("[WEB]", __VA_ARGS__)
+#define WEB_FOTA_TAG_CONSOLE(...)   CONSOLE_TAG_LOGI("[WEB_OTA]", __VA_ARGS__)
+#define WEB_FS_TAG_CONSOLE(...)     CONSOLE_TAG_LOGI("[WEB_FS]", __VA_ARGS__)
+#if (WEB_SERVER_CONSOLE_ENABLE == 1)
+#define WEB_SERVER_DBG_PRINTF(...)  CONSOLE_LOGI(__VA_ARGS__)
+#define WEB_SERVER_TAG_CONSOLE(...) CONSOLE_TAG_LOGI("[WEB_Server]", __VA_ARGS__)
+#else
+#define WEB_SERVER_DBG_PRINTF(...)
+#define WEB_SERVER_TAG_CONSOLE(...)
+#endif
+
 #define WEB_TAG_LOG(...)            FS_TAG_LOGI("[WEB]", __VA_ARGS__)
+
+#define WEB_SERVER_START_TIMEOUT_MS 10000U // 10 seconds
+
+// #include "log_pump.h"
+extern boolean pumpLogTotalEnterCritical(const char* path);
+extern boolean pumpLogTotalExitCritical(const char* path);
 
 static WebServerURLHandleCallbacks defaultCallbacks;
 
@@ -34,10 +51,12 @@ class RedirectUrlHandler : public AsyncWebHandler
 public:
   RedirectUrlHandler() {}
   virtual ~RedirectUrlHandler() {}
-
+#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
   bool canHandle(AsyncWebServerRequest *request) const override
+#else
+  bool canHandle(AsyncWebServerRequest *request) override
+#endif
   {
-    (void) request;
     return true;
   }
 
@@ -54,7 +73,7 @@ public:
   }
 };
 
-ESPWebServer::ESPWebServer(/* args */)
+ESPWebServer::ESPWebServer(/* args */) : _isStarted(false)
 {
 }
 
@@ -63,17 +82,18 @@ ESPWebServer::~ESPWebServer()
   this->end();
 }
 
-AsyncWebServer* ESPWebServer::_server = nullptr;
-AsyncWebServer* ESPWebServer::_server80 = nullptr;
+#if (WEB_SERVER_REDIRECT_ENABLE == 1)
+AsyncWebServer ESPWebServer::_server80(80);
+#endif
+AsyncWebServer ESPWebServer::_server(80);
 ESPWebsocket* ESPWebServer::_wsHandler = nullptr;
 std::vector<WebServerURLHandleCallbacks*> ESPWebServer::_pUrlCallbacks = {};
 asyncHttpHandler ESPWebServer::_httpGetAuthHandler = nullptr;
 asyncHttpHandler ESPWebServer::_httpGetHandler = nullptr;
 asyncHttpHandler ESPWebServer::_httpPostAuthHandler = nullptr;
-ESPFSEditor* ESPWebServer::_spiffsEditor = nullptr;
-ESPFsPart* ESPWebServer::_spiffsPart = nullptr;
+AsyncRateLimitMiddleware ESPWebServer::_rateLimitSpiffs;
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-ESPFSEditor* ESPWebServer::_sdCardEditor = nullptr;
+AsyncRateLimitMiddleware ESPWebServer::_rateLimitSdCard;
 #endif
 String ESPWebServer::_adminAuthUser = String();
 String ESPWebServer::_adminAuthPass = String();
@@ -93,6 +113,7 @@ void ESPWebServer::onUrlHandle(WebServerURLHandleCallbacks* pCallbacks)
   }
 }
 
+#if (0)
 void ESPWebServer::fs_editor_status(AsyncWebServerRequest *request)
 {
   uint64_t totalBytes, usedBytes;
@@ -163,11 +184,12 @@ void ESPWebServer::fs_editor_status(AsyncWebServerRequest *request)
   request->send(200, "application/json", output);
   output = String();
 }
+#endif
 
 uint8_t ESPWebServer::authentication_level(AsyncWebServerRequest *request)
 {
   uint8_t level;
-  if (request->authenticate("admin", "1234"))
+  if (request->authenticate("admin", "25123"))
   {
     level = HTTP_AUTH_LV0;
   }
@@ -188,6 +210,14 @@ uint8_t ESPWebServer::authentication_level(AsyncWebServerRequest *request)
   return level;
 }
 
+#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
+void ESPWebServer::authenticationCallBack(AsyncWebServerRequest* request, ArMiddlewareNext next) {
+  if (authentication_level(request) != HTTP_AUTH_FAIL) {
+    next();
+  }
+}
+#endif
+
 void ESPWebServer::updatePrintProgress(size_t prg, size_t sz)
 {
   uint32_t per = prg * 100 / sz;
@@ -200,7 +230,7 @@ void ESPWebServer::updatePrintProgress(size_t prg, size_t sz)
   {
     char p[5];
     _flashUpdatePercent = per;
-    WEB_SERVER_TAG_CONSOLE("Progress: %u%%", _flashUpdatePercent);
+    WEB_FOTA_TAG_CONSOLE("Progress: %u%%", _flashUpdatePercent);
     snprintf(p, 5, "%u", _flashUpdatePercent);
     _wsHandler->eventsSend(p, "dfu");
   }
@@ -213,6 +243,7 @@ void ESPWebServer::updatePrintProgress(size_t prg, size_t sz)
 uint32_t ESPWebServer::_sdUploadPercent = 0;
 void ESPWebServer::sdfsPrintProgress(size_t prg, size_t sz)
 {
+  if (0 == sz) return;
   uint32_t per = prg * 100 / sz;
 #ifdef ESP32
   if (_sdUploadPercent != per)
@@ -223,7 +254,7 @@ void ESPWebServer::sdfsPrintProgress(size_t prg, size_t sz)
   {
     char p[5];
     _sdUploadPercent = per;
-    WEB_SERVER_TAG_CONSOLE("Progress: %u%%", _sdUploadPercent);
+    WEB_FS_TAG_CONSOLE("[SDFS] Progress: %u%%", _sdUploadPercent);
     snprintf(p, 5, "%u", _sdUploadPercent);
     _wsHandler->eventsSend(p, "sdfs");
   }
@@ -234,6 +265,7 @@ void ESPWebServer::sdfsPrintProgress(size_t prg, size_t sz)
 
 void ESPWebServer::spiffsPrintProgress(size_t prg, size_t sz)
 {
+  if (0 == sz) return;
   uint32_t per = prg * 100 / sz;
 #ifdef ESP32
   if (_spiffsUploadPercent != per)
@@ -244,7 +276,7 @@ void ESPWebServer::spiffsPrintProgress(size_t prg, size_t sz)
   {
     char p[5];
     _spiffsUploadPercent = per;
-    WEB_SERVER_TAG_CONSOLE("Progress: %u%%", _spiffsUploadPercent);
+    WEB_FS_TAG_CONSOLE("[LITTLEFS] Progress: %u%%", _spiffsUploadPercent);
     snprintf(p, 5, "%u", _spiffsUploadPercent);
     _wsHandler->eventsSend(p, "spiffs");
   }
@@ -288,7 +320,7 @@ void ESPWebServer::printHandleRequest(AsyncWebServerRequest *request)
   message += "\nArguments: ";
   message += request->params();
   message += "\n";
-  for (uint8_t i = 0; i < request->params(); i++)
+  for (size_t i = 0; i < request->params(); i++)
   {
     const AsyncWebParameter* p = request->getParam(i);
     message += " NAME:" + p->name() + "\n VALUE:" + p->value() + "\n";
@@ -304,15 +336,7 @@ void ESPWebServer::begin(ESPWebsocket* ws)
   _adminAuthPass = ESPConfig.authAdminPass();
   _userAuthUser = ESPConfig.authUserUser();
   _userAuthPass = ESPConfig.authUserPass();
-
-  /* Protect server port don't less 80 */
-  if (ESPConfig.tcpPort() < 80) {
-    // set server port default
-    ESPConfig.tcpPortSet(SERVER_PORT_DEFAULT);
-  }
   
-  WEB_SERVER_TAG_CONSOLE("Init Web Server Port: %u", ESPConfig.tcpPort());
-  _server = new AsyncWebServer(ESPConfig.tcpPort());
 #ifdef ESP32
   /* Register esp32 event scan done */
   WiFi.onEvent(
@@ -339,47 +363,52 @@ void ESPWebServer::begin(ESPWebsocket* ws)
     }
   }
 
-  /* redirect port 80 to tcp port */
-  if (ESPConfig.tcpPort() != 80)
-  {
-    _server80 = new AsyncWebServer(80);
-    _server80->addHandler(new RedirectUrlHandler());
-    _server80->begin();
-  }
-
-  _server->addHandler(&_wsHandler->asyncWs());
-  _server->addHandler(&_wsHandler->asyncEvents());
+  _server.addHandler(&_wsHandler->asyncEvents());
+  _server.addHandler(&_wsHandler->asyncWs());
 
   // uri handle = "/edit"
-  _spiffsEditor = new ESPFSEditor(NAND_FS_SYSTEM, FS_EDITOR_NAND_TYPE);
-  _spiffsEditor->onAuthenticate([](AsyncWebServerRequest *request){
+#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
+  littleFsEditor.addMiddleware(&authenticationCallBack);
+  // W5: real budget = EDITOR_DOWNLOAD_COUNTER_LIMIT requests per EDITOR_DOWNLOAD_COUNTER_RESET_TIMEOUT/1000 s (20 per 10 s)
+  _rateLimitSpiffs.setMaxRequests(EDITOR_DOWNLOAD_COUNTER_LIMIT);
+  _rateLimitSpiffs.setWindowSize(EDITOR_DOWNLOAD_COUNTER_RESET_TIMEOUT / 1000);
+  littleFsEditor.addMiddleware(&_rateLimitSpiffs);
+#else
+  littleFsEditor.onAuthenticate([](AsyncWebServerRequest *request){
     return (authentication_level(request) != HTTP_AUTH_FAIL);
   });
-  _spiffsEditor->onProgress(spiffsPrintProgress);
-  _spiffsEditor->onStatus(fs_editor_status);
-  _server->addHandler(_spiffsEditor);
-
-  // uri handle = "/fs_part"
-  _spiffsPart = new ESPFsPart(NAND_FS_SYSTEM, FS_PART_NAND_TYPE);
-  _spiffsPart->onAuthenticate([](AsyncWebServerRequest *request){
-    return (authentication_level(request) != HTTP_AUTH_FAIL);
-  });
-  _server->addHandler(_spiffsPart);
+#endif
+  littleFsEditor.onProgress(spiffsPrintProgress);
+  // littleFsEditor.onStatus(fs_editor_status);
+  _server.addHandler(&littleFsEditor);
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
   // uri handle = "/edit_sdfs"
-  _sdCardEditor = new ESPFSEditor(SD_FS_SYSTEM, FS_EDITOR_SD_TYPE);
-  _sdCardEditor->onAuthenticate([](AsyncWebServerRequest *request){
+#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
+  sdCardEditor.addMiddleware(&authenticationCallBack);
+  // W5: real budget = EDITOR_DOWNLOAD_COUNTER_LIMIT requests per EDITOR_DOWNLOAD_COUNTER_RESET_TIMEOUT/1000 s (20 per 10 s)
+  _rateLimitSdCard.setMaxRequests(EDITOR_DOWNLOAD_COUNTER_LIMIT);
+  _rateLimitSdCard.setWindowSize(EDITOR_DOWNLOAD_COUNTER_RESET_TIMEOUT / 1000);
+  sdCardEditor.addMiddleware(&_rateLimitSdCard);
+#else
+  sdCardEditor.onAuthenticate([](AsyncWebServerRequest *request){
     return (authentication_level(request) != HTTP_AUTH_FAIL);
   });
-  _sdCardEditor->onProgress(sdfsPrintProgress);
-  _sdCardEditor->onStatus(fs_editor_status);
-  _server->addHandler(_sdCardEditor);
+#endif
+  sdCardEditor.onProgress(sdfsPrintProgress);
+#if (DATE_LOG_APP_OPTION == MT_API) && (PUMP_LOG_TOTAL_MUTEX_ON == 1) 
+  sdCardEditor.onSemaphoreTake(pumpLogTotalEnterCritical);
+  sdCardEditor.onSemaphoreGive(pumpLogTotalExitCritical);
+#endif
+  // sdCardEditor->onStatus(fs_editor_status);
+  _server.addHandler(&sdCardEditor);
 #endif
 
-  _server->on("/get", HTTP_GET, [](AsyncWebServerRequest *request)
+  _server.on("/get", HTTP_GET, [](AsyncWebServerRequest *request)
           {
+#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 0)
             if (authentication_level(request) != HTTP_AUTH_FAIL)
+#endif
             {
               if (_httpGetAuthHandler)
               {
@@ -404,9 +433,14 @@ void ESPWebServer::begin(ESPWebsocket* ws)
                 }
               }
             }
-          });
+          })
+#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
+          .addMiddleware(&authenticationCallBack);
+#else
+          ;
+#endif
 
-  _server->on("/get_open", HTTP_GET,
+  _server.on("/get_open", HTTP_GET,
           [](AsyncWebServerRequest *request)
           {
             if (_httpGetHandler)
@@ -421,6 +455,7 @@ void ESPWebServer::begin(ESPWebsocket* ws)
               {
                 if (elem->onHttpGet(request) != -1)
                 {
+                  hasHandler = true;
                   break;
                 }
               }
@@ -432,9 +467,12 @@ void ESPWebServer::begin(ESPWebsocket* ws)
             }
           });
 
-  _server->on("/post", HTTP_POST, [](AsyncWebServerRequest *request)
+  _server.on("/post", HTTP_POST, 
+          [](AsyncWebServerRequest *request)
           {
+#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 0)
             if (authentication_level(request) != HTTP_AUTH_FAIL)
+#endif
             {
               if (_httpPostAuthHandler)
               {
@@ -459,16 +497,59 @@ void ESPWebServer::begin(ESPWebsocket* ws)
                 }
               }
             }
-          });
+          })
+#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
+          .addMiddleware(&authenticationCallBack);
+#else
+          ;
+#endif
   
-  
+#if (FIRMWARE_RELEASE_ACTIVATED == 1)
+/* Handling Content-Type: raw (application/json) */
+  _server.on("/petro_counter", HTTP_POST, 
+          [](AsyncWebServerRequest *request)
+          {
+#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 0)
+            if(authentication_level(request) != HTTP_AUTH_FAIL)
+#endif
+            {
+              /* Combination TL and MT */
+              const char resp[] PROGMEM = "{\"Data_type\": 2,\"Error_code\": 0,\"code\": 0,\"data\": {\"dataType\": 2}}";
+              AsyncWebServerResponse *response = request->beginResponse(200, "text/json", resp);
+              request->send(response);
+            } 
+          }, nullptr, 
+          [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
+          {
+            if(!index)
+            {
+              WEB_SERVER_TAG_CONSOLE("BodyStart: %u", total);
+            }
+#if (WEB_SERVER_CONSOLE_ENABLE == 1)
+            WEB_SERVER_DBG_PORT.println("[WEB] Data: ");
+            WEB_SERVER_DBG_PORT.write(data, len);
+            WEB_SERVER_DBG_PORT.println();
+#endif
+            if((index + len) == total)
+            {
+              WEB_SERVER_TAG_CONSOLE("BodyEnd: %u", total);
+            } 
+          })
+#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
+          .addMiddleware(&authenticationCallBack);
+#else
+          ;
+#endif
+
   /* Handling Content-Type: raw (application/json) */
-  _server->on("/petro_counter", HTTP_POST, [](AsyncWebServerRequest *request){
+  _server.on("/petro_status", HTTP_POST, [](AsyncWebServerRequest *request){
+#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 0)
     if(authentication_level(request) != HTTP_AUTH_FAIL)
+#endif
     {
-      String resp = "{\"Data_type\": 2,\"Error_code\": 0}";
+      /* Combination TL and MT */
+      const char resp[] PROGMEM = "{\"Data_type\": 1,\"Error_code\": 0,\"code\": 0,\"data\": {\"dataType\": 1}}";
       AsyncWebServerResponse *response = request->beginResponse(200, "text/json", resp);
-      response->addHeader("Connection", "disconnect");
       request->send(response);
     }
   }, nullptr
@@ -477,14 +558,24 @@ void ESPWebServer::begin(ESPWebsocket* ws)
     {
       WEB_SERVER_TAG_CONSOLE("BodyStart: %u", total);
     }
+#if (WEB_SERVER_CONSOLE_ENABLE == 1)
+    WEB_SERVER_DBG_PORT.println("[WEB] Data: ");
     WEB_SERVER_DBG_PORT.write(data, len);
+    WEB_SERVER_DBG_PORT.println();
+#endif
     if((index + len) == total)
     {
       WEB_SERVER_TAG_CONSOLE("BodyEnd: %u", total);
     }
-  });
+  })
+#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
+  .addMiddleware(&authenticationCallBack);
+#else
+  ;
+#endif
+#endif // #if (FIRMWARE_RELEASE_ACTIVATED == 1)
 
-  _server->on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+  _server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     uint8_t level = authentication_level(request);
     switch (level) {
       case HTTP_AUTH_LV0:
@@ -498,38 +589,76 @@ void ESPWebServer::begin(ESPWebsocket* ws)
       default:
       break;
     }
-  });
+  })
+#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
+    .addMiddleware(&authenticationCallBack);
+#else
+    ;
+#endif
 
   /* Serving files in directory. Serving static files with authentication */
-  _server->serveStatic("/", NAND_FS_SYSTEM, "/").setDefaultFile("index.htm").setAuthentication(_adminAuthUser.c_str(), _adminAuthPass.c_str());
+#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
+  _server.serveStatic("/", NAND_FS_SYSTEM, "/").addMiddleware(&authenticationCallBack);
+#else
+  _server.serveStatic("/", NAND_FS_SYSTEM, "/").onAuthenticate([](AsyncWebServerRequest *request){
+    return (authentication_level(request) != HTTP_AUTH_FAIL);
+  });
+#endif
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-  _server->serveStatic("/onsd", SD_FS_SYSTEM, "/").setAuthentication(_adminAuthUser.c_str(), _adminAuthPass.c_str());
+#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
+  if (SDCard.statusIsOk()) {
+    _server.serveStatic("/onsd", SD_FS_SYSTEM, "/").addMiddleware(&authenticationCallBack);
+  } else {
+    _server.serveStatic("/onsd", NAND_FS_SYSTEM, "/").addMiddleware(&authenticationCallBack);
+  }
+#else
+  if (SDCard.statusIsOk()) {
+    _server.serveStatic("/onsd", SD_FS_SYSTEM, "/").onAuthenticate([](AsyncWebServerRequest *request){
+      return (authentication_level(request) != HTTP_AUTH_FAIL);
+    });
+  } else {
+    _server.serveStatic("/onsd", NAND_FS_SYSTEM, "/").onAuthenticate([](AsyncWebServerRequest *request){
+      return (authentication_level(request) != HTTP_AUTH_FAIL);
+    });
+  }
+#endif
 #endif
 
   // Simple Firmware Update Form
-  _server->on("/update", HTTP_GET, [](AsyncWebServerRequest *request)
+  _server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request)
              {
                if (authentication_level(request) == HTTP_AUTH_LV0)
                {
                  request->send(200, "text/html", "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>");
                }
              });
-  _server->on(
+  _server.on(
       "/update", HTTP_POST, [](AsyncWebServerRequest *request)
       {
         AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", !Update.hasError() ? "Update OK" : "Update FAIL");
+        /* 08/02/2025
+          E (5640550) task_wdt: Task watchdog got triggered. The following tasks did not reset the watchdog in time:
+          E (5640550) task_wdt:  - asyncTcpSock (CPU 0/1)
+          E (5640550) task_wdt: Tasks currently running:
+          E (5640550) task_wdt: CPU 0: IDLE0
+          E (5640550) task_wdt: CPU 1: loopTask
+          */
+        esp_task_wdt_reset();
         response->addHeader("Connection", "close");
         request->send(response);
         _IsUpdate = false;
-        ESPWifi.OTAStop();
+        if (!request->hasArg("ota_event")) {
+          ESPWifi.OTAStop();
+        }
         if (!Update.hasError())
         {
           updatePrintProgress(100, 100); // 100% --> Done
           WEB_TAG_LOG("[OTA] Succeed");
           if (U_FLASH == _flashUpdateType)
           {
-            SOFTReset.enable(500, ESPSoftReset::OTA_UPDATE_TYPE);
+            ESPWifi.OTASuccess();
+            SOFTReset.enable(1000, ESPSoftReset::OTA_UPDATE_TYPE);
           }
           else
           {
@@ -551,7 +680,10 @@ void ESPWebServer::begin(ESPWebsocket* ws)
         {
           WEB_SERVER_TAG_CONSOLE("[OTA] file: %s, size=%u", filename.c_str(), length);
           WEB_TAG_LOG("[OTA] file: %s, size = %u", filename.c_str(), length);
-          ESPWifi.OTAStart();
+
+          if (!request->hasArg("ota_event")) {
+            ESPWifi.OTAStart();
+          }
           _IsUpdate = true;
 #ifdef ESP8266
           _updateProgress = 0;
@@ -584,36 +716,69 @@ void ESPWebServer::begin(ESPWebsocket* ws)
           if (!Update.begin(length, _flashUpdateType))
 #endif
           {
+#if (WEB_SERVER_CONSOLE_ENABLE == 1)
             Update.printError(WEB_SERVER_DBG_PORT);
-            ESPWifi.OTAStop();
+#endif
             _IsUpdate = false;
           }
         }
+
         if (!Update.hasError())
         {
+          /* 08/02/2025
+            E (5640550) task_wdt: Task watchdog got triggered. The following tasks did not reset the watchdog in time:
+            E (5640550) task_wdt:  - asyncTcpSock (CPU 0/1)
+            E (5640550) task_wdt: Tasks currently running:
+            E (5640550) task_wdt: CPU 0: IDLE0
+            E (5640550) task_wdt: CPU 1: loopTask
+            */
+          esp_task_wdt_reset();
           if (Update.write(data, len) != len)
           {
+#if (WEB_SERVER_CONSOLE_ENABLE == 1)
             Update.printError(WEB_SERVER_DBG_PORT);
+#endif
           }
           _updateProgress += len;
           updatePrintProgress(_updateProgress, length);
+        } else {
+          _IsUpdate = false;
         }
-        if (final)
-        {
+
+        if (!_IsUpdate) {
+          ESPWifi.OTAStop();
+          Update.end(true); // End update with error
+          updatePrintProgress(101, 100); // 101% --> Fail
+          WEB_TAG_LOG("[OTA] Failed");
+          request->abort();
+        }
+
+        if (final) { 
+          /* 08/02/2025
+            E (5640550) task_wdt: Task watchdog got triggered. The following tasks did not reset the watchdog in time:
+            E (5640550) task_wdt:  - asyncTcpSock (CPU 0/1)
+            E (5640550) task_wdt: Tasks currently running:
+            E (5640550) task_wdt: CPU 0: IDLE0
+            E (5640550) task_wdt: CPU 1: loopTask
+            */
+          esp_task_wdt_reset();
           if (Update.end(true))
           {
             WEB_SERVER_TAG_CONSOLE("Update Success: %uB", index + len);
           }
+#if (WEB_SERVER_CONSOLE_ENABLE == 1)
           else
           {
             Update.printError(WEB_SERVER_DBG_PORT);
           }
+#endif
         }
       });
 
-  _server->onNotFound(
+  _server.onNotFound(
       [](AsyncWebServerRequest *request)
       {
+#if (WEB_SERVER_CONSOLE_ENABLE == 1)
         WEB_SERVER_TAG_CONSOLE("NOT_FOUND: ");
         if (request->method() == HTTP_GET)
           WEB_SERVER_TAG_CONSOLE("GET");
@@ -640,7 +805,7 @@ void ESPWebServer::begin(ESPWebsocket* ws)
         }
 
         int headers = request->headers();
-        int i;
+        size_t i;
         for (i = 0; i < headers; i++)
         {
           const AsyncWebHeader *h = request->getHeader(i);
@@ -664,38 +829,89 @@ void ESPWebServer::begin(ESPWebsocket* ws)
             WEB_SERVER_TAG_CONSOLE("_GET[%s]: %s", p->name().c_str(), p->value().c_str());
           }
         }
-
+#endif
         request->send(404);
       });
 
-  _server->onFileUpload(
+#if (WEB_SERVER_CONSOLE_ENABLE == 1)
+  _server.onFileUpload(
       [](AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data, size_t len, bool final)
       {
         if (!index)
         {
           WEB_SERVER_TAG_CONSOLE("UploadStart: %s", filename.c_str());
         }
+#if (WEB_SERVER_CONSOLE_ENABLE == 1)
         WEB_SERVER_DBG_PORT.write(data, len);
+#endif
         if (final)
         {
           WEB_SERVER_TAG_CONSOLE("UploadEnd: %s (%u)", filename.c_str(), index + len);
         }
       });
 
-  _server->onRequestBody(
+  _server.onRequestBody(
       [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
       {
         if (!index)
         {
           WEB_SERVER_TAG_CONSOLE("BodyStart: %u", total);
         }
+#if (WEB_SERVER_CONSOLE_ENABLE == 1)
         WEB_SERVER_DBG_PORT.write(data, len);
+#endif
         if (index + len == total)
         {
           WEB_SERVER_TAG_CONSOLE("BodyEnd: %u", total);
         }
       });
-  _server->begin();
+#endif
+
+  /* Protect server port don't less 80 */
+  if (ESPConfig.tcpPort() < 80) {
+    // set server port default
+    ESPConfig.tcpPortSet(SERVER_PORT_DEFAULT);
+  }
+
+  if (!EEPParams.isDeviceActivated()) {
+    start();
+  } else {
+    // Start web server once after 15 seconds
+    // This is needed to ensure that the WiFi connection is established before starting the server.
+    WEB_TAG_LOG("Web Server will start after %u seconds", WEB_SERVER_START_TIMEOUT_MS / 1000);
+    // Use a ticker to delay the start of the server
+    allocate_ticker_once_ms(WEB_SERVER_START_TIMEOUT_MS, [](void* arg)
+    {
+      ESPWebServer* pThis = static_cast<ESPWebServer*>(arg);
+      if (pThis) {
+        pThis->start();
+      }
+    }, this);
+  }
+}
+
+void ESPWebServer::start() {
+  if (_isStarted) {
+    WEB_SERVER_TAG_CONSOLE("Web Server already started");
+    return;
+  }
+  _isStarted = true;
+  
+#if (WEB_SERVER_REDIRECT_ENABLE == 1)
+  /* redirect port 80 to tcp port */
+  if (ESPConfig.tcpPort() != 80) {
+    _server80.addHandler(new RedirectUrlHandler());
+    _server80.begin(80);
+  }
+#endif
+  
+  WEB_SERVER_TAG_CONSOLE("Starting Web Server Port: %u", ESPConfig.tcpPort());
+  /* Start web server */
+  if (_server.begin(ESPConfig.tcpPort())) {
+    WEB_TAG_LOG("Web Server started on port %u", ESPConfig.tcpPort());
+  } else {
+    WEB_TAG_LOG("Web Server failed to start on port %u", ESPConfig.tcpPort());
+  }
 }
 
 void ESPWebServer::loop()

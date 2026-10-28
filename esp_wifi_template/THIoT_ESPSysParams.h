@@ -19,6 +19,7 @@ Json arduino assistant: https://arduinojson.org/v5/assistant/
 #define DEVICE_ADDR_LENGTH_MAX  127
 #define DEVICE_TELL_LENGTH_MAX  15
 #define DDNS_SERVICE_LENGTH_MAX 15
+#define DDNS_SERVER_LENGTH_MAX  31
 #define DDNS_DOMAIN_LENGTH_MAX  31
 #define DDNS_USER_LENGTH_MAX    15
 #define DDNS_PASS_LENGTH_MAX    15
@@ -32,17 +33,40 @@ Json arduino assistant: https://arduinojson.org/v5/assistant/
 #define PING_HOST_NUM           2
 
 #define PASS_COMMON_DEFAULT     1234
-#define PASS_EX1_DEFAULT        1234
-#define PASS_EX2_DEFAULT        1234
-#define PASS_EX3_DEFAULT        1234
-#define PASS_EX4_DEFAULT        1234
+#define PASS_PU3_DEFAULT        1234
+#define PASS_COST_DEFAULT       1234
+#define PASS_LOGFILE_DEFAULT    1234
 #define CONFIRM_NUM_MAX         5
 
+/*Has to update the value of the element "version" of the espSysParamsDefault, file wifi_info_file.txt*/
+#define SYS_PARAM_VERSION       1
+
 typedef struct {
+    struct{   
+        uint32_t t_start;
+        uint32_t t_stop;
+        uint32_t t_start1;
+        uint32_t t_stop1;
+        uint32_t t_start2;
+        uint32_t t_stop2;
+    }log_time; 
+
+    struct{   
+        uint32_t t_start1;
+        uint32_t t_stop1;
+        uint32_t t_start2;
+        uint32_t t_stop2;
+        uint32_t t_start3;
+        uint32_t t_stop3;
+    }probe_time; 
     struct {
-        uint16_t 	udp;    /* Udp port, reserved */
-        uint16_t 	tcp;    /* tcp port for webServer */
-        uint16_t    ws;     /* websocket port, not used */
+        uint32_t 	addr;
+        uint16_t    sync_time;
+    }i2c_para;
+    struct {
+        uint16_t 	udp;
+        uint16_t 	tcp;
+        uint16_t    ws;
     }port;    
     struct {
         char        name[DEVICE_NAME_LENGTH_MAX + 1];
@@ -58,7 +82,7 @@ typedef struct {
         char        pass[AUTH_LENGTH_MAX + 1];
     }auth_user;
     
-    uint16_t confirm[CONFIRM_NUM_MAX];
+    uint32_t confirm[CONFIRM_NUM_MAX];
 
     struct {
         IPAddress 	ip;
@@ -67,7 +91,7 @@ typedef struct {
         IPAddress 	dns;
         char 		ssid[SSID_LENGTH_MAX + 1];
         char 		pass[PASS_LENGTH_MAX + 1];
-        char        hostname[HOSTNAME_LENGTH_MAX + 1];                
+        char        hostname[HOSTNAME_LENGTH_MAX+1];                
         uint8_t 	dhcp        : 1;
         uint8_t     disable     : 1;
         uint8_t     smart_cfg   : 1;
@@ -77,13 +101,14 @@ typedef struct {
         IPAddress   sn; 
         char 		ssid[SSID_LENGTH_MAX + 1];
         char 		pass[PASS_LENGTH_MAX + 1];
-        char        dns_name[HOSTNAME_LENGTH_MAX + 1];               
+        char        dns_name[HOSTNAME_LENGTH_MAX+1];               
         uint8_t 	channel : 4;
         uint8_t 	hidden  : 1;
         uint8_t     disable : 1;
     }ap;
     struct {
         char        service[DDNS_SERVICE_LENGTH_MAX + 1];
+        char        server[DDNS_SERVER_LENGTH_MAX + 1];
         char        domain[DDNS_DOMAIN_LENGTH_MAX + 1];
         char        user[DDNS_USER_LENGTH_MAX + 1];
         char        pass[DDNS_PASS_LENGTH_MAX + 1];
@@ -91,6 +116,16 @@ typedef struct {
         uint8_t     sync_time;
         uint8_t     disable : 1;
     }ddns;
+    struct {
+        char        service[DDNS_SERVICE_LENGTH_MAX + 1];
+        char        server[DDNS_SERVER_LENGTH_MAX + 1];
+        char        domain[DDNS_DOMAIN_LENGTH_MAX + 1];
+        char        user[DDNS_USER_LENGTH_MAX + 1];
+        char        pass[DDNS_PASS_LENGTH_MAX + 1];
+        char        ipUrl[DDNS_IPURL_LENGTH_MAX + 1];
+        uint8_t     sync_time;
+        uint8_t     disable : 1;
+    }ddns_private;
     struct {
         char        server1[SNTP_SERVER_LENGTH_MAX + 1];
         char        server2[SNTP_SERVER_LENGTH_MAX + 1];
@@ -107,6 +142,53 @@ typedef struct {
         int         type[PING_HOST_NUM];    /*<! 0: None, 1: reset enable*/
         bool        enable[PING_HOST_NUM];  /*<! 1: enable, 0: disable*/
     }ping;
+    struct {
+        int hw_version;
+        uint32_t CpuFrequencyMhz;
+        struct {
+            int8_t Addr;
+            int8_t RstIO;
+            bool Enable;
+        } LAN;
+        struct {
+            int8_t PIN;
+            int8_t OffState;
+            bool Enable;
+        } LED;
+        struct {
+            uint32_t Freq;
+            int8_t Sda;
+            int8_t Scl;
+            uint8_t TimeScan;
+            bool Enable;
+        } I2C;
+        struct {
+            int Baud;
+            int8_t Serial;
+            int8_t Tx;
+            int8_t Rx;
+            int8_t Rts;
+            bool Enable;
+        } PROBE;
+        struct {
+            int Baud;
+            int8_t Serial;
+            int8_t Tx;
+            int8_t Rx;
+            int8_t Rts;
+            bool Enable;
+        } RFID;
+        struct {
+            int Baud;
+            int8_t Serial;
+            int8_t Tx;
+            int8_t Rx;
+            int8_t Rts;
+            bool Enable;
+        } PRINTER;
+    } hw_cfg;
+    int fw_version;
+    uint8_t version;
 } esp_sys_params_t;
 
 class ESPSysParams
@@ -116,26 +198,74 @@ class ESPSysParams
 public:
     typedef enum : uint8_t {
         CONFIRM_COMMON = 0,
-        CONFIRM_EX1,
-        CONFIRM_EX2,
-        CONFIRM_EX3,
-        CONFIRM_EX4
+        CONFIRM_PU3,
+        CONFIRM_COST,
+        CONFIRM_LOGFILE,
+        CONFIRM_RESERVE
     } passConfirm_t;
+
+    typedef enum : uint8_t {
+        OK_STATUS = 0,
+        ERROR_STATUS,
+        UPDATE_STATUS,
+        ADD_VERION_STATUS,
+        NEW_VERSION_STATUS,
+        ADD_FIRMWARE_STATUS,
+        NEW_FIRMWARE_STATUS,
+        ADD_HARDWARE_STATUS,
+        NEW_HARDWARE_STATUS
+    } syncStatus_t;
 
 private:
     FS *_fs;
     esp_sys_params_t _sys_prams;
-    void syncFromFileSystem();
+    uint32_t _statusUpdate;
+    uint8_t syncFromFileSystem();
     void saveToFileSystem();
 public:
     ESPSysParams(FS &fs);
     ~ESPSysParams();
 
-    void load(FS *fs = nullptr);
+    void load(FS* fs = nullptr);
     void save() { saveToFileSystem(); }
     void setDefault() { _fs->remove(ESP_SYSTEM_PARAMS); }
     void resetPassword();
-    bool passSupperAdminIsOK(const String &pass);
+    boolean passSupperAdminIsOK(const String &pass);
+
+    boolean isUpdated(uint8_t status) { return bitRead(_statusUpdate, status); }
+    /* log_time API */
+    uint32_t logTimeStart() const { return _sys_prams.log_time.t_start; }
+    uint32_t logTimeStart1() const { return _sys_prams.log_time.t_start1; }
+    uint32_t logTimeStart2() const { return _sys_prams.log_time.t_start2; }
+    uint32_t logTimeStop() const { return _sys_prams.log_time.t_stop; }
+    uint32_t logTimeStop1() const { return _sys_prams.log_time.t_stop1; }
+    uint32_t logTimeStop2() const { return _sys_prams.log_time.t_stop2; }
+    void logTimeStartSet(uint32_t tStart) { _sys_prams.log_time.t_start = tStart; }
+    void logTimeStart1Set(uint32_t tStart) { _sys_prams.log_time.t_start1 = tStart; }
+    void logTimeStart2Set(uint32_t tStart) { _sys_prams.log_time.t_start2 = tStart; }
+    void logTimeStopSet(uint32_t tStop) { _sys_prams.log_time.t_stop = tStop; }
+    void logTimeStop1Set(uint32_t tStop) { _sys_prams.log_time.t_stop1 = tStop; }
+    void logTimeStop2Set(uint32_t tStop) { _sys_prams.log_time.t_stop2 = tStop; }
+    /* probe_time API */
+    uint32_t probeTimeStart1() const { return _sys_prams.probe_time.t_start1; }
+    uint32_t probeTimeStart2() const { return _sys_prams.probe_time.t_start2; }
+    uint32_t probeTimeStart3() const { return _sys_prams.probe_time.t_start3; }
+    uint32_t probeTimeStop1() const { return _sys_prams.probe_time.t_stop1; }
+    uint32_t probeTimeStop2() const { return _sys_prams.probe_time.t_stop2; }
+    uint32_t probeTimeStop3() const { return _sys_prams.probe_time.t_stop3; }
+    void probeTimeStart1Set(uint32_t tStart) { _sys_prams.probe_time.t_start1 = tStart; }
+    void probeTimeStart2Set(uint32_t tStart) { _sys_prams.probe_time.t_start2 = tStart; }
+    void probeTimeStart3Set(uint32_t tStart) { _sys_prams.probe_time.t_start3 = tStart; }
+    void probeTimeStop1Set(uint32_t tStop) { _sys_prams.probe_time.t_stop1 = tStop; }
+    void probeTimeStop2Set(uint32_t tStop) { _sys_prams.probe_time.t_stop2 = tStop; }
+    void probeTimeStop3Set(uint32_t tStop) { _sys_prams.probe_time.t_stop3 = tStop; }
+    /* i2c_para API */
+    uint8_t i2cDeviceNum();
+    uint32_t i2cDeviceAddr() const { return _sys_prams.i2c_para.addr; }
+    bool i2cDeviceIsEnable(uint8_t addr) const { return bitRead(_sys_prams.i2c_para.addr, addr); }
+    uint16_t i2cParaInterval() const { return _sys_prams.i2c_para.sync_time; }
+    void i2cParaAddrSet(uint32_t addr) { _sys_prams.i2c_para.addr = addr; }
+    void i2cParaIntervalSet(uint16_t interval) { _sys_prams.i2c_para.sync_time = interval; }
     /* Port API */
     uint16_t udpPort() const { return _sys_prams.port.udp; }
     uint16_t tcpPort() { return _sys_prams.port.tcp; }
@@ -175,10 +305,10 @@ public:
     }
     /* Confirm pass */
     bool passConfirmIsOK(const String &pass, passConfirm_t type);
-    uint16_t passConfirm(passConfirm_t passType) { 
+    uint32_t passConfirm(passConfirm_t passType) { 
         return _sys_prams.confirm[passType]; 
     }
-    void passConfirmSet(passConfirm_t passType, uint16_t pass) { 
+    void passConfirmSet(passConfirm_t passType, uint32_t pass) { 
         _sys_prams.confirm[passType] = pass;
     }
     /* STA API */
@@ -237,8 +367,10 @@ public:
     void channelAPSet(uint8_t channel) { _sys_prams.ap.channel = channel; }
     void hiddenAPSet(uint8_t hidden) { _sys_prams.ap.hidden = hidden; }
     void disableAPSet(uint8_t disable) { _sys_prams.ap.disable = disable; }
+
     /* DDNS API */
     String serviceDDNS() { return _sys_prams.ddns.service; }
+    String serverDDNS() { return _sys_prams.ddns.server; }
     String domainDDNS() { return _sys_prams.ddns.domain; }
     String userDDNS() { return _sys_prams.ddns.user; }
     String passDDNS() { return _sys_prams.ddns.pass; }
@@ -247,6 +379,9 @@ public:
     uint8_t disableDDNS() { return _sys_prams.ddns.disable; }
     void serviceDDNSSet(const String &service) { 
         service.toCharArray(_sys_prams.ddns.service, DDNS_SERVICE_LENGTH_MAX + 1);
+    }
+    void serverDDNSSet(const String &server) { 
+        server.toCharArray(_sys_prams.ddns.server, DDNS_SERVER_LENGTH_MAX + 1);
     }
     void domainDDNSSet(const String &domain) { 
         domain.toCharArray(_sys_prams.ddns.domain, DDNS_DOMAIN_LENGTH_MAX + 1);
@@ -262,6 +397,37 @@ public:
     }
     void syncTimeDDNSSet(uint8_t sync_time) { _sys_prams.ddns.sync_time = sync_time; }
     void disableDDNSSet(uint8_t disable) { _sys_prams.ddns.disable = disable; }
+
+    /* DDNS private API */
+    String serviceDDNSPri() { return _sys_prams.ddns_private.service; }
+    String serverDDNSPri() { return _sys_prams.ddns_private.server; }
+    String domainDDNSPri() { return _sys_prams.ddns_private.domain; }
+    String userDDNSPri() { return _sys_prams.ddns_private.user; }
+    String passDDNSPri() { return _sys_prams.ddns_private.pass; }
+    String ipUrlDDNSPri() { return _sys_prams.ddns_private.ipUrl; }
+    uint8_t syncTimeDDNSPri() { return _sys_prams.ddns_private.sync_time; }
+    uint8_t disableDDNSPri() { return _sys_prams.ddns_private.disable; }
+    void serviceDDNSPriSet(const String &service) { 
+        service.toCharArray(_sys_prams.ddns_private.service, DDNS_SERVICE_LENGTH_MAX + 1);
+    }
+    void serverDDNSPriSet(const String &server) { 
+        server.toCharArray(_sys_prams.ddns_private.server, DDNS_SERVER_LENGTH_MAX + 1);
+    }
+    void domainDDNSPriSet(const String &domain) { 
+        domain.toCharArray(_sys_prams.ddns_private.domain, DDNS_DOMAIN_LENGTH_MAX + 1);
+    }
+    void userDDNSPriSet(const String &user) { 
+        user.toCharArray(_sys_prams.ddns_private.user, DDNS_USER_LENGTH_MAX + 1);
+    }
+    void passDDNSPriSet(const String &pass) { 
+        pass.toCharArray(_sys_prams.ddns_private.pass, DDNS_PASS_LENGTH_MAX + 1);
+    }
+    void ipUrlDDNSPriSet(const String &ipUrl) { 
+        ipUrl.toCharArray(_sys_prams.ddns_private.ipUrl, DDNS_IPURL_LENGTH_MAX + 1);
+    }
+    void syncTimeDDNSPriSet(uint8_t sync_time) { _sys_prams.ddns_private.sync_time = sync_time; }
+    void disableDDNSPriSet(uint8_t disable) { _sys_prams.ddns_private.disable = disable; }
+
     /* sntp API */
     String server1SNTP() { return _sys_prams.sntp.server1; }
     String server2SNTP() { return _sys_prams.sntp.server2; }
@@ -295,6 +461,69 @@ public:
     void pingIntervalSet(int interval, int id) { _sys_prams.ping.interval[id] = interval; }
     void pingTypeSet(int type, int id) { _sys_prams.ping.type[id] = type; }
     void pingEnableSet(bool enable, int id) { _sys_prams.ping.enable[id] = enable; }
+
+    int fwVersionGet() { return _sys_prams.fw_version; }
+    void fwVersionSet(int fw_version) { _sys_prams.fw_version = fw_version; }
+
+    uint32_t CpuFrequencyMhzGet() { return _sys_prams.hw_cfg.CpuFrequencyMhz; }
+    void CpuFrequencyMhzSet(uint32_t freq) { _sys_prams.hw_cfg.CpuFrequencyMhz = freq; }
+    
+    int hwVersionGet() { return _sys_prams.hw_cfg.hw_version; }
+    String hwVersionStr() { return "V" + String(_sys_prams.hw_cfg.hw_version/10) + "."  + String(_sys_prams.hw_cfg.hw_version%10); }
+    void hwVersionSet(int hw_version) { _sys_prams.hw_cfg.hw_version = hw_version; }
+    String hardwareId();
+
+    bool ledEnableGet() { return _sys_prams.hw_cfg.LED.Enable; }
+    int8_t ledOffStateGet() { return _sys_prams.hw_cfg.LED.OffState; }
+    int8_t ledPINGet() { return _sys_prams.hw_cfg.LED.PIN; }
+
+    bool i2cEnableGet() { return _sys_prams.hw_cfg.I2C.Enable; }
+    uint32_t i2cFreqGet() { return _sys_prams.hw_cfg.I2C.Freq; }
+    int8_t i2CSdaGet() { return _sys_prams.hw_cfg.I2C.Sda; }
+    int8_t i2cSclGet() { return _sys_prams.hw_cfg.I2C.Scl; }
+    int8_t i2cTimeScanGet() { return _sys_prams.hw_cfg.I2C.TimeScan; }
+
+    bool printerEnableGet() { return _sys_prams.hw_cfg.PRINTER.Enable; }
+    int printerBaudGet() { return _sys_prams.hw_cfg.PRINTER.Baud; }
+    int8_t printerSerialGet() { return _sys_prams.hw_cfg.PRINTER.Serial; }
+    int8_t printerTxGet() { return _sys_prams.hw_cfg.PRINTER.Tx; }
+    int8_t printerRxGet() { return _sys_prams.hw_cfg.PRINTER.Rx; }
+    int8_t printerRrsGet() { return _sys_prams.hw_cfg.PRINTER.Rts; }
+    void printerEnableSet(bool var) { _sys_prams.hw_cfg.PRINTER.Enable = var; }
+    void printerBaudSet(int var) { _sys_prams.hw_cfg.PRINTER.Baud = var; }
+    void printerSerialSet(int8_t var) { _sys_prams.hw_cfg.PRINTER.Serial = var; }
+    void printerTxSet(int8_t var) { _sys_prams.hw_cfg.PRINTER.Tx = var; }
+    void printerRxSet(int8_t var) { _sys_prams.hw_cfg.PRINTER.Rx = var; }
+    void printerRrsSet(int8_t var) { _sys_prams.hw_cfg.PRINTER.Rts = var; }
+
+    bool rfidEnableGet() { return _sys_prams.hw_cfg.RFID.Enable; }
+    int rfidBaudGet() { return _sys_prams.hw_cfg.RFID.Baud; }
+    int8_t rfidSerialGet() { return _sys_prams.hw_cfg.RFID.Serial; }
+    int8_t rfidTxGet() { return _sys_prams.hw_cfg.RFID.Tx; }
+    int8_t rfidRxGet() { return _sys_prams.hw_cfg.RFID.Rx; }
+    int8_t rfidRrsGet() { return _sys_prams.hw_cfg.RFID.Rts; }
+    void rfidEnableSet(bool var) { _sys_prams.hw_cfg.RFID.Enable = var; }
+    void rfidBaudSet(int var) { _sys_prams.hw_cfg.RFID.Baud = var; }
+    void rfidSerialSet(int8_t var) { _sys_prams.hw_cfg.RFID.Serial = var; }
+    void rfidTxSet(int8_t var) { _sys_prams.hw_cfg.RFID.Tx = var; }
+    void rfidRxSet(int8_t var) { _sys_prams.hw_cfg.RFID.Rx = var; }
+    void rfidRrsSet(int8_t var) { _sys_prams.hw_cfg.RFID.Rts = var; }
+
+    bool probeEnableGet() { return _sys_prams.hw_cfg.PROBE.Enable; }
+    int probeBaudGet() { return _sys_prams.hw_cfg.PROBE.Baud; }
+    int8_t probeSerialGet() { return _sys_prams.hw_cfg.PROBE.Serial; }
+    int8_t probeTxGet() { return _sys_prams.hw_cfg.PROBE.Tx; }
+    int8_t probeRxGet() { return _sys_prams.hw_cfg.PROBE.Rx; }
+    int8_t probeRrsGet() { return _sys_prams.hw_cfg.PROBE.Rts; }
+    void probeEnableSet(bool var) { _sys_prams.hw_cfg.PROBE.Enable = var; }
+    void probeBaudSet(int var) { _sys_prams.hw_cfg.PROBE.Baud = var; }
+    void probeSerialSet(int8_t var) { _sys_prams.hw_cfg.PROBE.Serial = var; }
+    void probeTxSet(int8_t var) { _sys_prams.hw_cfg.PROBE.Tx = var; }
+    void probeRxSet(int8_t var) { _sys_prams.hw_cfg.PROBE.Rx = var; }
+    void probeRrsSet(int8_t var) { _sys_prams.hw_cfg.PROBE.Rts = var; }
+
+    uint8_t versionGet() { return _sys_prams.version; }
+    void versionGet(uint8_t version) { _sys_prams.version = version; }
 };
 
 extern ESPSysParams ESPConfig;

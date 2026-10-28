@@ -81,6 +81,7 @@
 #include "THIoT_ESPTaskMonitor.h"
 #include "THIoT_ESPTaskHelper.h"
 #include "THIoT_APPCoreDump.h"
+#include "THIoT_ESPOTAManager.h"
 
 /* Private macro -------------------------------------------------------------*/
 #if CONFIG_FREERTOS_UNICORE
@@ -145,6 +146,11 @@ void setup() {
     /* Shared log-trace task (writes the FS log records) */
     logTraceTaskBegin();
 
+    /* OTA validation state of the previous boot (power on reset handler) */
+#if (OTA_CONFIRM_FIRMWARE_VALIDATION == 1)
+    esp_ota_power_on_reset_handler();
+#endif
+
     MAIN_TAG_CONSOLE("build_time: %s", build_time);
     MAIN_TAG_CONSOLE("==== Firmware version %u.%u.%u ====\r\n",
                      FW_VERSION_MAJOR,
@@ -192,6 +198,9 @@ void setup() {
         MAIN_TAG_CONSOLE("SD Card Init succeed");
     }
 #endif
+
+    /* Confirm the running image so the bootloader does not roll it back */
+    esp_ota_confirm_image_rollback();
 
     /* SoftReset configuration: heap guard + trace/console enable flags stored in
      * /SOFT_RESET.TXT (load() must run after the FS is mounted). */
@@ -342,6 +351,9 @@ void setup() {
     wsHandler.begin();
     webServer.onUrlHandle(new WebServerURLHandle("param_wifi"));
     webServer.begin(&wsHandler);
+    /* Editor write protection + download limit, taken from the soft-reset config */
+    webServer.editorLock(SOFTReset.editorLockGet());
+    webServer.editorDownloadLimited(SOFTReset.downloadLimitGet());
 
 #if (defined FACTORY_INPUT_PIN) && (FACTORY_INPUT_PIN != -1)
     factorySysParams.onFactory([]() {

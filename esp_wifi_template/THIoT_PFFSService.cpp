@@ -1,27 +1,133 @@
 /** Common include */
 #include <Arduino.h>
 #include "FS.h"
+#include "THIoT_ESPMessageList.h"
 #include "THIoT_PFFSService.h"
 #include "THIoT_PFcUtil.h"
 #include "THIoT_PFSerialTrace.h"
 
-#define FS_UTILITY_TAG_CONSOLE(...) //SERIAL_TAG_LOGI("[FS_UTILITY]", __VA_ARGS__)
-FSULogService::FSULogService(const FS &fs, int logLength, const char *path, size_t headerLength)
-    : _fs(fs),
-      _path(path),
-      _headerLength(headerLength),
-      _window(logLength * 2) /*_window the minimum size of two line so multi 2 length input*/
+#define FS_UTILITY_TAG_CONSOLE(...) //CONSOLE_TAG_LOGI("[FS_SERVICE]", __VA_ARGS__)
+#define FS_SERVICE_TAG_MUTEX        "[FS_SERVICE]"
+/* Reserved for conditions that must stay visible in a release build. */
+#define FS_SERVICE_TAG_LOGE(...)    CONSOLE_TAG_LOGE("[FS_SERVICE]", __VA_ARGS__)
+
+#define FS_UTILITY_FILE_MUTEX_TIMEOUT LINKED_LIST_FILE_MUTEX_TIMEOUT_1S
+
+const char * const fsu_error_code[] PROGMEM = {
+/* 00 */   "FSU_ERROR_NONE",
+/* 01 */   "FSU_ERROR_FILE_NOT_FOUND",
+/* 02 */   "FSU_ERROR_FILE_TOO_LARGE",
+/* 03 */   "FSU_ERROR_FILE_OPEN",
+/* 04 */   "FSU_ERROR_FILE_READ",
+/* 05 */   "FSU_ERROR_FILE_WRITE",
+/* 06 */   "FSU_ERROR_FILE_SEEK",
+/* 07 */   "FSU_ERROR_FILE_MEMORY",
+/* 08 */   "FSU_ERROR_FILE_PARSE",
+/* 09 */   "FSU_ERROR_FILE_LOOKUP",
+/* 10 */   "FSU_ERROR_FILE_QUERY",
+/* 11 */   "FSU_ERROR_FILE_LOCK"
+};
+
+FSULogService::FSULogService(FS &fs, int logLength, const char *path, size_t headerLength)
+    : _fs(&fs),
+      _path{0},
+      _mutex(xSemaphoreCreateRecursiveMutex()),
+      _window(logLength * 2) /*_window the minimum size of two line so multi 2 length input*/,
+      _headerLength(headerLength)
 {
     _posLineBegin = 0;
     _posLineEnd = 0;
     _lookupPos = 0;
+    _errorCode = FSU_ERROR_NONE;
     _parseLogCallback = nullptr;
     _lookupLogCallback = nullptr;
     _queryLogCallback = nullptr;
+    /* Nobody can reach this object before the constructor returns, so the path
+     * may be stored without taking the lock. */
+    pathAssign(path);
 }
 
 FSULogService::~FSULogService()
 {
+    if (_mutex)
+    {
+        vSemaphoreDelete(_mutex);
+        _mutex = nullptr;
+    }
+}
+
+/* Brief: Lock of this instance. Recursive; created by the constructor, the
+ * lazy creation only covers a failed allocation there. */
+bool FSULogService::lock()
+{
+    if (!_mutex)
+    {
+        _mutex = xSemaphoreCreateRecursiveMutex();
+    }
+    return _mutex && xSemaphoreTakeRecursive(_mutex, portMAX_DELAY) == pdTRUE;
+}
+
+void FSULogService::unlock()
+{
+    if (_mutex)
+    {
+        xSemaphoreGiveRecursive(_mutex);
+    }
+}
+
+void FSULogService::enterCritical()
+{
+    lock();
+}
+
+void FSULogService::exitCritical()
+{
+    unlock();
+}
+
+/* Brief: Store [path] as the active file. Caller holds the lock.
+ * An over-long path is refused instead of truncated: a truncated name would
+ * silently read another file, so it is reported and left empty instead. */
+void FSULogService::pathAssign(const char *path)
+{
+    if (!path)
+    {
+        _path[0] = '\0';
+        return;
+    }
+
+    const size_t length = strlen(path);
+    if (length >= sizeof(_path))
+    {
+        FS_SERVICE_TAG_LOGE("Path too long (%u >= %u), refused: %s",
+                            (unsigned)length, (unsigned)sizeof(_path), path);
+        _path[0] = '\0';
+        _errorCode = FSU_ERROR_FILE_OPEN;
+        return;
+    }
+
+    memcpy(_path, path, length + 1);
+}
+
+/* Brief: Copy the active path into a caller-owned buffer. Caller holds the
+ * lock, so the copy cannot race with setPath() and the caller never uses the
+ * member buffer afterwards. */
+bool FSULogService::pathSnapshot(char *dst, size_t size) const
+{
+    if (!dst || size == 0)
+    {
+        return false;
+    }
+
+    if (_path[0] == '\0')
+    {
+        dst[0] = '\0';
+        return false;
+    }
+
+    strncpy(dst, _path, size - 1);
+    dst[size - 1] = '\0';
+    return true;
 }
 
 /**
@@ -31,6 +137,7 @@ FSULogService::~FSULogService()
 bool FSULogService::withOffset(uint32_t offset)
 {
     FS_UTILITY_TAG_CONSOLE("offset %lu", offset);
+    Guard guard(this);
     if (offset < _headerLength)
     {
         offset = _headerLength;
@@ -44,6 +151,7 @@ bool FSULogService::withOffset(uint32_t offset)
 */
 bool FSULogService::first()
 {
+    Guard guard(this);
     return find(_headerLength, FIND_FORWARD);
 }
 
@@ -54,6 +162,7 @@ bool FSULogService::first()
 bool FSULogService::last()
 {
     FS_UTILITY_TAG_CONSOLE("");
+    Guard guard(this);
     return find(-_window, FIND_REVERSE);
 }
 
@@ -64,6 +173,7 @@ bool FSULogService::last()
 bool FSULogService::next()
 {
     FS_UTILITY_TAG_CONSOLE("");
+    Guard guard(this);
     return find(_posLineEnd, FIND_FORWARD);
 }
 
@@ -74,14 +184,35 @@ bool FSULogService::next()
 bool FSULogService::withValue(int value)
 {
     FS_UTILITY_TAG_CONSOLE("value %d", value);
+    Guard guard(this);
+    /* Snapshot the path under the lock: the member buffer is never handed out,
+     * so no reallocation of it can happen while the file mutex is held. */
+    char path[FS_SERVICE_PATH_LENGTH_MAX];
+    if (!pathSnapshot(path, sizeof(path)))
+    {
+        FS_UTILITY_TAG_CONSOLE("Path is empty");
+        _errorCode = FSU_ERROR_FILE_OPEN;
+        return false;
+    }
+
+    bool isLock = mutexFileList.take(path, FS_UTILITY_FILE_MUTEX_TIMEOUT, FS_SERVICE_TAG_MUTEX); // locked file
+    if (!isLock) {
+        FS_UTILITY_TAG_CONSOLE("Mutex list take FAIL");
+        _errorCode = FSU_ERROR_FILE_LOCK;
+        return false;
+    }
+
+    bool status = false;
     if (lookUp(value))
     {
         if (query(_lookupPos, value))
         {
-            return true;
+            status = true;
         }
     }
-    return false;
+    mutexFileList.give(path, FS_SERVICE_TAG_MUTEX);
+    _errorCode = status ? FSU_ERROR_NONE : FSU_ERROR_FILE_QUERY;
+    return status;
 }
 
 /** 
@@ -97,28 +228,39 @@ bool FSULogService::withValue(int value)
 bool FSULogService::lookUp(int find_val)
 {
     File file;
-    const char* path = _path.c_str();
+    char path[FS_SERVICE_PATH_LENGTH_MAX];
     uint32_t mid_index, left_bound, right_bound;
     int parse_val;
     bool status_isError = false;
 
-    if (!_lookupLogCallback)
+    Guard guard(this);
+    if (!pathSnapshot(path, sizeof(path)))
     {
-        FS_UTILITY_TAG_CONSOLE("_lookupLogCallback() Null");
+        FS_UTILITY_TAG_CONSOLE("Path is empty");
+        _errorCode = FSU_ERROR_FILE_OPEN;
         return false;
     }
 
-    if (!_fs.exists(path))
+    if (!_lookupLogCallback)
+    {
+        FS_UTILITY_TAG_CONSOLE("_lookupLogCallback() Null");
+        _errorCode = FSU_ERROR_FILE_LOOKUP;
+        return false;
+    }
+
+    if (!_fs->exists(path))
     {
         FS_UTILITY_TAG_CONSOLE("File '%s' is not exist", path);
+        _errorCode = FSU_ERROR_FILE_NOT_FOUND;
         return false;
     }
 
     FS_UTILITY_TAG_CONSOLE("Open Path: %s", path);
-    file = _fs.open(path, "r");
+    file = _fs->open(path, "r");
     if (!file)
     {
         FS_UTILITY_TAG_CONSOLE("Failed to open file %s for reading", path);
+        _errorCode = FSU_ERROR_FILE_OPEN;
         return false;
     }
 
@@ -128,7 +270,14 @@ bool FSULogService::lookUp(int find_val)
     FS_UTILITY_TAG_CONSOLE("left_bound input: %lu", left_bound);
     FS_UTILITY_TAG_CONSOLE("right_bound input: %lu", right_bound);
 
-    char* buff = new(std::nothrow) char[_window + 1];
+    char* buff = new (std::nothrow) char[_window + 1];
+    if (!buff)
+    {
+        FS_UTILITY_TAG_CONSOLE("Memory allocation for buffer failed");
+        file.close();
+        _errorCode = FSU_ERROR_FILE_MEMORY;
+        return false;
+    }
 
     do
     {
@@ -148,7 +297,13 @@ bool FSULogService::lookUp(int find_val)
             break;
         }
 
-        size_t read_cnt = file.readBytes(buff, _window);
+        int read_cnt = file.readBytes(buff, _window);
+        if (read_cnt <= 0 || read_cnt > _window)
+        {
+            FS_UTILITY_TAG_CONSOLE("Read bytes failed or no data");
+            status_isError = true;
+            break;
+        }
         buff[read_cnt] = '\0'; /* Add NuLL */
         char *line = lineIndex(buff, FIND_FORWARD);
         if (line != nullptr)
@@ -195,8 +350,9 @@ bool FSULogService::lookUp(int find_val)
     file.close();
     _lookupPos = left_bound;
     FS_UTILITY_TAG_CONSOLE("left_bound output: %lu", left_bound);
-    FS_UTILITY_TAG_CONSOLE("right_boundoutput: %lu", right_bound);
+    FS_UTILITY_TAG_CONSOLE("right_bound output: %lu", right_bound);
     FS_UTILITY_TAG_CONSOLE("%s", status_isError ? "Failure!" : "succeed!");
+    _errorCode = status_isError ? FSU_ERROR_FILE_LOOKUP : FSU_ERROR_NONE;
     return !status_isError;
 }
 
@@ -209,26 +365,37 @@ bool FSULogService::lookUp(int find_val)
 bool FSULogService::query(uint32_t offset, int find_val)
 {
     File file;
-    const char* path = _path.c_str();
+    char path[FS_SERVICE_PATH_LENGTH_MAX];
     uint32_t fsize, window;
     bool status_isOK = false;
+
+    Guard guard(this);
+    if (!pathSnapshot(path, sizeof(path)))
+    {
+        FS_UTILITY_TAG_CONSOLE("Path is empty");
+        _errorCode = FSU_ERROR_FILE_OPEN;
+        return false;
+    }
 
     if (!_queryLogCallback)
     {
         FS_UTILITY_TAG_CONSOLE("_queryLogCallback() Null");
+        _errorCode = FSU_ERROR_FILE_QUERY;
         return false;
     }
 
-    if (!_fs.exists(path))
+    if (!_fs->exists(path))
     {
         FS_UTILITY_TAG_CONSOLE("File '%s' is not exist", path);
+        _errorCode = FSU_ERROR_FILE_NOT_FOUND;
         return false;
     }
 
-    file = _fs.open(path, "r");
+    file = _fs->open(path, "r");
     if (!file)
     {
         FS_UTILITY_TAG_CONSOLE("Failed to open file %s for reading", path);
+        _errorCode = FSU_ERROR_FILE_OPEN;
         return false;
     }
 
@@ -242,6 +409,8 @@ bool FSULogService::query(uint32_t offset, int find_val)
     {
         FS_UTILITY_TAG_CONSOLE("File size %lu", fsize);
         FS_UTILITY_TAG_CONSOLE("Seek to %lu failed!", offset);
+        file.close();
+        _errorCode = FSU_ERROR_FILE_SEEK;
         return false;
     }
 
@@ -257,8 +426,24 @@ bool FSULogService::query(uint32_t offset, int find_val)
 
     FS_UTILITY_TAG_CONSOLE("window size %u", window);
 
-    char* buff = new(std::nothrow) char[window + 1];
-    size_t read_cnt = file.readBytes(buff, window);
+    char* buff = new (std::nothrow) char[window + 1];
+    if (buff == nullptr)
+    {
+        FS_UTILITY_TAG_CONSOLE("Memory allocation failed for buffer");
+        file.close();
+        _errorCode = FSU_ERROR_FILE_MEMORY;
+        return false;
+    }
+    
+    int read_cnt = file.readBytes(buff, window);
+    if (read_cnt <= 0 || read_cnt > window)
+    {
+        FS_UTILITY_TAG_CONSOLE("Read bytes failed or empty file");
+        delete[] buff;
+        file.close();
+        _errorCode = FSU_ERROR_FILE_READ;
+        return false;
+    }
     buff[read_cnt] = '\0'; /* Add NuLL */
     char *line = lineIndex(buff, FIND_FORWARD);
     fsContent_t output;
@@ -285,7 +470,7 @@ bool FSULogService::query(uint32_t offset, int find_val)
     file.close();
 
     FS_UTILITY_TAG_CONSOLE("%s", status_isOK ? "succeed!" : "Failure!");
-
+    _errorCode = status_isOK ? FSU_ERROR_NONE : FSU_ERROR_FILE_PARSE;
     return status_isOK;
 }
 
@@ -299,25 +484,44 @@ bool FSULogService::find(int offset, uint8_t searchType)
 {
     File file;
     size_t fsize;
-    uint32_t read_cnt;
     bool status_isOK = false;
-    const char* path = _path.c_str();
+    char path[FS_SERVICE_PATH_LENGTH_MAX];
+
+    Guard guard(this);
+    if (!pathSnapshot(path, sizeof(path)))
+    {
+        FS_UTILITY_TAG_CONSOLE("Path is empty");
+        _errorCode = FSU_ERROR_FILE_OPEN;
+        return false;
+    }
 
     if (!_parseLogCallback)
     {
+        _errorCode = FSU_ERROR_FILE_PARSE;
         return false;
     }
 
-    if (!_fs.exists(path))
+    bool isLock = mutexFileList.take(path, FS_UTILITY_FILE_MUTEX_TIMEOUT, FS_SERVICE_TAG_MUTEX); // locked file
+    if (!isLock) {
+        FS_UTILITY_TAG_CONSOLE("Mutex list take FAIL");
+        _errorCode = FSU_ERROR_FILE_LOCK;
+        return false;
+    }
+
+    if (!_fs->exists(path))
     {
         FS_UTILITY_TAG_CONSOLE("File '%s' is not exist", path);
+        mutexFileList.give(path, FS_SERVICE_TAG_MUTEX);
+        _errorCode = FSU_ERROR_FILE_NOT_FOUND;
         return false;
     }
 
-    file = _fs.open(path, "r");
+    file = _fs->open(path, "r");
     if (!file)
     {
         FS_UTILITY_TAG_CONSOLE("Failed to open file %s for reading", path);
+        mutexFileList.give(path, FS_SERVICE_TAG_MUTEX);
+        _errorCode = FSU_ERROR_FILE_OPEN;
         return false;
     }
 
@@ -338,11 +542,31 @@ bool FSULogService::find(int offset, uint8_t searchType)
     if (!file.seek(seek))
     {
         FS_UTILITY_TAG_CONSOLE("Seek to %u failed!", seek);
+        file.close();
+        mutexFileList.give(path, FS_SERVICE_TAG_MUTEX);
+        _errorCode = FSU_ERROR_FILE_SEEK;
         return false;
     }
 
-    char* buff = new(std::nothrow) char[_window + 1];
-    read_cnt = file.readBytes(buff, _window);
+    char* buff = new (std::nothrow) char[_window + 1];
+    if (buff == nullptr)
+    {
+        FS_UTILITY_TAG_CONSOLE("Memory allocation failed for buffer");
+        file.close();
+        mutexFileList.give(path, FS_SERVICE_TAG_MUTEX);
+        _errorCode = FSU_ERROR_FILE_MEMORY;
+        return false;
+    }
+    int read_cnt = file.readBytes(buff, _window);
+    if (read_cnt <= 0 || read_cnt > _window)
+    {
+        FS_UTILITY_TAG_CONSOLE("Read bytes failed or empty file");
+        delete[] buff;
+        file.close();
+        mutexFileList.give(path, FS_SERVICE_TAG_MUTEX);
+        _errorCode = FSU_ERROR_FILE_READ;
+        return false;
+    }
     buff[read_cnt] = '\0'; /* Add NuLL */
 
     char *line = lineIndex(buff, searchType);
@@ -369,6 +593,8 @@ bool FSULogService::find(int offset, uint8_t searchType)
 
     FS_UTILITY_TAG_CONSOLE("%s", status_isOK ? "succeed!" : "Failure!");
 
+    mutexFileList.give(path, FS_SERVICE_TAG_MUTEX);
+    _errorCode = status_isOK ? FSU_ERROR_NONE : FSU_ERROR_FILE_PARSE;
     return status_isOK;
 }
 
@@ -421,4 +647,66 @@ char* FSULogService::lineIndex(char* buff, uint8_t searchType)
     }
 
     return pStart;
+}
+
+FSULogStream::FSULogStream(FS &fs, const char *logPath)
+    : _fs(&fs), _logPath(logPath)
+{
+}
+
+size_t FSULogStream::write(const uint8_t *buffer, size_t size) {
+    /* ML7: lock and unlock with the SAME stable copy of the path.  Taking a raw
+     * _logPath.c_str() pointer and using it again after a blocking take() meant that a
+     * concurrent rotation (the param setting log) could reallocate _logPath and leave give()
+     * comparing against freed memory. */
+    const String lockPath = _logPath;
+    mutex_status_t lockReason = MUTEX_STATUS_OK;
+    bool isLock = mutexFileList.takeEx(lockPath.c_str(), FS_UTILITY_FILE_MUTEX_TIMEOUT,
+                                       FS_SERVICE_TAG_MUTEX, &lockReason); // locked file
+    if (!isLock) {
+        FS_UTILITY_TAG_CONSOLE("Mutex list take FAIL %s (%s)", lockPath.c_str(), mutexStatusToString(lockReason));
+        return 0;
+    }
+    size_t wSize = 0;
+    File fs_handle = _fs->open(lockPath, "a");
+    if (fs_handle) {
+        wSize = fs_handle.write(buffer, size);
+        fs_handle.close();
+    }
+    mutexFileList.give(lockPath.c_str(), FS_SERVICE_TAG_MUTEX);
+    return wSize;
+}
+
+size_t FSULogStream::logSize() {
+    const String lockPath = _logPath;   /* stable key, see write() */
+    mutex_status_t lockReason = MUTEX_STATUS_OK;
+    bool isLock = mutexFileList.takeEx(lockPath.c_str(), FS_UTILITY_FILE_MUTEX_TIMEOUT,
+                                       FS_SERVICE_TAG_MUTEX, &lockReason); // locked file
+    if (!isLock) {
+        FS_UTILITY_TAG_CONSOLE("Mutex list take FAIL %s (%s)", lockPath.c_str(), mutexStatusToString(lockReason));
+        return 0;
+    }
+    size_t fSize = 0;
+    File fs_handle = _fs->open(lockPath, "r");
+    if (fs_handle) {
+        fSize = fs_handle.size();
+        fs_handle.close();
+    }
+    mutexFileList.give(lockPath.c_str(), FS_SERVICE_TAG_MUTEX);
+    return fSize;
+}
+
+void FSULogStream::clean() {
+    const String lockPath = _logPath;   /* stable key, see write() */
+    const String backupPath = backupNameOf(lockPath);
+    mutex_status_t lockReason = MUTEX_STATUS_OK;
+    bool isLock = mutexFileList.takeEx(lockPath.c_str(), FS_UTILITY_FILE_MUTEX_TIMEOUT,
+                                       FS_SERVICE_TAG_MUTEX, &lockReason); // locked file
+    if (!isLock) {
+        FS_UTILITY_TAG_CONSOLE("Mutex list take FAIL %s (%s)", lockPath.c_str(), mutexStatusToString(lockReason));
+        return;
+    }
+    _fs->remove(lockPath);
+    _fs->remove(backupPath);
+    mutexFileList.give(lockPath.c_str(), FS_SERVICE_TAG_MUTEX);
 }

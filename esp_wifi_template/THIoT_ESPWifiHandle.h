@@ -86,6 +86,7 @@ public:
     boolean IsOTA() { return _IsOTA; }
     void OTAStart();
     void OTAStop();
+    void OTASuccess();
 };
 
 extern ESPWifiHandle ESPWifi;

@@ -1,71 +1,149 @@
 {
-  "port": {
-    "udp": 25130,
-    "tcp": 25130,
-    "ws": 25131
-  },
-  "device": {
-    "name": "Công Ty TNHH Điện Tử Tiến Huy",
-    "addr": "102 Phan Huy Ích, Phường 15, Quận Tân Bình, Tp HCM",
-    "tell": "0983497310"
-  },
-  "auth_admin": {
-    "user": "admin",
-    "pass": "admin"
-  },
-  "auth_user": {
-    "user": "admin",
-    "pass": "12345"
-  },
-  "confirm": [
-    1234,
-    1234,
-    1234,
-    1234,
-    1234
-  ],
-  "sta": {
-    "ip":"192.168.3.101",
-    "gw":"192.168.3.1",
-    "sn":"255.255.255.0",
-    "dns":"192.168.3.1",
-    "ssid":"Quyen_2.4G_T2",
-    "psk":"12345679",
-    "hostname": "tienhuyiot1",
-    "dhcp": 0,
-    "disable": 0,
-    "smart_cfg": 0
-  },
-  "ap": {
-    "ip": "192.168.4.1",
-    "sn": "255.255.255.0",
-    "ssid": "tienhuyiot",
-    "psk": "88888888",
-    "dns_name": "tienhuyiot.vn",
-    "disable": 0,
-    "hidden": 0,
-    "channel": 2
-  },
-  "ddns": {
-    "service": "noip",
-    "ipUrl": "ifconfig.me/ip",
-    "domain": "tienhuyiot.ddns.net",
-    "user": "tienhuyiot",
-    "pass": "123456789",
-    "sync_time": 120,
-    "disable":1
-  },
-  "sntp":{
-    "server1": "pool.ntp.org",
-    "server2": "time.nist.gov",
-    "server3": "time.windows.com",
-    "gmtOffset": 7,
-    "daylightOffset": 0,
-    "TzTime": "<+07>-7",
-    "interval": 3600
-  },
-  "ping":[
-      {"host": "gateway", "timeout": 120, "interval": 30, "type": 1, "enable": 1},
-      {"host": "google.com", "timeout": 120, "interval": 30, "type": 0, "enable": 0}
-  ]
+    "log_time":{
+        "t_start" :210000,
+        "t_stop"  :50000,
+        "t_start1":50000,
+        "t_stop1" :130000,
+        "t_start2":130000,
+        "t_stop2" :210000
+    },
+    "probe_time":{
+        "t_start1" :210000,
+        "t_stop1"  :50000,
+        "t_start2":50000,
+        "t_stop2" :130000,
+        "t_start3":130000,
+        "t_stop3" :210000
+    },
+    "i2c_para":{
+        "addr": 1,
+        "sync_time": 333
+    },
+    "port":{
+        "udp": 25130,
+        "tcp": 25130,
+        "ws" : 25131
+    },
+    "device":{
+        "name": "Công Ty TNHH Điện Tử Tiến Huy",
+        "addr": "102 Phan Huy Ích, Phường 15, Quận Tân Bình, Tp HCM",
+        "tell": "0983497310"
+    },
+    "auth":{
+        "user": "admin",
+        "pass": "admin"
+    },
+    "auth_user":{
+        "user": "admin",
+        "pass": "12345"
+    },
+    "confirm":[
+        1234,
+        1234,
+        1234,
+        1234,
+        1234
+    ],
+    "sta":{
+        "ip":"192.168.3.101",
+        "gw":"192.168.3.1",
+        "sn":"255.255.255.0",
+        "dns":"192.168.3.1",
+        "ssid":"Quyen_2.4G_T2",
+        "psk":"12345679",
+        "hostname":"tienhuyiot",
+        "dhcp":0,
+        "disable":0,
+        "smart_cfg":0
+    },
+    "ap":{
+        "ip":"192.168.4.1",
+        "sn":"255.255.255.0",
+        "ssid":"tienhuyiot",
+        "psk":"88888888",
+        "dns_name":"tienhuyiot.vn",
+        "disable":0,
+        "channel":2,
+        "hidden":0
+    },
+    "ddns":{
+        "service": "noip",
+        "server": "dynupdate.no-ip.com",
+        "ipUrl": "ifconfig.me/ip",
+        "domain": "tienhuyiot.ddns.net",
+        "user": "tienhuyiot",
+        "pass": "123456789",
+        "sync_time": 120,
+        "disable": 1
+    },
+    "ddns_private":{
+        "service": "private",
+        "server": "tienhuyiot.ddns.net",
+        "ipUrl": "ifconfig.me/ip",
+        "domain": "tienhuyiot.ddns.net",
+        "user": "tienhuyiot",
+        "pass": "123456789",
+        "sync_time": 120,
+        "disable": 1
+    },
+    "sntp":{
+        "server1": "pool.ntp.org",
+        "server2": "time.nist.gov",
+        "server3": "time.windows.com",
+        "gmtOffset": 7,
+        "daylightOffset": 0,
+        "TzTime": "<+07>-7",
+        "interval": 3600
+    },
+    "ping":[
+        {"host": "gateway", "timeout": 180, "interval": 60, "type": 1, "enable": 1},
+        {"host": "google.com", "timeout": 180, "interval": 60, "type": 1, "enable": 0}
+    ],
+    "hw_cfg":{
+        "hw_version": 0,
+        "CpuFrequencyMhz": 240,
+        "LAN": {
+            "Addr":-1,
+            "RstIO":-1,
+            "Enable":0
+        },
+        "LED": {
+            "PIN":-1,
+            "OffState":1,
+            "Enable":0
+        },
+        "I2C": {
+            "Freq":90000,
+            "Sda":-1,
+            "Scl":-1,
+            "TimeScan":5,
+            "Enable":0
+        },
+        "PROBE": {
+            "Enable":0,
+            "Serial":2,
+            "Baud":9600,
+            "Tx":-1,
+            "Rx":-1,
+            "Rts":-1
+        },
+        "RFID": {
+            "Enable":0,
+            "Serial":2,
+            "Baud":38400,
+            "Tx":-1,
+            "Rx":-1,
+            "Rts":-1
+        },
+        "PRINTER": {
+            "Enable":0,
+            "Serial":1,
+            "Baud":115200,
+            "Tx":-1,
+            "Rx":-1,
+            "Rts":-1
+        }
+    },
+    "fw_version": 100,
+    "version":1
 }

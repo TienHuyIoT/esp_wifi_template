@@ -795,6 +795,14 @@ void ESPWifiHandle::OTAStop() {
   }
 }
 
+/* A firmware update completed successfully.  The web update handler calls this
+ * to leave the OTA state and to let the application know that the image on the
+ * flash is complete (the reference firmware reports a dedicated OTA_SUCCESS
+ * state here). */
+void ESPWifiHandle::OTASuccess() {
+  OTAStop();
+}
+
 void ESPWifiHandle::end(void)
 {
   if (WIFI_OFF != WiFi.getMode())
