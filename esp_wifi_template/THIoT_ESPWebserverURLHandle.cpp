@@ -520,8 +520,12 @@ void format_sd_card_get(AsyncWebServerRequest *request, WebServerURLHandle* clie
     if (request->argName(1) == "pass" && ESPConfig.passConfirmIsOK(request->arg(1), ESPSysParams::CONFIRM_COMMON))
     {
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)    
-        FSHandle.format(SD_FS_SYSTEM, "/");
-        request->send(200, "text/html", "Format SD card Succeed");
+        /* https://gist.github.com/dizcza/a35d8c1d09450369ed2f08f6803b5101
+         * SD_MMC has no "format" helper any more: arm the format flag and let the
+         * next boot format the card (same behaviour as the web485_v3 firmware). */
+        SDCard.formatON();
+        request->send(200, "text/html", "SD card format after reset....(10S)");
+        SOFTReset.enable(500, ESPSoftReset::SD_FORMAT_TYPE);
 #else
         request->send(200, "text/html", "No Support SD Card");
 #endif     

@@ -5,6 +5,12 @@
 
 #ifdef ESP32
 #include "esp32-hal-timer.h"
+
+#define WDT_IDENTIFY_INIT_NUMBER    0
+#define WDT_IDENTIFY_RESET_NUMBER   25251325
+
+extern RTC_NOINIT_ATTR int noInitWDT;
+
 class ESPWatchDogTimer
 {
 private:
@@ -16,12 +22,13 @@ public:
     static void enable(uint32_t timeout_ms = 0);
     static void disable();
     static void feed();
-
+    static bool isWdtReset();
+    static void wdtStatusReset();
 };
 
 extern ESPWatchDogTimer ESPWdt;
 
-#define wdt_enable(time)    ESPWdt.enable(time)
+#define wdt_enable(x)       ESPWdt.enable(x)
 #define wdt_disable()       ESPWdt.disable()
 #define wdt_reset()         ESPWdt.feed()
 

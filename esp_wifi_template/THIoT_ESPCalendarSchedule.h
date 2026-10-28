@@ -17,7 +17,7 @@
 #define CALENDAR_SCHEDULE_SECOND_JSON_ARRAY_INDEX  5
 #define CALENDAR_SCHEDULE_ENABLE_JSON_ARRAY_INDEX  6
 
-typedef std::function<void(uint32_t)> ResetHandler;
+typedef std::function<void(uint32_t)> CalendarResetHandler;
 using namespace espTimeAlarm;
 class CalendarScheduleFileHandler
 {

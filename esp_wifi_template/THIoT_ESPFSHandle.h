@@ -4,30 +4,32 @@
 #include <Arduino.h>
 #include <FS.h>
 #include "THIoT_ESPSDFSClass.h"
+#include "THIoT_ESPMessageList.h"
+
+#define FS_HANDLE_SD_FREE_SPACE_SIZE_LIMIT      (1024ULL * 1024ULL * 512ULL) // 512MByte
+#define FS_HANDLE_SD_FILE_SIZE_LIMIT            (1024ULL * 1024ULL * 32ULL)  // 32MByte
+
+#define FS_HANDLE_NAND_FREE_SPACE_SIZE_LIMIT    (1024U * 200U)               // 200KByte
+#define FS_HANDLE_NAND_FILE_SIZE_LIMIT          (1024U * 200U)               // 200KByte
 
 class ESPFSHandle
 {
     using File = fs::File;
     using FS = fs::FS;
 private:
-    /* data */
+    bool isInhibited(FS *fs, String path);
 public:
     ESPFSHandle(/* args */);
     ~ESPFSHandle();
-
-    void listDir(FS &fs, const char *dirname, uint8_t levels);
-    void format(FS &fs, const char *dirname);
-    void deleteFile(FS &fs, const char *path);
-    void removeDir(FS &fs, const char *path);
-    #if (0)
-    void createDir(FS &fs, const char *path);
-    void removeDir(FS &fs, const char *path);
-    void readFile(FS &fs, const char *path);
-    void writeFile(FS &fs, const char *path, const char *message);
-    void appendFile(FS &fs, const char *path, const char *message);
-    void renameFile(FS &fs, const char *path1, const char *path2);
-    void testFileIO(FS &fs, const char *path);
-    #endif // (0)
+    void listDir(FS &fs,
+                 const char *dirname,
+                 uint8_t levels = 0,
+                 ESPMessageList *mList = NULL,
+                 uint64_t sLimit = FS_HANDLE_SD_FILE_SIZE_LIMIT);
+    boolean backup2Folder(FS &fs, String path);
+    bool copy(FS *fs_src, String path_src, String path_des, FS *fs_des);
+    bool cleanUp(FS &fs, uint64_t sLimit = FS_HANDLE_SD_FILE_SIZE_LIMIT);
+    bool deleteRecursive(FS *fs, String path);
 };
 
 extern ESPFSHandle FSHandle;

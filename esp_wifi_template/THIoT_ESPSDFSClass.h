@@ -1,3 +1,6 @@
+// C:\Users\HUY-GAMING\Documents\Arduino\hardware\espressif\esp32\tools\sdk\include\fatfs\ffconf.h
+// #define FF_FS_LOCK		CONFIG_FATFS_FS_LOCK
+
 #ifndef	__ESP_SDFS_CLASS_H
 #define __ESP_SDFS_CLASS_H
 
@@ -9,6 +12,8 @@
 #include <SPI.h>
 #endif
 #include "THIoT_ESPBoard.h"
+
+#define SDMMC_MAX_OPEN_FILES    5 // Maximum number of open files for SDMMC
 
 #if (SD_SPI_INTERFACE == 0)
 #define SD_FS_SYSTEM SD_MMC
@@ -85,6 +90,16 @@ SD INTERFACE
 #define SD_MISO_PIN     		        SPI_MISO_PIN
 #define SD_MOSI_PIN     		        SPI_MOSI_PIN   
 
+#define SD_FORMAT_MAGIC_NUM             1512325123U
+extern RTC_NOINIT_ATTR int noInitSdFormat;
+
+#define FS_NAND_FILE_SIZE_LIMITED       (1024U * 100U) // 100KByte
+
+typedef enum : uint8_t {
+    FS_NAND_HANDLER_TYPE = 0,
+    SD_CARD_HANDLER_TYPE
+} fsMemoryHandler_t;
+
 class ESPSdCard
 {
 private:
@@ -98,6 +113,10 @@ public:
 #else
     boolean begin();
 #endif
+    uint64_t freeSpace();
+    void formatON() { noInitSdFormat = SD_FORMAT_MAGIC_NUM; }
+    void formatOFF() { noInitSdFormat = 0; }
+    boolean isFormatON() { return (SD_FORMAT_MAGIC_NUM == noInitSdFormat); }
 };
 
 extern ESPSdCard SDCard;

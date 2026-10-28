@@ -21,11 +21,18 @@
 #include <ESP.h>
 #endif
 
-#ifdef ESP32
-uint32_t esp_reset_reason(int cpu_no);
-#elif defined(ESP8266)
-uint32_t esp_reset_reason();
-#endif
+#define PRO_CPU0_ID             0
+#define APP_CPU1_ID             1
+#define APP_CPU_NUM             2
+
+#define POWER_ON_VALIDATE_NUM   1234523456U
+#define POWER_ON_DEFAULT_NUM    1987654321U
+extern RTC_NOINIT_ATTR int noInitPowerOn;
+
+void esp_reset_reason_force_as_PowerON();
+boolean is_esp_reset_reason_force_as_PowerON();
+int esp_reset_reason_core(int cpu_no);
 String esp_reset_reason_str();
+String esp_reset_reason_str(int type);
 
 #endif // __ESP_RESET_REASON_H

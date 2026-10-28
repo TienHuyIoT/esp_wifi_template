@@ -38,6 +38,7 @@
 #include <soc/rtc.h>
 #include <time.h>
 #include <Ticker.h>
+#include <lwip/tcpip.h> // tcpip_callback()
 #include "THIoT_APPConfig.h"
 #include "THIoT_ESPConfig.h"
 #include "THIoT_PFcUtil.h"
@@ -75,6 +76,11 @@
 #include "THIoT_ESPSoftReset.h"
 #include "THIoT_ESPCalendarSchedule.h"
 #include "THIoT_ESPPingService.h"
+#include "THIoT_ESPLogTrace.h"
+#include "THIoT_PFConsoleTrace.h"
+#include "THIoT_ESPTaskMonitor.h"
+#include "THIoT_ESPTaskHelper.h"
+#include "THIoT_APPCoreDump.h"
 
 /* Private macro -------------------------------------------------------------*/
 #if CONFIG_FREERTOS_UNICORE
@@ -98,6 +104,17 @@ const char *build_time = "Thu " __DATE__ " " __TIME__ " GMT";
 ESPPingService pingGateway;
 ESPPingService pingInternet;
 ESPWebServer webServer;
+/* Timeout check used to stop the serial debug stream (see the console trace setup) */
+#define SERIAL_TRACE_CONSOLE_TIMEOUT    60U
+ticker_function_handle_t serialTraceConsoleTicker;
+
+/* Handle of the lwIP tcpip task, used by the task monitor.  It is captured from
+ * inside the lwIP task itself (see the tcpip_callback() in setup()). */
+TaskHandle_t _lwIP_TaskHandle;
+static void lwipTaskHandleCapture(void *ctx) {
+    (void) ctx;
+    _lwIP_TaskHandle = xTaskGetCurrentTaskHandle();
+}
 #if (defined FACTORY_INPUT_PIN) && (FACTORY_INPUT_PIN != -1)
 FactoryButton factorySysParams(FACTORY_INPUT_PIN);
 #endif
@@ -110,10 +127,24 @@ void setup() {
 #if (MUTEX_PLATFORM_TICKER == 1)
     ticker_schedule_init();
 #endif
-    SERIAL_PORT.begin(921600, SERIAL_8N1, -1, 1);
+    SERIAL_PORT.begin(SERIAL_BAUDRATE, SERIAL_8N1, -1, 1);
 #if defined(ESP32) && ESP_IDF_VERSION_MAJOR >= 4
     SERIAL_PORT.setTxBufferSize(512);
 #endif
+    SERIAL_PORT.printf("\n\n(^-^)\n\n");
+
+    /* Console trace task (serial + file + WebSocket) - must be started before the
+     * first log line, otherwise the early boot logs are lost. */
+#if (gConsoleDebugLevel > 0)
+    consoleTraceTaskBegin();
+#endif
+#if (CONSOLE_TRACE_SERIAL_STREAM == 1)
+    CONSOLE_TRACE_STREAM.beginSerial(&SERIAL_PORT);
+#endif
+
+    /* Shared log-trace task (writes the FS log records) */
+    logTraceTaskBegin();
+
     MAIN_TAG_CONSOLE("build_time: %s", build_time);
     MAIN_TAG_CONSOLE("==== Firmware version %u.%u.%u ====\r\n",
                      FW_VERSION_MAJOR,
@@ -160,6 +191,39 @@ void setup() {
         // FSHandle.listDir(SD_FS_SYSTEM, "/", 0);
         MAIN_TAG_CONSOLE("SD Card Init succeed");
     }
+#endif
+
+    /* SoftReset configuration: heap guard + trace/console enable flags stored in
+     * /SOFT_RESET.TXT (load() must run after the FS is mounted). */
+    SOFTReset.load();
+    SD_FS_LOG.enableSet(SOFTReset.traceLogGet());
+    ESP_FS_LOG.enable(); // Always enable internal log
+#if (CONSOLE_TRACE_WS_STREAM == 1)
+    CONSOLE_TRACE_STREAM.wsConsoleSet(SOFTReset.wsTraceConsoleGet());
+#endif
+#if (CONSOLE_TRACE_SERIAL_STREAM == 1)
+    ticker_once(&serialTraceConsoleTicker, SERIAL_TRACE_CONSOLE_TIMEOUT, [](void *arg) {
+#if (CONSOLE_TRACE_FILE_STREAM == 1)
+        if (SDCard.statusIsOk() && SOFTReset.fileTraceConsoleGet()) {
+            MAIN_TAG_CONSOLE("File recorder Debug Enable");
+            CONSOLE_TRACE_STREAM.beginFs(SD_FS_SYSTEM, CONSOLE_TRACE_FILE_PATH, CONSOLE_EXTERNAL_MEMORY_SIZE_LIMITED);
+        } else {
+            MAIN_TAG_CONSOLE("File recorder Debug disable");
+        }
+#endif
+        // should be called latest in case of serial disable
+        if (!SOFTReset.serialTraceConsoleGet()) {
+            MAIN_TAG_CONSOLE("Disable Serial Debug");
+            CONSOLE_TRACE_STREAM.consoleSerialStop();
+        } else {
+            MAIN_TAG_CONSOLE("Serial Debug Enable");
+        }
+        // Check if console trace stream is enable
+        if (!CONSOLE_TRACE_STREAM.isEnable()) {
+            MAIN_TAG_CONSOLE("Console Trace Stream is disable");
+            consoleTraceTaskEnd();
+        }
+    }, nullptr);
 #endif
 
     /* Update log */
@@ -296,9 +360,8 @@ void setup() {
     /**
      * SoftReset event handler
     */
-    SOFTReset.onReset([](uint32_t timeout) {
-        (void) timeout;
-        MAIN_TAG_CONSOLE("onReset handler");
+    SOFTReset.onReset([](uint32_t timeout, uint8_t type) {
+        MAIN_TAG_CONSOLE("onReset handler: timeout = %u, type = %u", timeout, type);
         pingGateway.end();
         pingInternet.end();
 #if (defined ETH_ENABLE) && (ETH_ENABLE == 1)
@@ -311,6 +374,17 @@ void setup() {
         }
 #endif
     });
+
+    /* Start the heap guard + the reset timers (after load() has read the config) */
+    SOFTReset.begin();
+
+    /* Capture the lwIP tcpip task handle (runs in the lwIP task context) */
+    tcpip_callback(lwipTaskHandleCapture, NULL);
+
+    /* Task monitor: watch the stack high-water marks of the registered tasks */
+    if (SOFTReset.monitorTaskGet()) {
+        ESPTaskMonitor.begin();
+    }
 
     /**
      * Creation a schedule Alarm Clock

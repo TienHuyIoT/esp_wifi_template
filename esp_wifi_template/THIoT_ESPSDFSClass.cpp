@@ -2,6 +2,7 @@
 #include "THIoT_ESPConfig.h"
 #include "THIoT_ESPFSHandle.h"
 #include "THIoT_PFSerialTrace.h"
+#include "THIoT_ESPLogTrace.h"
 #include "THIoT_ESPSDFSClass.h"
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
@@ -17,9 +18,11 @@
 /* Private define ------------------------------------------------------------*/
 
 /* Private macro -------------------------------------------------------------*/
-#define SD_FS_PORT SERIAL_PORT
-#define SD_FS_PRINTF(...) SERIAL_LOGI(__VA_ARGS__)
-#define SD_FS_PRINTFLN(...) SERIAL_TAG_LOGI("[SD]", __VA_ARGS__)
+#define SD_FS_TAG_CONSOLE(...)  //CONSOLE_TAG_LOGI("[SD]", __VA_ARGS__)
+
+#define SD_FS_TAG_ESP_LOG(...)  ESP_FS_TAG_LOGI("[SD]", __VA_ARGS__)
+
+RTC_NOINIT_ATTR int noInitSdFormat;
 
 #ifdef ESP8266
 #if(HTH_SDFS_HANDLE)
@@ -39,7 +42,7 @@ boolean SDFSClass::begin(uint8_t csPin, uint32_t cfg)
 
 uint8_t SDFSClass::type() {
   if (!_impl) {
-      SD_FS_PRINTFLN("[type] FS not mounted\n");
+      SD_FS_TAG_CONSOLE("[type] FS not mounted\n");
       return CARD_NONE;
   }
     sdfs::SDFSImpl* sd = static_cast<sdfs::SDFSImpl*>(getImpl().get());
@@ -49,10 +52,10 @@ uint8_t SDFSClass::type() {
 bool SDFSClass::info64(FSInfo64& info)
 {
   if (!_impl) {
-      SD_FS_PRINTFLN("[info64] FS not mounted\n");
+      SD_FS_TAG_CONSOLE("[info64] FS not mounted\n");
       return false;
   }
-  SD_FS_PRINTFLN("[info64] updated\n");
+  SD_FS_TAG_CONSOLE("[info64] updated\n");
   sdfs::SDFSImpl* sd = static_cast<sdfs::SDFSImpl*>(getImpl().get());
   info.blockSize = 512;
   info.usedBytes = 0x40000000ULL; // add for fun
@@ -91,13 +94,9 @@ boolean ESPSdCard::begin()
   delay(10); // add timeout to supply power to sd card
 #endif
 #if (defined SD_SPI_INTERFACE) && (SD_SPI_INTERFACE == 0)
-#if (ESP_IDF_VERSION_MAJOR >= 4)
-  if (!SD_FS_SYSTEM.begin("/sdcard", false, false, SDMMC_FREQ_52M))
-#else
-  if (!SD_FS_SYSTEM.begin())
-#endif
+  if (!SD_FS_SYSTEM.begin("/sdcard", false, isFormatON(), SDMMC_FREQ_HIGHSPEED, SDMMC_MAX_OPEN_FILES))
   {
-    SD_FS_PRINTFLN("Card Mount Failed");
+    SD_FS_TAG_CONSOLE("Card Mount Failed");
     _sdCardStatus = false;
     return false;
   }
@@ -112,12 +111,12 @@ boolean ESPSdCard::begin()
   if (!SD_FS_SYSTEM.begin(SD_NSS_PIN, SPI_FULL_SPEED))
 #endif
   {
-    SD_FS_PRINTFLN("Card Mount Failed");
+    SD_FS_TAG_CONSOLE("Card Mount Failed");
     _sdCardStatus = false;
     return false;
   }
 #endif
-  SD_FS_PRINTFLN("Card Mount Succeed");
+  SD_FS_TAG_CONSOLE("Card Mount Succeed");
   _sdCardStatus = true;
 
 #ifdef ESP32
@@ -138,47 +137,62 @@ boolean ESPSdCard::begin()
 #endif
 #endif
 
-  SD_FS_PRINTFLN("cardType = %u", cardType);
+  SD_FS_TAG_CONSOLE("cardType = %u", cardType);
   if (cardType == CARD_NONE)
   {
-    SD_FS_PRINTFLN("No SD_FS_SYSTEM card attached");
+    SD_FS_TAG_CONSOLE("No SD_FS_SYSTEM card attached");
     return false;
   }
 
   if (cardType == CARD_MMC)
   {
-    SD_FS_PRINTFLN("Type: MMC");
+    SD_FS_TAG_CONSOLE("Type: MMC");
   }
   else if (cardType == CARD_SD)
   {
-    SD_FS_PRINTFLN("Type: SDSC");
+    SD_FS_TAG_CONSOLE("Type: SDSC");
   }
   else if (cardType == CARD_SDHC)
   {
-    SD_FS_PRINTFLN("Type: SDHC");
+    SD_FS_TAG_CONSOLE("Type: SDHC");
   }
   else
   {
-    SD_FS_PRINTF("Type: UNKNOWN");
+    SD_FS_TAG_CONSOLE("Type: UNKNOWN");
   }
 
-  SD_FS_PRINTFLN("Card Size: %lluMB", cardSize);
-  SD_FS_PRINTFLN("Card used: %lluMB\r\n", usedBytes);
+  SD_FS_TAG_CONSOLE("Card Size %lluMB, used %lluMB", cardSize, usedBytes);
 
-#if (0)
-  FSHandle.createDir(SD_FS_SYSTEM, "/mydir");
-  FSHandle.listDir(SD_FS_SYSTEM, "/", 0);
-  FSHandle.removeDir(SD_FS_SYSTEM, "/mydir");
-  FSHandle.listDir(SD_FS_SYSTEM, "/", 2);
-  FSHandle.writeFile(SD_FS_SYSTEM, "/hello.txt", "Hello ");
-  FSHandle.appendFile(SD_FS_SYSTEM, "/hello.txt", "World!\n");
-  FSHandle.readFile(SD_FS_SYSTEM, "/hello.txt");
-  FSHandle.deleteFile(SD_FS_SYSTEM, "/foo.txt");
-  FSHandle.renameFile(SD_FS_SYSTEM, "/hello.txt", "/foo.txt");
-  FSHandle.readFile(SD_FS_SYSTEM, "/foo.txt");
-  FSHandle.testFileIO(SD_FS_SYSTEM, "/test.txt");
-#endif
+  if (isFormatON()) {
+    formatOFF();
+    if (SD_FS_SYSTEM.format() == ESP_OK) {
+      SD_FS_TAG_ESP_LOG("Format SD card succeed!");
+    }
+    else {
+      SD_FS_TAG_ESP_LOG("Formatting SD card failure!");
+    }
+
+    CONSOLE_FLUSH();
+    delay(150);
+    ESP.restart();
+  }
   return true;
+}
+
+/**
+ * @brief get the free space of SD card
+*/
+uint64_t ESPSdCard::freeSpace() {
+  uint64_t space = FS_HANDLE_SD_FREE_SPACE_SIZE_LIMIT;
+  if (_sdCardStatus) {
+    uint64_t cardSize = SD_FS_SYSTEM.cardSize();
+    uint64_t usedBytes = SD_FS_SYSTEM.usedBytes();
+    if (cardSize > usedBytes) {
+      space = cardSize - usedBytes;
+    }
+  }
+  SD_FS_TAG_CONSOLE("SD free space: %llu", space);
+  return space;
 }
 
 ESPSdCard SDCard;

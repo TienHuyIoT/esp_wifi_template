@@ -8,8 +8,9 @@
 #include "THIoT_PFTimeZone.h"
 #include "THIoT_PFTicker.h"
 
-typedef rtc_time_t esp_rtc_time_t;
 typedef std::function<void(uint8_t, esp_rtc_time_t*)> espTimeHandle;
+
+extern RTC_NOINIT_ATTR time_t noInitTimeSystem;
 
 class RtcFileHandler
 {
@@ -39,7 +40,7 @@ public:
 
 private:
   espTimeHandle  _espTimeCallback;
-  ticker_function_handle_t _logTicker;
+  ticker_function_handle_t _timeTicker;
   RtcFileHandler _rtcFile;
   level_update_t _rtcSource;
 
@@ -63,6 +64,8 @@ public:
 
   void set(time_t t_now);
 
+  void timeSystemUpdate() { noInitTimeSystem = now(); }
+
   /* Convert now to rtc */
   esp_rtc_time_t makeRtcFromNow(time_t t_now);
 
@@ -70,6 +73,8 @@ public:
   time_t makeNowFromRtc(esp_rtc_time_t *rtc);
 
   String toStringLog();
+  
+  String toStringConsole();
 
   String toString();
 
@@ -82,12 +87,21 @@ public:
 
   /* Get rtc */
   esp_rtc_time_t get();
+  esp_rtc_time_t get(time_t t_now);
   uint32_t hhMMssGet();
+  String hhMMssToStr();
+
   uint32_t ddmmyyGet();
+  String ddmmyyToStr();
+  
+  uint32_t yymmddGet();
+  String yymmddToStr();
+  String yyyymmddToStr();
 
   uint32_t hhmmssFormat(esp_rtc_time_t *rtc);
 
   uint32_t ddmmyyFormat(esp_rtc_time_t *rtc);
+  uint32_t yymmddFormat(esp_rtc_time_t *rtc);
 
   uint32_t yyyymmddFormat(esp_rtc_time_t *rtc);
 
@@ -98,8 +112,13 @@ public:
   String ddmmyyStr(uint32_t n);
 
   String yyyymmddStr(uint32_t n);
+  String yyyy_mm_ddStr(uint32_t n);
 
   time_t nowFromDdmmyyhhmmss(uint32_t ddmmyy, uint32_t hhmmss);
+  time_t nowFromYyyymmddhhmmss(uint32_t yyyymmdd, uint32_t hhmmss);
+  esp_rtc_time_t rtcFromDdmmyyhhmmss(uint32_t ddmmyy, uint32_t hhmmss);
+  bool assertFromDdmmyyhhmmss(uint32_t ddmmyy, uint32_t hhmmss);
+  bool assertFromRtc(esp_rtc_time_t &rtc);
 
   // "Tue" __DATE__ " " __TIME__ " GMT";
   bool GMTStringUpdate(const char *rtc_web, level_update_t level);
