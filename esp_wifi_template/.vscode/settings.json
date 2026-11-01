@@ -1,0 +1,15 @@
+{
+    "arduino.disableIntelliSenseAutoGen": true,
+    "workbench.colorTheme": "Visual Studio 2017 Dark - C++",
+    "arduino.theme": "",
+    "files.exclude": {
+        "**/.build**": true,
+        "**/.release_build": true,
+        "**/.session**": true
+    },
+    "search.exclude": {
+        "**/.build**": true,
+        "**/.release_build": true,
+        "**/.session**": true
+    },
+}

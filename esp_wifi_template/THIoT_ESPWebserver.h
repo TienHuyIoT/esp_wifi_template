@@ -96,7 +96,7 @@ class ESPWebServer
 {
 private:
   static constexpr uint16_t SERVER_PORT_DEFAULT = 25123;
-#if (WEB_SERVER_REDIRECT_ENABLE == 1)
+#if (WEB_SERVER_REDIRECT_PORT_80_ENABLE == 1)
   static AsyncWebServer _server80;
 #endif
   static AsyncWebServer _server;
@@ -125,9 +125,7 @@ private:
   String _uriHttpPostAuth;
 
   static uint8_t authentication_level(AsyncWebServerRequest *request);
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
   static void authenticationCallBack(AsyncWebServerRequest* request, ArMiddlewareNext next);
-#endif
   static void updatePrintProgress(size_t prg, size_t sz);
   static void spiffsPrintProgress(size_t prg, size_t sz);
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)

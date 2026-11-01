@@ -53,7 +53,7 @@ static server_get_handle_t client_get_handle[DATA_GET_HANDLE_NUM] = {
     /*07*/{(const char*)"fw_version", fw_version_get},
     /*08*/{(const char*)"restart", restart_device_get},
     /*09*/{(const char*)"heap_temperature", heap_temperature_get},
-    /*10*/{(const char*)"activated", activated_get},
+    /*10*/{(const char*)"device_enable", activated_get},
     /*11*/{(const char*)"format_sd_card", format_sd_card_get},
     /*12*/{(const char*)"ddns_client", ddns_client_get},
     /*13*/{(const char*)"pass_common", pass_common_get},
@@ -489,7 +489,7 @@ void heap_temperature_get(AsyncWebServerRequest *request, WebServerURLHandle* cl
     SERVER_DATA_CONSOLE("\r\nHeap out: %u", ESP.getFreeHeap());
 }
 
-/* /get?param_wifi=activated&cmd=X 
+/* /get?param_wifi=device_enable&cmd=X 
  * [X] = 0: InActive
  * [X] = 1: Active
  * [X] > 1: Read status

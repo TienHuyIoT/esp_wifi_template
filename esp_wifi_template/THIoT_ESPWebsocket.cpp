@@ -78,7 +78,6 @@ void ESPWebsocket::end() {}
 void ESPWebsocket::begin()
 {
     _asyncWs.onEvent(onWsEvent);
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
     _asyncWs.addMiddleware([](AsyncWebServerRequest* request, ArMiddlewareNext next) {
         size_t num = _asyncWs.count();
         WS_TRACE_TAG_LOG("onMiddle count(): %u", num + 1);
@@ -99,7 +98,6 @@ void ESPWebsocket::begin()
         // process next middleware and at the end the handler
         next();
     });
-#endif
 
     _asyncEvents.onConnect([](AsyncEventSourceClient *client) {
         ++_eventNum;
@@ -144,7 +142,6 @@ void ESPWebsocket::begin()
         }
     });
 
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
     _asyncEvents.addMiddleware([](AsyncWebServerRequest* request, ArMiddlewareNext next) {
         size_t num = _asyncEvents.count();
         EV_TAG_SERIAL("onMiddle %u, %u, %u", num + 1, _eventNum + 1, NUM_EVT_CONNECTION_MAX);
@@ -161,7 +158,6 @@ void ESPWebsocket::begin()
         // process next middleware and at the end the handler
         next();
     });
-#endif
 
     ticker_attach(&_ws_ticker, WS_CLEAN_UP_INTERVAL, [](void *arg){
         ESPWebsocket *handler = (ESPWebsocket*)arg;

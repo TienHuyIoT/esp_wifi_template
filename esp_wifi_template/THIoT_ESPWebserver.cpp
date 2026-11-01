@@ -51,11 +51,7 @@ class RedirectUrlHandler : public AsyncWebHandler
 public:
   RedirectUrlHandler() {}
   virtual ~RedirectUrlHandler() {}
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
   bool canHandle(AsyncWebServerRequest *request) const override
-#else
-  bool canHandle(AsyncWebServerRequest *request) override
-#endif
   {
     return true;
   }
@@ -82,7 +78,7 @@ ESPWebServer::~ESPWebServer()
   this->end();
 }
 
-#if (WEB_SERVER_REDIRECT_ENABLE == 1)
+#if (WEB_SERVER_REDIRECT_PORT_80_ENABLE == 1)
 AsyncWebServer ESPWebServer::_server80(80);
 #endif
 AsyncWebServer ESPWebServer::_server(80);
@@ -210,13 +206,11 @@ uint8_t ESPWebServer::authentication_level(AsyncWebServerRequest *request)
   return level;
 }
 
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
 void ESPWebServer::authenticationCallBack(AsyncWebServerRequest* request, ArMiddlewareNext next) {
   if (authentication_level(request) != HTTP_AUTH_FAIL) {
     next();
   }
 }
-#endif
 
 void ESPWebServer::updatePrintProgress(size_t prg, size_t sz)
 {
@@ -367,34 +361,22 @@ void ESPWebServer::begin(ESPWebsocket* ws)
   _server.addHandler(&_wsHandler->asyncWs());
 
   // uri handle = "/edit"
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
   littleFsEditor.addMiddleware(&authenticationCallBack);
   // W5: real budget = EDITOR_DOWNLOAD_COUNTER_LIMIT requests per EDITOR_DOWNLOAD_COUNTER_RESET_TIMEOUT/1000 s (20 per 10 s)
   _rateLimitSpiffs.setMaxRequests(EDITOR_DOWNLOAD_COUNTER_LIMIT);
   _rateLimitSpiffs.setWindowSize(EDITOR_DOWNLOAD_COUNTER_RESET_TIMEOUT / 1000);
   littleFsEditor.addMiddleware(&_rateLimitSpiffs);
-#else
-  littleFsEditor.onAuthenticate([](AsyncWebServerRequest *request){
-    return (authentication_level(request) != HTTP_AUTH_FAIL);
-  });
-#endif
   littleFsEditor.onProgress(spiffsPrintProgress);
   // littleFsEditor.onStatus(fs_editor_status);
   _server.addHandler(&littleFsEditor);
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
   // uri handle = "/edit_sdfs"
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
   sdCardEditor.addMiddleware(&authenticationCallBack);
   // W5: real budget = EDITOR_DOWNLOAD_COUNTER_LIMIT requests per EDITOR_DOWNLOAD_COUNTER_RESET_TIMEOUT/1000 s (20 per 10 s)
   _rateLimitSdCard.setMaxRequests(EDITOR_DOWNLOAD_COUNTER_LIMIT);
   _rateLimitSdCard.setWindowSize(EDITOR_DOWNLOAD_COUNTER_RESET_TIMEOUT / 1000);
   sdCardEditor.addMiddleware(&_rateLimitSdCard);
-#else
-  sdCardEditor.onAuthenticate([](AsyncWebServerRequest *request){
-    return (authentication_level(request) != HTTP_AUTH_FAIL);
-  });
-#endif
   sdCardEditor.onProgress(sdfsPrintProgress);
 #if (DATE_LOG_APP_OPTION == MT_API) && (PUMP_LOG_TOTAL_MUTEX_ON == 1) 
   sdCardEditor.onSemaphoreTake(pumpLogTotalEnterCritical);
@@ -406,39 +388,30 @@ void ESPWebServer::begin(ESPWebsocket* ws)
 
   _server.on("/get", HTTP_GET, [](AsyncWebServerRequest *request)
           {
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 0)
-            if (authentication_level(request) != HTTP_AUTH_FAIL)
-#endif
+            if (_httpGetAuthHandler)
             {
-              if (_httpGetAuthHandler)
+              _httpGetAuthHandler(request);
+            }
+            
+            if (!_pUrlCallbacks.empty())
+            {
+              bool hasHandler = false;
+              for (auto elem : _pUrlCallbacks)
               {
-                _httpGetAuthHandler(request);
+                if (elem->onHttpGetAuth(request) != -1)
+                {
+                  hasHandler = true;
+                  break;
+                }
               }
-              
-              if (!_pUrlCallbacks.empty())
-              {
-                bool hasHandler = false;
-                for (auto elem : _pUrlCallbacks)
-                {
-                  if (elem->onHttpGetAuth(request) != -1)
-                  {
-                    hasHandler = true;
-                    break;
-                  }
-                }
 
-                if (!hasHandler)
-                {
-                  printHandleRequest(request);
-                }
+              if (!hasHandler)
+              {
+                printHandleRequest(request);
               }
             }
           })
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
           .addMiddleware(&authenticationCallBack);
-#else
-          ;
-#endif
 
   _server.on("/get_open", HTTP_GET,
           [](AsyncWebServerRequest *request)
@@ -470,110 +443,30 @@ void ESPWebServer::begin(ESPWebsocket* ws)
   _server.on("/post", HTTP_POST, 
           [](AsyncWebServerRequest *request)
           {
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 0)
-            if (authentication_level(request) != HTTP_AUTH_FAIL)
-#endif
+            if (_httpPostAuthHandler)
             {
-              if (_httpPostAuthHandler)
+              _httpPostAuthHandler(request);
+            }
+
+            if (!_pUrlCallbacks.empty())
+            {
+              bool hasHandler = false;
+              for (auto elem : _pUrlCallbacks)
               {
-                _httpPostAuthHandler(request);
+                if (elem->onHttpPostAuth(request) != -1)
+                {
+                  hasHandler = true;
+                  break;
+                }
               }
 
-              if (!_pUrlCallbacks.empty())
+              if (!hasHandler)
               {
-                bool hasHandler = false;
-                for (auto elem : _pUrlCallbacks)
-                {
-                  if (elem->onHttpPostAuth(request) != -1)
-                  {
-                    hasHandler = true;
-                    break;
-                  }
-                }
-
-                if (!hasHandler)
-                {
-                  printHandleRequest(request);
-                }
+                printHandleRequest(request);
               }
             }
           })
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
           .addMiddleware(&authenticationCallBack);
-#else
-          ;
-#endif
-  
-#if (FIRMWARE_RELEASE_ACTIVATED == 1)
-/* Handling Content-Type: raw (application/json) */
-  _server.on("/petro_counter", HTTP_POST, 
-          [](AsyncWebServerRequest *request)
-          {
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 0)
-            if(authentication_level(request) != HTTP_AUTH_FAIL)
-#endif
-            {
-              /* Combination TL and MT */
-              const char resp[] PROGMEM = "{\"Data_type\": 2,\"Error_code\": 0,\"code\": 0,\"data\": {\"dataType\": 2}}";
-              AsyncWebServerResponse *response = request->beginResponse(200, "text/json", resp);
-              request->send(response);
-            } 
-          }, nullptr, 
-          [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
-          {
-            if(!index)
-            {
-              WEB_SERVER_TAG_CONSOLE("BodyStart: %u", total);
-            }
-#if (WEB_SERVER_CONSOLE_ENABLE == 1)
-            WEB_SERVER_DBG_PORT.println("[WEB] Data: ");
-            WEB_SERVER_DBG_PORT.write(data, len);
-            WEB_SERVER_DBG_PORT.println();
-#endif
-            if((index + len) == total)
-            {
-              WEB_SERVER_TAG_CONSOLE("BodyEnd: %u", total);
-            } 
-          })
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
-          .addMiddleware(&authenticationCallBack);
-#else
-          ;
-#endif
-
-  /* Handling Content-Type: raw (application/json) */
-  _server.on("/petro_status", HTTP_POST, [](AsyncWebServerRequest *request){
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 0)
-    if(authentication_level(request) != HTTP_AUTH_FAIL)
-#endif
-    {
-      /* Combination TL and MT */
-      const char resp[] PROGMEM = "{\"Data_type\": 1,\"Error_code\": 0,\"code\": 0,\"data\": {\"dataType\": 1}}";
-      AsyncWebServerResponse *response = request->beginResponse(200, "text/json", resp);
-      request->send(response);
-    }
-  }, nullptr
-  , [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
-    if(!index)
-    {
-      WEB_SERVER_TAG_CONSOLE("BodyStart: %u", total);
-    }
-#if (WEB_SERVER_CONSOLE_ENABLE == 1)
-    WEB_SERVER_DBG_PORT.println("[WEB] Data: ");
-    WEB_SERVER_DBG_PORT.write(data, len);
-    WEB_SERVER_DBG_PORT.println();
-#endif
-    if((index + len) == total)
-    {
-      WEB_SERVER_TAG_CONSOLE("BodyEnd: %u", total);
-    }
-  })
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
-  .addMiddleware(&authenticationCallBack);
-#else
-  ;
-#endif
-#endif // #if (FIRMWARE_RELEASE_ACTIVATED == 1)
 
   _server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     uint8_t level = authentication_level(request);
@@ -590,39 +483,17 @@ void ESPWebServer::begin(ESPWebsocket* ws)
       break;
     }
   })
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
     .addMiddleware(&authenticationCallBack);
-#else
-    ;
-#endif
 
   /* Serving files in directory. Serving static files with authentication */
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
   _server.serveStatic("/", NAND_FS_SYSTEM, "/").addMiddleware(&authenticationCallBack);
-#else
-  _server.serveStatic("/", NAND_FS_SYSTEM, "/").onAuthenticate([](AsyncWebServerRequest *request){
-    return (authentication_level(request) != HTTP_AUTH_FAIL);
-  });
-#endif
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
   if (SDCard.statusIsOk()) {
     _server.serveStatic("/onsd", SD_FS_SYSTEM, "/").addMiddleware(&authenticationCallBack);
   } else {
     _server.serveStatic("/onsd", NAND_FS_SYSTEM, "/").addMiddleware(&authenticationCallBack);
   }
-#else
-  if (SDCard.statusIsOk()) {
-    _server.serveStatic("/onsd", SD_FS_SYSTEM, "/").onAuthenticate([](AsyncWebServerRequest *request){
-      return (authentication_level(request) != HTTP_AUTH_FAIL);
-    });
-  } else {
-    _server.serveStatic("/onsd", NAND_FS_SYSTEM, "/").onAuthenticate([](AsyncWebServerRequest *request){
-      return (authentication_level(request) != HTTP_AUTH_FAIL);
-    });
-  }
-#endif
 #endif
 
   // Simple Firmware Update Form
@@ -897,7 +768,7 @@ void ESPWebServer::start() {
   }
   _isStarted = true;
   
-#if (WEB_SERVER_REDIRECT_ENABLE == 1)
+#if (WEB_SERVER_REDIRECT_PORT_80_ENABLE == 1)
   /* redirect port 80 to tcp port */
   if (ESPConfig.tcpPort() != 80) {
     _server80.addHandler(new RedirectUrlHandler());

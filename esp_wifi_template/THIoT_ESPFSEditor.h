@@ -103,7 +103,7 @@ update.htm
 #define EDITOR_DOWNLOAD_FILE_LIMIT          0
 #define EDITOR_DOWNLOAD_CLIENT_MAX          8U    /* W1/M2: cap of the download bookkeeping list */
 #define EDITOR_LIST_CTX_MAX                 2U    /* W2/C2 + 2026-10-15: max concurrent chunked listings.
-                                                     * Measured on 192.168.3.101 (SD root, 172 entries, fw V3.1.9BT9):
+                                                     * Measured on 192.168.3.102 (SD root, 172 entries, fw V3.1.9BT9):
                                                      * 1 stream = 5/5 OK, 2 = 10/10 OK, 3 = 9/15 OK, 4 = 1/12 OK.
                                                      * From 3 streams up several responses are reset mid-stream at the
                                                      * same instant (~1.4 KB sent, free heap still ~96 KB, no abort() in
@@ -116,9 +116,6 @@ update.htm
 #define EDITOR_DOWNLOAD_TIMEOUT_LIMIT       (60 * 60000U)  /* ms */
 #define EDITOR_DOWNLOAD_TIMEOUT_INIT        30000  /* ms */
 
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 0)
-typedef std::function<bool(AsyncWebServerRequest *request)> fs_ArRequestAuthenticateFunction;
-#endif
 #if (DATE_LOG_APP_OPTION == MT_API) && (PUMP_LOG_TOTAL_MUTEX_ON == 1) 
 typedef std::function<bool(const char*)> semaphoreFunction;
 #endif
@@ -170,22 +167,14 @@ class ESPFSEditor: public AsyncWebHandler {
     ESPFSEditor& onProgress(THandlerFunction_Progress fn);
     ESPFSEditor& onStatus(fs_status fn);
     ESPFSEditor& setAuthentication(const char *username, const char *password){  _username = String(username);_password = String(password); return *this; };
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 0)
-    ESPFSEditor& onAuthenticate(fs_ArRequestAuthenticateFunction fn) {_onAuthenticate = fn; return *this;}
-#endif
 #if (DATE_LOG_APP_OPTION == MT_API) && (PUMP_LOG_TOTAL_MUTEX_ON == 1) 
     ESPFSEditor& onSemaphoreTake(semaphoreFunction fn) { _semaphoreTakeCallback = fn;  return *this;}
     ESPFSEditor& onSemaphoreGive(semaphoreFunction fn) { _semaphoreGiveCallback = fn;  return *this;}
 #endif
     virtual void handleRequest(AsyncWebServerRequest *request) override final;
     virtual void handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final) override final;
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
     virtual bool canHandle(AsyncWebServerRequest *request) const override final;
     virtual bool isRequestHandlerTrivial() const override final {return false;}
-#else
-    virtual bool canHandle(AsyncWebServerRequest *request) override final;
-    virtual bool isRequestHandlerTrivial() override final {return false;}
-#endif
 #if (defined FS_EDITOR_DEBUG) && (FS_EDITOR_DEBUG == 1)
     void debug(AsyncWebServerRequest *request);
 #endif
@@ -207,8 +196,6 @@ class ESPFSEditor: public AsyncWebHandler {
     String _password; 
     const char* _uri;
     uint32_t _startTime;
-    uint32_t _filesize;
-    uint32_t _progress;
 #if (FS_EDITOR_FS_PAGE == 0)
     uint8_t *_edit_htm;
     uint32_t _size_htm;
@@ -228,9 +215,6 @@ class ESPFSEditor: public AsyncWebHandler {
     const char* _pathPage;
     fs_status _status_callback;
     THandlerFunction_Progress _progress_callback;
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 0)
-    fs_ArRequestAuthenticateFunction _onAuthenticate;
-#endif
 #if (DATE_LOG_APP_OPTION == MT_API) && (PUMP_LOG_TOTAL_MUTEX_ON == 1) 
     semaphoreFunction _semaphoreTakeCallback;
     semaphoreFunction _semaphoreGiveCallback;

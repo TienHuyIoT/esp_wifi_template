@@ -200,7 +200,7 @@ static const char *editorGetContentType(const String &name) {
 /*
   W3/C4: per-request upload state.  Stored in request->_tempObject, which the library
   releases with free() (WebRequest.cpp:121-122) - allocate with malloc and never free it
-  here.  The old handler-level _progress/_filesize/_startTime mixed concurrent uploads.
+  here.  The old handler-level progress/file-size members mixed concurrent uploads.
 */
 struct EditorUploadState {
   uint32_t progress;
@@ -262,12 +262,10 @@ ESPFSEditor::ESPFSEditor(const FS& fs, const int fsType, const String& username,
 ,_username(username)
 ,_password(password)
 ,_startTime(0)
-,_filesize(0)
 ,_renameCounter(1)
 ,_downloadCounter(0)
 ,_isLocked(true)
 ,_isDownloadLimited(true)
-,_progress(0)
 ,_progress_callback(NULL)
 ,_status_callback(NULL)
 #if (DATE_LOG_APP_OPTION == MT_API) && (PUMP_LOG_TOTAL_MUTEX_ON == 1) 
@@ -311,11 +309,7 @@ ESPFSEditor& ESPFSEditor::onStatus(fs_status fn)
   return *this;
 }
 
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
 bool ESPFSEditor::canHandle(AsyncWebServerRequest *request) const
-#else
-bool ESPFSEditor::canHandle(AsyncWebServerRequest *request)
-#endif
 {
   if(!request->url().equalsIgnoreCase(_uri)) {
     return false;
@@ -342,74 +336,15 @@ bool ESPFSEditor::canHandle(AsyncWebServerRequest *request)
     if(request->hasParam("cleanup25123")) {
       return true;
     }
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
     if(request->hasParam("edit") || request->hasParam("download")) {
       request->addInterestingHeader("If-Modified-Since");
       return true;
     }
-#else
-    if(request->hasParam("edit")) {
-      path = request->arg("edit");
-#if defined(ESP32) && ESP_IDF_VERSION_MAJOR >= 4
-      if (!path.startsWith("/"))
-      {
-        path = "/" + path;
-      }
-#endif
-      request->_tempFile = _fs.open(path, "r");
-      if(!request->_tempFile) {
-        return false;
-      }
-#ifdef ESP32
-      if(request->_tempFile.isDirectory()) {
-        request->_tempFile.close();
-        return false;
-      }
-#endif
-    }
-    if(request->hasParam("download")) {
-      path = request->arg("download");
-#if defined(ESP32) && ESP_IDF_VERSION_MAJOR >= 4
-      if (!path.startsWith("/"))
-      {
-        path = "/" + path;
-      }
-#endif
-      request->_tempFile = _fs.open(path, "r");
-      if(!request->_tempFile) {
-        return false;
-      }
-#ifdef ESP32
-      if(request->_tempFile.isDirectory()) {
-        request->_tempFile.close();
-        return false;
-      }
-#endif
-#if (DATE_LOG_APP_OPTION == MT_API) && (PUMP_LOG_TOTAL_MUTEX_ON == 1) 
-      /* V3.1.7 */
-      if (_semaphoreTakeCallback) {
-        FS_EDITOR_DBG_PRINTF_I("[HTTP_GET] Path: %s", path.c_str());
-        if (_semaphoreTakeCallback(path.c_str())) {
-          request->onDisconnect([&]() {
-            if (_semaphoreGiveCallback) {
-              _semaphoreGiveCallback(nullptr);
-            }
-            FS_EDITOR_DBG_PRINTF_I("onDisconnect");
-          });
-        }
-      }
-#endif
-    }
-#endif // #if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 0)
     request->addInterestingHeader("If-Modified-Since");
     return true;
   }
   else if(request->method() == HTTP_POST)
   {
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 0)
-    _progress = 0;
-    _filesize = request->contentLength();
-#endif
     return true;
   }      
   else if(request->method() == HTTP_DELETE) {
@@ -457,19 +392,6 @@ void ESPFSEditor::handleRequest(AsyncWebServerRequest *request) {
   }
 
   String path = "";
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 0)
-  if(_username.length() && _password.length()) {
-    if(!request->authenticate(_username.c_str(), _password.c_str())) {
-      return request->requestAuthentication();
-    } 
-  } else {
-    if(_onAuthenticate) {
-      if(!_onAuthenticate(request)) {
-        return;
-      }
-    }
-  }
-#endif
 
 #if (defined FS_EDITOR_DEBUG) && (FS_EDITOR_DEBUG == 1)
   FS_EDITOR_DBG_PRINTF_I("handleRequest");
@@ -491,7 +413,6 @@ void ESPFSEditor::handleRequest(AsyncWebServerRequest *request) {
     }
     else if(request->hasParam("edit") || request->hasParam("download")) {
       bool isDownloadRecord = false;
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
       if(request->hasParam("edit")) {
         path = request->arg("edit");
       }
@@ -602,7 +523,6 @@ void ESPFSEditor::handleRequest(AsyncWebServerRequest *request) {
         return replyServerError(request, F("PATH IS DIR"));
       }
 #endif // #ifdef ESP32
-#endif // #if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
 
       String fName;
       if (request->hasParam("filename")) {
@@ -883,9 +803,9 @@ void ESPFSEditor::handleRequest(AsyncWebServerRequest *request) {
       FS_EDITOR_DBG_PRINTF_I("Exist(%u)", exist);
       if (exist) {
         FS_EDITOR_DBG_PRINTF_I("UPLOADED");
-        /* W3/H2: the verdict comes from the real file, not from _progress compared with
-         * the whole multipart contentLength - which made the failure branch unreachable
-         * (progress is payload only, contentLength includes boundaries/headers). */
+        /* W3/H2: the verdict comes from the real file, not from the byte counter compared
+         * with the whole multipart contentLength - which made the failure branch
+         * unreachable (progress is payload only, contentLength includes boundaries/headers). */
         EditorUploadState *st = (EditorUploadState *)request->_tempObject;
         bool ok = false;
         if (st && !st->failed && (st->progress > 0U)) {
@@ -923,7 +843,6 @@ void ESPFSEditor::handleUpload(AsyncWebServerRequest *request, const String& fil
     /* W3/C4: per-request upload state (malloc; request->_tempObject is freed by the
      * library with free(), see WebRequest.cpp:121-122). */
     EditorUploadState *st = (EditorUploadState *)request->_tempObject;
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
     if (!st) {
       st = (EditorUploadState *)malloc(sizeof(EditorUploadState));
       if (!st) { return replyEnd(request); }
@@ -933,7 +852,6 @@ void ESPFSEditor::handleUpload(AsyncWebServerRequest *request, const String& fil
     st->fileSize = request->contentLength();
     st->startMs  = millis();
     st->failed   = false;
-#endif
 #if defined(ESP32) && ESP_IDF_VERSION_MAJOR >= 4
     if (!path.startsWith("/")) {
       path = "/" + path;
@@ -949,7 +867,6 @@ void ESPFSEditor::handleUpload(AsyncWebServerRequest *request, const String& fil
       backupPath(path, "/BACKUP");
     }
 
-#if (defined ASYNC_WEB_SERVER_MIDDLEWARE_USED) && (ASYNC_WEB_SERVER_MIDDLEWARE_USED == 1)
     /* H2: refuse early when the payload cannot fit - the full multipart size is a safe
      * upper bound for the file itself. */
     if (st) {
@@ -961,7 +878,6 @@ void ESPFSEditor::handleUpload(AsyncWebServerRequest *request, const String& fil
         return request->send(507, FPSTR(TEXT_PLAIN), "NO SPACE");
       }
     }
-#endif
 
     /* mutex lock timeout has to be less than WDT task CONFIG_TASK_WDT_TIMEOUT_S
       sdkconfig.h current default configure is 5S
@@ -1024,8 +940,8 @@ void ESPFSEditor::handleUpload(AsyncWebServerRequest *request, const String& fil
   if(request->_tempFile) {
     if(len) {
       esp_task_wdt_reset(); /* Avoid reset by wdt of the task */
-      /* W3/H2: a short/failed write used to be invisible (_progress += len was
-       * unconditional and the write() result was dropped). */
+      /* W3/H2: a short/failed write used to be invisible (the byte counter was bumped
+       * unconditionally and the write() result was dropped). */
       const size_t written = request->_tempFile.write(data, len);
       if (st) {
         st->progress += (uint32_t)written;

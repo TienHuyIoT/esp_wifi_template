@@ -1,4 +1,13 @@
 **.vscode
-*.json
+!.vscode/
+!.vscode/arduino.yaml
 *.cfg
 *.svd
+*.json
+!script/release/release-config.json
+!.vscode/settings.json
+!.vscode/tasks.json
+**.build**
+script/test/_out/
+.vscode/.arduino-includes
+.release_build/

@@ -60,12 +60,12 @@ void ESPEEPromParams::load()
     if (_eepData.chipID != chipID)
     {
         _eepData.activeStatus = DEVICE_INACTIVE;
-        EEPROM_DATA_TAG_CONSOLE("Device inactive");
+        EEPROM_DATA_TAG_CONSOLE("Device disabled");
     }
     else
     {
         _eepData.activeStatus = DEVICE_ACTIVATED;
-        EEPROM_DATA_TAG_CONSOLE("Device activated");
+        EEPROM_DATA_TAG_CONSOLE("Device enabled");
     }
 }
 
