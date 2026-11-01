@@ -52,7 +52,7 @@ espota.exe -i 192.168.3.102 -p 3232 --auth= `
 .\script\ota\Flash-OTA.ps1 -Target littlefs
 
 # Chỉ định file .bin cụ thể + log debug
-.\script\ota\Flash-OTA.ps1 -Bin .\script\bin\app.bin -OtaDebug -SkipPing
+.\script\ota\Flash-OTA.ps1 -Bin .\script\esp32\flash_raw\bin\app.bin -OtaDebug -SkipPing
 ```
 
 Hoặc chạy `script\ota\Flash_OTA.bat` rồi nhập IP theo hướng dẫn.
@@ -73,27 +73,9 @@ Hoặc chạy `script\ota\Flash_OTA.bat` rồi nhập IP theo hướng dẫn.
 
 Biến môi trường tùy chọn: `ARDUINO_CLI` (đường dẫn `arduino-cli.exe`), `ESPOTA_EXE` (đường dẫn `espota.exe`).
 
-## Chạy từ VS Code
-
-Mở Command Palette → **Tasks: Run Task** → chọn:
-
-- `OTA (build + flash qua IP 192.168.3.102)` — build rồi nạp.
-- `OTA (flash .bin co san qua IP)` — nạp nhanh file `.bin` đang có.
-- `Arduino: Verify`, `Arduino: Upload (COM10)`, `Serial Monitor COM10 @115200` — như cũ.
-
-Nếu muốn một phím tắt, thêm vào `keybindings.json`:
-
-```json
-{
-  "key": "ctrl+alt+o",
-  "command": "workbench.action.tasks.runTask",
-  "args": "OTA (build + flash qua IP 192.168.3.102)"
-}
-```
-
 ## Lưu ý
 
-- **Chỉ nạp được app**, không nạp được bootloader / partition table qua OTA (giới hạn của ESP32 — phải nạp qua COM bằng `flash_esp32_qio.bat`).
+- **Chỉ nạp được app**, không nạp được bootloader / partition table qua OTA (giới hạn của ESP32 — phải nạp qua COM/UART, xem `.clinerules/flash-device.md`).
 - Windows Firewall có thể hỏi cho phép `espota.exe` mở socket TCP — phải đồng ý.
 - Chỉ 1 board được dùng IP đó; đảm bảo chạy đúng firmware có OTA đang chạy.
 - Log phía board (qua Serial Monitor / Tera Term) sẽ hiện `[OTA] Start updating application`, `[OTA] Progress: n%`, `[OTA] Succeed`.

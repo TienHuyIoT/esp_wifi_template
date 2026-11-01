@@ -2,10 +2,10 @@
 
 > Rule chuyên cho việc nạp app / ảnh FS lên board. Việc nạp **một trang web** là rule khác
 > (`.clinerules/upload-web-page.md`, không cần flash). Quy trình build/monitor đầy đủ:
-> `.clinerules/arduino-esp32-build-flash-monitor.md`. Skill: `.dsh/skills/flash-device/SKILL.md`.
-> Xác nhận cuối: 2026-10-10 — OTA `Flash-OTA.ps1 -Build` chạy 100% và board trả lời lại sau ~3 s (fw
-> `V3.1.9BT9`, Build_Date `Thu Oct 10 2026 10:25:56`); UART `esptool flash_id` trên COM10 tự vào download
-> mode và tự hard-reset (ESP32-D0WD-V3 rev v3.1, flash 4 MB) **không cần bấm nút**.
+> `.clinerules/arduino-esp32-build-flash-monitor.md`.
+> Xác nhận: 2026-10-10 — OTA `Flash-OTA.ps1 -Build` chạy 100% và board trả lời lại sau ~3 s; UART
+> `esptool flash_id` tự đưa ESP32 vào download mode rồi tự hard-reset (ESP32-D0WD-V3 rev v3.1)
+> **không cần bấm nút**.
 
 ## 1. Thứ tự ưu tiên (bắt buộc)
 
@@ -18,24 +18,25 @@
 Không hỏi lại người dùng "nạp bằng cách nào": tự chọn theo thứ tự trên. Chỉ hỏi **một câu xác nhận** trước
 khi nạp app (board sẽ khởi động lại, trạm đang chạy) — và bỏ qua câu đó nếu chính người dùng vừa yêu cầu nạp.
 
-## 2. Chẩn đoán chọn đường nạp — một lệnh (chỉ đọc)
+## 2. Chẩn đoán chọn đường nạp (chỉ đọc)
 
 ```powershell
-node script/flash/board_status.js          # in ping/web/firmware/cổng COM/công cụ + KẾT LUẬN kèm lệnh nạp
+ping 192.168.3.102 -n 2                            # board còn trong LAN?
+& 'C:\ArduinoCLI\arduino-cli.exe' board list       # có cổng `network` của IP đó? có COM nào?
 ```
 
 | Quan sát | Kết luận |
 | --- | --- |
-| Web trả lời `device_info` | **OTA** |
+| Web trả lời `GET /get?param_wifi=device_info` | **OTA** |
 | Không web nhưng còn cổng `network` của IP đó (`arduino-cli board list`) | **UART** (app treo/crash, OTA không đáng tin) |
 | Không ping + không cổng `network` sau khi chờ | **UART** (board reset mất WiFi hoặc không vào LAN) |
 
-**Phải chờ 20–60 s sau reset/OTA rồi mới kết luận** (board cần thời gian vào lại WiFi; script đã chờ sẵn
-tối đa 45 s, đổi bằng `--wait`). Kết luận "UART" khi board vừa reset xong là **sai** — đã gặp thực tế này.
+**Phải chờ 20–60 s sau reset/OTA rồi mới kết luận** — board cần thời gian vào lại WiFi. Kết luận "UART"
+khi board vừa reset xong là **sai** — đã gặp thực tế này.
 
-⚠️ `arduino-cli board list` có thể thấy **nhiều board**: hiện có `192.168.3.102` và `192.168.3.203`.
-Trước khi nạp phải chắc đúng board: `GET /get?param_wifi=device_info` → phải là trạm cần nạp
-(hiện tại `CỬA HÀNG XĂNG DẦU SỐ 1`), COM mặc định `COM10` theo `.vscode/arduino.yaml`. Đừng nạp mù theo IP.
+⚠️ `arduino-cli board list` có thể thấy **nhiều board**. Trước khi nạp phải chắc đúng board:
+`GET /get?param_wifi=device_info` → đúng thiết bị cần nạp. COM mặc định lấy từ `.vscode/arduino.yaml`
+(hiện `COM10`). **Đừng nạp mù theo IP.**
 
 ## 3. Đường ưu tiên — OTA
 
@@ -68,9 +69,9 @@ Nạp **full** (bootloader + partition + app, chỉ khi board trắng/partition 
 `<core>\tools\partitions\boot_app0.bin` @`0xe000`, `.build\esp_wifi_template.ino.bin` @`0x10000`
 (`--flash_mode qio --flash_freq 80m` cho khớp FQBN).
 
-### ⚠️ LittleFS (scheme `web485_v2`, 4 MB): offset `0x310000`, size `0xF0000`
+### ⚠️ LittleFS (4 MB): offset `0x310000`, size `0xF0000`
 
-Phân vùng thật (`web485_v2` — theo `.vscode/arduino.yaml`, `FlashSize=4M`): `nvs 0x9000/0x5000` ·
+Phân vùng thật (theo `.vscode/arduino.yaml`, `FlashSize=4M`): `nvs 0x9000/0x5000` ·
 `otadata 0xe000/0x2000` · `app0 0x10000/0x180000` (1.5 MB) · `app1 0x190000/0x180000` (1.5 MB) ·
 **`spiffs 0x310000/0xF0000`** (960 KB). Board báo `totalBytes` = 983.040 = `0xF0000`.
 
@@ -82,16 +83,16 @@ $esp = "C:\Users\HUY-GAMING\Documents\Arduino\hardware\espressif\esp32\tools\esp
   write_flash -z --flash_mode dio --flash_freq 80m --flash_size detect 0x310000 .\littlefs.bin
 ```
 
-`script\esp32\flash_raw\` là bộ ảnh gốc **đúng layout này**: `bin\partitions.csv` = `web485_v2`
-(app0 `0x10000`, app1 `0x190000`, spiffs `0x310000/0xF0000`), `bin\littlefs.bin` = 983.040 B = `0xF0000`,
+`script\esp32\flash_raw\` là bộ ảnh gốc **đúng layout này**: `bin\partitions.csv` (app0 `0x10000`,
+app1 `0x190000`, spiffs `0x310000/0xF0000`), `bin\littlefs.bin` = 983.040 B = `0xF0000`,
 `bin\app.bin` = 1.027.792 B. `flash_esp32_qio.bat` ghi boot_app0 `0xe000` · bootloader `0x1000` · app
-`0x10000` · partition `0x8000` · LittleFS `0x310000` → **offset đúng cho `web485_v2`**; chỉ vướng `set /p`
+`0x10000` · partition `0x8000` · LittleFS `0x310000` → **offset đúng cho layout 4 MB**; chỉ vướng `set /p`
 hỏi COM nên không tự động hoá được (nạp tay bằng esptool như trên). Nạp FS thì ưu tiên OTA `-Target littlefs`
 (board tự biết phân vùng).
 
 ## 5. Sau khi nạp — bắt buộc kiểm chứng
 
-1. `node script/flash/board_status.js` → `web + device_info OK` và `firmware` có `Build_Date` **mới**.
+1. `GET /get?param_wifi=device_info` trả JSON và `firmware` có `Build_Date` **mới**.
 2. Endpoint mới (nếu bản nạp có thêm): `GET /get?param_wifi=<tên>` phải trả JSON — endpoint lạ chỉ trả dòng
    echo `URI: /get … VALUE:…` nghĩa là firmware cũ vẫn đang chạy.
 3. Log boot serial theo checklist `.clinerules/arduino-esp32-build-flash-monitor.md` §3
@@ -101,7 +102,7 @@ hỏi COM nên không tự động hoá được (nạp tay bằng esptool như 
 
 | Việc | Đường |
 | --- | --- |
-| Một trang web trong `data_org/` | **Không flash** — dùng `script/web_upload/upload_page.js` (skill `upload-web-page`) |
+| Một trang web trong `data_org/` | **Không flash** — nạp qua `POST /edit` (rule `.clinerules/upload-web-page.md`) |
 | App (C++/endpoint/handler) | OTA trước, UART khi OTA không tới |
 | LittleFS dựng lại | OTA `-Target littlefs`, UART chỉ khi buộc (0x310000) |
 | Bootloader / partition table, board trắng | UART (esptool) |

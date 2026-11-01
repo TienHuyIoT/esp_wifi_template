@@ -19,9 +19,8 @@ Số liệu tham chiếu:
 | Hạng mục | Giá trị | Nguồn |
 |---|---|---|
 | `TASK_HTTP_LOG_STACK` | 1024×4+512 = **4608 B** | `THIoT_ESPTaskConfig.h:119` |
-| 1 chu kỳ tạo→xoá `http_log` | ≈ **4.7 KB heap** | 4608 + TCB |
-| Idle timeout worker `http_log` | **10 s** | `THIoT_APPHttpDataReport.cpp:132` |
-| Interval producer mặc định | pump/card **1000 ms** + `random(0,1000)` ms | template `THIoT_FileHandleHttpAPI.cpp:33-34`; arm ticker `THIoT_APPHttpDataReport.cpp:345-347,399-402` |
+| 1 chu kỳ tạo→xoá task | ≈ **4.7 KB heap** | 4608 + TCB |
+| `TASK_DELETE_DELAY_MS` | **10 ms** (trễ trước khi xoá task) | `THIoT_ESPTaskHelper.h` |
 | Slot ticker tối đa | `TICKER_FUNCTION_HANDLE_MAX = 20` | `THIoT_PFTicker.h:10` |
 | Đơn vị stack (ESP-IDF) | **BYTE**, không phải word | — |
 
@@ -36,11 +35,11 @@ Behavior chung của dự án. Hai vai trò khác context — không được g�
 
 ```cpp
 /* Queue rỗng = 0 byte RAM: không tạo consumer. */
-static inline bool http_log_pending() {
-  return _http_log_queue && uxQueueMessagesWaiting(_http_log_queue) > 0;
+static inline bool work_pending() {
+  return _queue && uxQueueMessagesWaiting(_queue) > 0;
 }
 ...
-if (http_log_pending()) { _start_http_log_task(); }
+if (work_pending()) { _start_xxx_task(); }
 ```
 
 Bắt buộc:
@@ -51,8 +50,7 @@ Bắt buộc:
 3. Null-check queue trước khi gọi API queue (`uxQueueMessagesWaiting` assert nếu NULL).
 4. Gọi ensure **trước** khi chạm log store / HTTP client — không giữ lock trong lúc chờ create.
 
-Ví dụ chuẩn: `THIoT_APPHttpDataReport.cpp` — `putPumpLogConfirmToQueue()` / `putCardLedgerToQueue()`
-(async_tcp) chỉ enqueue; `pumpLogReportSend()` / `cardDataReportSend()` (i2c_data) là nơi ensure.
+Nơi ensure phải là **task khác** `async_tcp` (ví dụ `loopTask`), và phải có nguồn định kỳ gọi nó.
 
 **Anti-pattern đã xảy ra thật:** start từ producer **không guard** ⇒ start call không reset idle timer —
 worker vẫn thoát sau 10 s rỗng và được tick producer kế tiếp (≤ 2.5 s) tạo lại ⇒ churn tạo/xoá ~4.7 KB
@@ -108,9 +106,8 @@ Trước khi viết `_start_xxx_task()`: xác định task nào gọi nó. Same-
 
 ## 6. Tham chiếu
 
-- `THIoT_ESPTaskHelper.h`, `THIoT_ESPTaskConfig.h`
-- `THIoT_APPHttpDataReport.cpp` (enqueue/ensure + worker `http_log`)
-- `THIoT_APPAsyncHttpAPI.cpp` (`waitClientIdle()` thay `delay()`)
-- `docs/HTTP_LOG_WORKER_START_ANALYSIS.vi.md` (phân tích + số liệu)
-- `docs/HTTP_REPORT_ARCHITECTURE_REVIEW.md` (T3, T12, T13)
-- `.github/instructions/task-lifecycle-ram.instructions.md` (bản cho Copilot)
+- `THIoT_ESPTaskHelper.h` (helper create/delete + recreate), `THIoT_ESPTaskConfig.h` (stack/size)
+- `THIoT_ESPLogTrace.cpp` — worker có idle-exit + **external delete** đúng mẫu §2
+- `THIoT_ESPMessageQueue.cpp` — dùng `task_alloc_delete_ticker()` / `TASK_DELETE_DELAY_MS`
+- `THIoT_ESPPingService.cpp` — mẫu §3 (ensure ở `loopTask`, bỏ wait)
+- `THIoT_PFConsoleTrace.cpp` — `_start_console_trace_task()`
