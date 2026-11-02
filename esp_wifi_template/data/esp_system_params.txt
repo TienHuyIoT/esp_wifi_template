@@ -1,24 +1,4 @@
 {
-    "log_time":{
-        "t_start" :210000,
-        "t_stop"  :50000,
-        "t_start1":50000,
-        "t_stop1" :130000,
-        "t_start2":130000,
-        "t_stop2" :210000
-    },
-    "probe_time":{
-        "t_start1" :210000,
-        "t_stop1"  :50000,
-        "t_start2":50000,
-        "t_stop2" :130000,
-        "t_start3":130000,
-        "t_stop3" :210000
-    },
-    "i2c_para":{
-        "addr": 1,
-        "sync_time": 333
-    },
     "port":{
         "udp": 25130,
         "tcp": 25130,
@@ -76,16 +56,6 @@
         "sync_time": 120,
         "disable": 1
     },
-    "ddns_private":{
-        "service": "private",
-        "server": "tienhuyiot.ddns.net",
-        "ipUrl": "ifconfig.me/ip",
-        "domain": "tienhuyiot.ddns.net",
-        "user": "tienhuyiot",
-        "pass": "123456789",
-        "sync_time": 120,
-        "disable": 1
-    },
     "sntp":{
         "server1": "pool.ntp.org",
         "server2": "time.nist.gov",
@@ -99,51 +69,6 @@
         {"host": "gateway", "timeout": 180, "interval": 60, "type": 1, "enable": 1},
         {"host": "google.com", "timeout": 180, "interval": 60, "type": 1, "enable": 0}
     ],
-    "hw_cfg":{
-        "hw_version": 0,
-        "CpuFrequencyMhz": 240,
-        "LAN": {
-            "Addr":-1,
-            "RstIO":-1,
-            "Enable":0
-        },
-        "LED": {
-            "PIN":-1,
-            "OffState":1,
-            "Enable":0
-        },
-        "I2C": {
-            "Freq":90000,
-            "Sda":-1,
-            "Scl":-1,
-            "TimeScan":5,
-            "Enable":0
-        },
-        "PROBE": {
-            "Enable":0,
-            "Serial":2,
-            "Baud":9600,
-            "Tx":-1,
-            "Rx":-1,
-            "Rts":-1
-        },
-        "RFID": {
-            "Enable":0,
-            "Serial":2,
-            "Baud":38400,
-            "Tx":-1,
-            "Rx":-1,
-            "Rts":-1
-        },
-        "PRINTER": {
-            "Enable":0,
-            "Serial":1,
-            "Baud":115200,
-            "Tx":-1,
-            "Rx":-1,
-            "Rts":-1
-        }
-    },
     "fw_version": 100,
-    "version":1
+    "version":2
 }

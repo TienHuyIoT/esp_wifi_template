@@ -103,7 +103,7 @@ update.htm
 #define EDITOR_DOWNLOAD_FILE_LIMIT          0
 #define EDITOR_DOWNLOAD_CLIENT_MAX          8U    /* W1/M2: cap of the download bookkeeping list */
 #define EDITOR_LIST_CTX_MAX                 2U    /* W2/C2 + 2026-10-15: max concurrent chunked listings.
-                                                     * Measured on 192.168.3.102 (SD root, 172 entries, fw V3.1.9BT9):
+                                                     * Measured on 192.168.3.102 (SD root, 172 entries):
                                                      * 1 stream = 5/5 OK, 2 = 10/10 OK, 3 = 9/15 OK, 4 = 1/12 OK.
                                                      * From 3 streams up several responses are reset mid-stream at the
                                                      * same instant (~1.4 KB sent, free heap still ~96 KB, no abort() in

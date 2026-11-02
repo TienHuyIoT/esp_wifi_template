@@ -104,9 +104,9 @@ boolean ESPSdCard::begin()
   SD_NSS_PINMODE_INIT();
   SD_NSS_RELEASE();
 #ifdef ESP32
-  // Init SD card with SPI clock = 40Mhz
+  // Init SD card with SPI clock = 80Mhz
   // https://github.com/espressif/esp-idf/issues/1008
-  if (!SD_FS_SYSTEM.begin(SD_NSS_PIN, spi, 40E6))
+  if (!SD_FS_SYSTEM.begin(SD_NSS_PIN, spi, 80E6))
 #elif defined(ESP8266)
   if (!SD_FS_SYSTEM.begin(SD_NSS_PIN, SPI_FULL_SPEED))
 #endif

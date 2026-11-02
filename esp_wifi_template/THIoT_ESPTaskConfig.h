@@ -101,7 +101,7 @@ extern StaticTask_t _i2c_frame_xTaskBuffer;
 #endif
 extern TaskHandle_t _i2c_frame_task_handle;
 
-// 6. Task probe tank config, dynamic task by config probeEnableGet()
+// 6. Task probe tank config (dynamic task, created on demand)
 #define TASK_PROBE_TANK_STATIC          0
 #define TASK_PROBE_TANK_RUNNING_CORE    1
 #define TASK_PROBE_TANK_STACK           (1024U * 2)
