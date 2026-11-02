@@ -57,7 +57,7 @@
  *
  * NOTE (same-task case, e.g. THIoT_ESPPingService.cpp): ticker callbacks run in
  * loopTask (THIoT_PFTicker.cpp -> ticker_schedule_handler(), whose only caller is
- * loop() in web485_v3.ino). If the recreate path is *also* driven by a ticker
+ * loop() in esp_wifi_template.ino). If the recreate path is *also* driven by a ticker
  * callback, the clearer cannot run while the waiter blocks, so the wait would
  * never complete. Such a module must NOT use this wait. It is safe because the
  * intervening loops (interval >= 1 s) already let the ticker fire.

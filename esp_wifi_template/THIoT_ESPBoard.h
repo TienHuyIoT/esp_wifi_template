@@ -26,10 +26,10 @@
 SPI BUS
 */
 #ifdef ESP32
-#define SPI_SCK_PIN     		5
-#define SPI_MISO_PIN     		18
-#define SPI_MOSI_PIN     		17
-#define SPI_NSS_PIN				16 
+#define SPI_SCK_PIN     		18
+#define SPI_MISO_PIN     		19
+#define SPI_MOSI_PIN     		23
+#define SPI_NSS_PIN				5 
 #elif defined(ESP8266)
 #define SPI_SCK_PIN     		14
 #define SPI_MISO_PIN     		12
@@ -41,7 +41,7 @@ SPI BUS
 #endif
 
 // GPIO SDcard SPI Chip select, don't care if the SD_CARD_ENABLE = 0
-#define SD_NSS_PIN				16
+#define SD_NSS_PIN				SPI_NSS_PIN
 /**GPIO control power of SD card, don't care if the SD_CARD_ENABLE = 0
  * -1: be not used
 */

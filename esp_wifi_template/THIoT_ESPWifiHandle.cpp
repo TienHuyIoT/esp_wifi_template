@@ -552,7 +552,7 @@ void ESPWifiHandle::loop()
    * interface is up and an IP address has been obtained.  Starting SNTP before
    * the lwIP tcpip thread exists makes configTime()/sntp_init() assert in
    * tcpip_api_call() ("Invalid mbox") and the board reboots in a loop.
-   * Same order as the web485_v3 firmware (ESPWifiHandle::loop). */
+   * This is the order ESPWifiHandle::loop requires. */
   if (_IsConnected)
   {
     if (!_connectedEvent)
@@ -587,7 +587,7 @@ void ESPWifiHandle::begin(bool wifiON)
    * initialisation.  configTime() -> sntp_init() -> tcpip_api_call() then hit
    * "assert failed: tcpip_api_call (Invalid mbox)" and the board rebooted in a
    * loop.  It is now started in loop() as soon as the connection is up (see
-   * ESPWifiHandle::loop), exactly like the web485_v3 firmware does. */
+   * ESPWifiHandle::loop). */
 
 #if (defined ASYNC_EASY_SNTP) && (ASYNC_EASY_SNTP == 1)
   EASY_NTP.onNTPSyncEvent([](struct timeval* val){

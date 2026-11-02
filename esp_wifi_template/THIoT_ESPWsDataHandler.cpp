@@ -66,8 +66,8 @@ void ESPWsDataHandle::onDataReceived(AsyncWebSocketClient *client, char *payload
     return;
   }
 
-  /* Accept both key styles: "page"/"cmd" (this project) and "Page"/"WsCmd"
-   * (the pages ported from web485_v3, e.g. ws_console.htm). */
+  /* Accept both key styles: "page"/"cmd" and "Page"/"WsCmd"
+   * (e.g. ws_console.htm uses the latter). */
   if (root["page"].success()) { page = root["page"]; }
   else if (root["Page"].success()) { page = root["Page"]; }
   else

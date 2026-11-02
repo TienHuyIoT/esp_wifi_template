@@ -431,7 +431,6 @@ void fw_version_get(AsyncWebServerRequest *request, WebServerURLHandle* client)
     JsonObject& root = djbco.createObject();   
     root["Hw_Version"].set(HW_VERSION_STRING);
     root["Fw_Version"].set(FW_VERSION_STRING);
-    root["Stm8_Version"].set(STM8_FW_VERSION_STRING);
     root["Build_Date"].set(build_time);
     AsyncResponseStream *response = request->beginResponseStream("text/json");
     root.prettyPrintTo(*response);
@@ -522,7 +521,7 @@ void format_sd_card_get(AsyncWebServerRequest *request, WebServerURLHandle* clie
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)    
         /* https://gist.github.com/dizcza/a35d8c1d09450369ed2f08f6803b5101
          * SD_MMC has no "format" helper any more: arm the format flag and let the
-         * next boot format the card (same behaviour as the web485_v3 firmware). */
+         * next boot format the card. */
         SDCard.formatON();
         request->send(200, "text/html", "SD card format after reset....(10S)");
         SOFTReset.enable(500, ESPSoftReset::SD_FORMAT_TYPE);

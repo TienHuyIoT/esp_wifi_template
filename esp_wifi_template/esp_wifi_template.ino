@@ -192,7 +192,13 @@ void setup() {
 
 #if (defined SD_CARD_ENABLE) && (SD_CARD_ENABLE == 1)
     /* Init sd card */
-    if (SDCard.begin()) {
+#if (SD_SPI_INTERFACE == 1) && (defined ESP32)
+    SPI.begin(SD_SCK_PIN, SD_MISO_PIN, SD_MOSI_PIN, SD_NSS_PIN);
+    if (SDCard.begin(SPI))
+#else
+    if (SDCard.begin())
+#endif
+    {
         /* List file in sd card memory file system */
         // FSHandle.listDir(SD_FS_SYSTEM, "/", 0);
         MAIN_TAG_CONSOLE("SD Card Init succeed");

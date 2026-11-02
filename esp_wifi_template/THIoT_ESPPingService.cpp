@@ -141,7 +141,7 @@ static bool _start_ping_task() {
          * clears _ping_service_task_handle is another ticker callback. Ticker
          * callbacks all run in loopTask (THIoT_PFTicker.cpp ->
          * ticker_schedule_handler(), whose ONLY caller is loop() in
-         * web485_v3.ino), so the clearer cannot run while this path waits. With
+         * esp_wifi_template.ino), so the clearer cannot run while this path waits. With
          * the endless wait of task_wait_pending_delete() that would DEADLOCK the
          * loopTask, not merely expire at a cap.
          *

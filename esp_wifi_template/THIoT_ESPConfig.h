@@ -2,25 +2,10 @@
 #define __ESP_CONFIG_H
 
 //==========================================================
-// <o> SERIAL_NUMBER_ADDR
-
-#ifndef SERIAL_NUMBER_ADDR          // option
-#define SERIAL_NUMBER_ADDR          0x1FDE0 // address
-#define SERIAL_NUMBER_LENGTH_MAX    32
-#endif
-
-//==========================================================
 // <o> HW_VERSION_STRING
 
 #ifndef HW_VERSION_STRING
 #define HW_VERSION_STRING           "ESP32"
-#endif
-
-//==========================================================
-// <o> STM8_FW_VERSION_STRING
-
-#ifndef STM8_FW_VERSION_STRING
-#define STM8_FW_VERSION_STRING      "V1.0.0"
 #endif
 
 //==========================================================
@@ -71,7 +56,7 @@ https://github.com/boblemaire/asyncHTTPrequest
 0: Disable
 1: Enable
 */
-#define MDNS_SERVICE_ENABLE         0
+#define MDNS_SERVICE_ENABLE         1
 
 /* OTA Arduino
 0: Disable
@@ -132,7 +117,7 @@ https://github.com/boblemaire/asyncHTTPrequest
 1: SD interface over SPI
 */
 #ifdef ESP32
-#define SD_SPI_INTERFACE            0
+#define SD_SPI_INTERFACE            1
 #elif defined(ESP8266)
 #define SD_SPI_INTERFACE            1
 #endif
@@ -160,9 +145,10 @@ https://github.com/boblemaire/asyncHTTPrequest
 #ifdef ESP32
 #if ESP_IDF_VERSION_MAJOR >= 4
   // #define NAND_FS_SYSTEM LittleFS
-  // #include <LittleFS.h>
-  #define NAND_FS_SYSTEM            LITTLEFS
-  #include <LITTLEFS.h>
+  #include <LittleFS.h>
+  #define NAND_FS_SYSTEM            LittleFS
+  // #define NAND_FS_SYSTEM            LITTLEFS
+  // #include <LITTLEFS.h>
 #else
   #define NAND_FS_SYSTEM            LITTLEFS
   #include <LITTLEFS.h>

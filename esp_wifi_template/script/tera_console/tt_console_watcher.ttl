@@ -1,0 +1,155 @@
+; =============================================================================
+;  tt_console_watcher.ttl  -  TEMPLATE (not meant to be executed directly)
+;
+;  TeraTerm Console (TeraTermConsole.ps1) generates a runtime copy of this
+;  file for every session:  .build\watcher_<sid>.ttl
+;  with these placeholders replaced:
+;     @@CTRL@@    full path of the control file  (UI -> watcher)
+;     @@STATUS@@  full path of the status file   (watcher -> UI)
+;     @@TSFLAG@@  1 = timestamp each log line, 0 = none
+;     @@TSTYPE@@  0 = Local, 1 = UTC, 2 = elapsed since logging, 3 = elapsed since connect
+;
+;  Control file format (single line, rewritten by the UI):
+;     <seq>|LOGSTART|<logpath>||END
+;     <seq>|LOGSTOP|||END
+;     <seq>|DISCONNECT|||END
+;     <seq>|CONNECT|<connect params>||END   e.g. /C=4 /SPEED=115200
+;     <seq>|SETRTS|<1=hold RESET low via RTS / 0=release>||END
+;                     (DTR is left untouched on purpose)
+;     <seq>|QUIT|||END
+;
+;  Status file: only the FIRST line is meaningful (writer never truncates;
+;  content is written from offset 0 and always ends with a CRLF).
+;     -1|READY||<link>
+;     <seq>|LOGGING|<logpath>|<link>
+;     <seq>|ERROR|<logpath>|<link>
+;     <seq>|IDLE|<logpath>|<link>
+;     FINAL|QUIT|
+;     <link> = testlink value: 0=not linked, 1=linked+disconnected, 2=connected
+;     (refreshed by a ~1 s heartbeat so the UI can track connection state)
+;
+;  The macro ends itself when Tera Term is closed (testlink check).
+;  Poll interval: 250 ms.
+; =============================================================================
+
+CTRLFILE   = '@@CTRL@@'
+STATUSFILE = '@@STATUS@@'
+
+lastline  = ''
+laststate = 'IDLE'
+lastlog   = ''
+lastseq   = '-1'
+emptystr  = ''
+lnk       = 0
+lnkstr    = '0'
+ticks     = 0
+
+testlink
+lnk = result
+int2str lnkstr lnk
+rstate = 'READY'
+sprintf2 statstr '%s|%s|%s|%s' lastseq rstate emptystr lnkstr
+fileopen sfh STATUSFILE 0 0
+filewriteln sfh statstr
+fileclose sfh
+
+:MAINLOOP
+
+; ---- read current directive (first line of the control file) ----
+fileopen fh CTRLFILE 0 1
+filereadln fh cline
+fileclose fh
+
+strcompare cline lastline
+if result = 0 then
+    goto LINKCHECK
+endif
+
+; ---- validate directive: <seq>|CMD|arg1|arg2|END  (5 tokens) ----
+strsplit cline '|' 5
+strcompare groupmatchstr5 'END'
+if result = 0 then
+    seqv  = groupmatchstr1
+    cmdv  = groupmatchstr2
+    arg1v = groupmatchstr3
+
+    strcompare cmdv 'LOGSTART'
+    if result = 0 then
+        logopen arg1v 0 0 1 @@TSFLAG@@ 1 0 @@TSTYPE@@
+        if result = 0 then
+            laststate = 'LOGGING'
+            lastlog   = arg1v
+        else
+            laststate = 'ERROR'
+            lastlog   = arg1v
+        endif
+    endif
+
+    strcompare cmdv 'LOGSTOP'
+    if result = 0 then
+        logclose
+        laststate = 'IDLE'
+    endif
+
+    strcompare cmdv 'DISCONNECT'
+    if result = 0 then
+        disconnect 0
+    endif
+
+    strcompare cmdv 'CONNECT'
+    if result = 0 then
+        connect arg1v
+    endif
+
+    strcompare cmdv 'SETRTS'
+    if result = 0 then
+        strcompare arg1v '1'
+        if result = 0 then
+            ; RTS only - the DTR line is never driven by this UI
+            setrts 1
+        else
+            setrts 0
+        endif
+    endif
+
+    strcompare cmdv 'QUIT'
+    if result = 0 then
+        logclose
+        fileopen sfh STATUSFILE 0 0
+        filewriteln sfh 'FINAL|QUIT|'
+        fileclose sfh
+        closett
+        end
+    endif
+
+    lastline = cline
+    lastseq  = seqv
+    testlink
+    lnk = result
+    int2str lnkstr lnk
+    sprintf2 statstr '%s|%s|%s|%s' lastseq laststate lastlog lnkstr
+    fileopen sfh STATUSFILE 0 0
+    filewriteln sfh statstr
+    fileclose sfh
+endif
+
+:LINKCHECK
+testlink
+if result = 0 then
+    end
+endif
+lnk = result
+int2str lnkstr lnk
+
+; ---- ~1 s heartbeat (every 4th poll): keep link state fresh for the UI ----
+ticks = ticks + 1
+if ticks >= 4 then
+    ticks = 0
+    sprintf2 statstr '%s|%s|%s|%s' lastseq laststate lastlog lnkstr
+    fileopen sfh STATUSFILE 0 0
+    filewriteln sfh statstr
+    fileclose sfh
+endif
+
+mpause 250
+goto MAINLOOP

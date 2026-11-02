@@ -99,10 +99,10 @@ void THIoT_ESPTaskMonitor::begin(size_t interval) {
     ticker_attach_ms(&_monitorTicker, _interval, [](void *arg) {
         THIoT_ESPTaskMonitor *self = static_cast<THIoT_ESPTaskMonitor *>(arg);
         if (self->_enabled) {
-            /* Task set of this project: the station specific tasks of web485_v3
-             * (i2c / probe / printer / http_log / websocket / ping service ...) do
-             * not exist in this template; they are added back when the matching
-             * module is ported. */
+            /* Task set of this project: the station specific tasks (i2c / probe /
+             * printer / http_log / websocket / ping service ...) do not exist in
+             * this template; they are added back when the matching module is
+             * ported. */
             self->addTask(&_log_trace_task_handle);
 #if (CONSOLE_TRACE_TASK_ENABLE == 1)
             self->addTask(&_console_trace_task_handle);

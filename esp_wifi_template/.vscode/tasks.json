@@ -1,0 +1,207 @@
+{
+    // esp_wifi_template - Build & Flash (Arduino CLI)
+    // Ctrl+Shift+B de chay task mac dinh.
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Arduino: Verify",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\script\\build\\Arduino-Build.ps1",
+                "-Action",
+                "verify"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": [],
+            "group": { "kind": "build", "isDefault": true },
+            "presentation": { "reveal": "always", "clear": true, "panel": "dedicated" }
+        },
+        {
+            "label": "Arduino: Re-build",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\script\\build\\Arduino-Build.ps1",
+                "-Action",
+                "rebuild"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": [],
+            "group": "build",
+            "presentation": { "reveal": "always", "clear": true, "panel": "dedicated" }
+        },
+        {
+            "label": "Arduino: Upload (COM10)",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\script\\build\\Arduino-Build.ps1",
+                "-Action",
+                "upload"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "clear": true, "panel": "dedicated" }
+        },
+        {
+            "label": "Arduino: CLI Upload (COM10)",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\script\\build\\Arduino-Build.ps1",
+                "-Action",
+                "cliupload"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "clear": true, "panel": "dedicated" }
+        },
+        {
+            "label": "Serial Monitor COM10 @115200",
+            "type": "shell",
+            "command": "C:\\ArduinoCLI\\arduino-cli.exe",
+            "args": ["monitor", "-p", "COM10", "-c", "baudrate=115200", "-q"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "panel": "dedicated" }
+        },
+        {
+            "label": "OTA (build + flash qua IP 192.168.3.102)",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\script\\ota\\Flash-OTA.ps1",
+                "-Ip",
+                "192.168.3.102",
+                "-Build"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "clear": true, "panel": "dedicated" }
+        },
+        {
+            "label": "OTA (flash .bin co san qua IP)",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\script\\ota\\Flash-OTA.ps1",
+                "-Ip",
+                "192.168.3.102"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "clear": true, "panel": "dedicated" }
+        },
+        {
+            "label": "LittleFS: Build image (4MB)",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\script\\littlefs_gen\\Flash-Littlefs.ps1",
+                "-Mem",
+                "4MB",
+                "-Mode",
+                "none"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "clear": true, "panel": "dedicated" }
+        },
+        {
+            "label": "LittleFS: Build + Flash OTA (192.168.3.102)",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\script\\littlefs_gen\\Flash-Littlefs.ps1",
+                "-Mem",
+                "4MB",
+                "-Mode",
+                "ota",
+                "-Ip",
+                "192.168.3.102",
+                "-Yes"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "clear": true, "panel": "dedicated" }
+        },
+        {
+            "label": "LittleFS: Build + Flash UART (COM10)",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\script\\littlefs_gen\\Flash-Littlefs.ps1",
+                "-Mem",
+                "4MB",
+                "-Mode",
+                "uart",
+                "-ComPort",
+                "COM10",
+                "-Yes"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "clear": true, "panel": "dedicated" }
+        },
+        {
+            "label": "LittleFS: Flash .bin co san (OTA)",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\script\\littlefs_gen\\Flash-Littlefs.ps1",
+                "-Mem",
+                "4MB",
+                "-SkipBuild",
+                "-Mode",
+                "ota",
+                "-Ip",
+                "192.168.3.102",
+                "-Yes"
+            ],
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "clear": true, "panel": "dedicated" }
+        }
+    ]
+}

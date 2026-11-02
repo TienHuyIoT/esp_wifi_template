@@ -18,7 +18,7 @@
 /* Private define ------------------------------------------------------------*/
 
 /* Private macro -------------------------------------------------------------*/
-#define SD_FS_TAG_CONSOLE(...)  //CONSOLE_TAG_LOGI("[SD]", __VA_ARGS__)
+#define SD_FS_TAG_CONSOLE(...)  CONSOLE_TAG_LOGI("[SD]", __VA_ARGS__)
 
 #define SD_FS_TAG_ESP_LOG(...)  ESP_FS_TAG_LOGI("[SD]", __VA_ARGS__)
 
@@ -104,9 +104,9 @@ boolean ESPSdCard::begin()
   SD_NSS_PINMODE_INIT();
   SD_NSS_RELEASE();
 #ifdef ESP32
-  // Init SD card with SPI clock = 80Mhz
+  // Init SD card with SPI clock = 40Mhz
   // https://github.com/espressif/esp-idf/issues/1008
-  if (!SD_FS_SYSTEM.begin(SD_NSS_PIN, spi, 80E6))
+  if (!SD_FS_SYSTEM.begin(SD_NSS_PIN, spi, 40E6))
 #elif defined(ESP8266)
   if (!SD_FS_SYSTEM.begin(SD_NSS_PIN, SPI_FULL_SPEED))
 #endif
@@ -163,6 +163,7 @@ boolean ESPSdCard::begin()
 
   SD_FS_TAG_CONSOLE("Card Size %lluMB, used %lluMB", cardSize, usedBytes);
 
+#if SD_SPI_INTERFACE == 0
   if (isFormatON()) {
     formatOFF();
     if (SD_FS_SYSTEM.format() == ESP_OK) {
@@ -176,6 +177,7 @@ boolean ESPSdCard::begin()
     delay(150);
     ESP.restart();
   }
+#endif
   return true;
 }
 

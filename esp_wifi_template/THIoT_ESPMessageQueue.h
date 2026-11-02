@@ -130,7 +130,7 @@ public:
 
 #else
 /* Q4 / MQ24: the ESPMessageQueue substitution is no longer switchable.  The call sites in
- * I2CData.cpp, web485_v3.ino and THIoT_APPParamSettingLogHandler.h were written against this class and
+ * I2CData.cpp and THIoT_APPParamSettingLogHandler.h were written against this class and
  * were never guarded, so MESSAGE_QUEUE_REPLACE_X_RING_BUFFER == 0 does not build anymore.
  * Flipping the flag now stops with this message instead of failing deep in a caller.
  * See docs/ESPMESSAGEQUEUE_FIX_PLAN.md (decision D5). */

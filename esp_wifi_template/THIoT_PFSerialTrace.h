@@ -8,7 +8,7 @@
 #define STRINGIFY(x)        #x
 #define TOSTRING(x)         STRINGIFY(x)
 #define SERIAL_PORT         Serial
-#define SERIAL_BAUDRATE     921600
+#define SERIAL_BAUDRATE     115200
 
 /* ---------------------------------------------------------------------------
  * Optional SERIAL log prefix (THIoT_APPConfig.h):

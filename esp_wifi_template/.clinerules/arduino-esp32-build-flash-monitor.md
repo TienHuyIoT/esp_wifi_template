@@ -35,6 +35,8 @@ Extension `electropol-fr.arduino-vscode-ide-2026.9.5` chạy `arduino-cli` phía
 | `Arduino: Open Serial Monitor` (`arduino.openSerialMonitor`) | Mở panel Serial Monitor (`ms-vscode.vscode-serial-monitor`): chọn COM10 @ 115200 |
 
 > **OTA qua IP không có command trong extension.** Arduino IDE có mục chọn cổng mạng; extension `electropol-fr.arduino-vscode-ide` không expose. Tương đương CLI là gọi trực tiếp `espota.exe` — xem §2.4.
+>
+> **VS Code tasks (`.vscode/tasks.json`) không hardcode FQBN**: các task build/nạp gọi `script/build/Arduino-Build.ps1` (`-Action verify|rebuild|upload|cliupload`); script này đọc `board`/`configuration`/`sketch`/`output`/`port` từ `.vscode/arduino.yaml`, nên đổi board option chỉ cần sửa `arduino.yaml`.
 
 ### 2.1. Verify (Arduino: Verify)
 
@@ -59,7 +61,9 @@ arduino-cli compile -b $fqbn --upload --port COM10 --build-path ".build" "./esp_
 
 ### 2.3. Serial Monitor (COM10 @ 115200)
 
-- Trong VS Code: `Arduino: Open Serial Monitor` → chọn COM10, 115200.
+- Trong VS Code: `Arduino: Open Serial Monitor` → chọn COM10, **115200**.
+- Log của **app** ở **115200** (`THIoT_PFSerialTrace.h` → `SERIAL_BAUDRATE`); ROM/bootloader cũng in ở
+  **115200**, nên đọc cả log boot lẫn log app ở cùng một mức baud.
 - Từ CLI (agent — thu log có giới hạn thời gian, không treo):
 
 ```powershell

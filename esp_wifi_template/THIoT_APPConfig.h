@@ -72,7 +72,7 @@
 #define TIME_ZONE_TYPE_CFG                      1
 
 /** @brief Mutex memory PFTicker
- *  NOTE: THIoT_PFTicker.cpp (ported from web485_v3) always uses the mutex mode:
+ *  NOTE: THIoT_PFTicker.cpp always uses the mutex mode:
  *        ticker_t carries the per-ticker semaphore and the scheduler takes it,
  *        so this has to stay 1.
 */

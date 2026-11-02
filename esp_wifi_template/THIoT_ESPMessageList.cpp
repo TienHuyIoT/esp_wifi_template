@@ -253,7 +253,7 @@ void ESPMessageListMutex::_releaseSlot(message_element_list_mutex_t *element) {
  * force-deleted task cannot do either.  The module therefore reports instead of guessing:
  * a row held far beyond LINKED_LIST_LIVE_TIME_MS is surfaced by the "held longer than ..."
  * alert and by printList() with its [src] tag.  In-tree this costs nothing: the firmware's
- * task protocol parks every task where it holds no lock (web485_v3.ino:264-277), so a row
+ * task protocol parks every task where it holds no lock (see esp_wifi_template.ino), so a row
  * outliving its owner is a leak signal for the operator, not a case to auto-heal. */
 bool ESPMessageListMutex::_reclaimAbandoned(message_element_list_mutex_t *element) {
     (void)element;
