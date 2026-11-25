@@ -103,6 +103,7 @@ boolean ESPSdCard::begin()
 #else
   SD_NSS_PINMODE_INIT();
   SD_NSS_RELEASE();
+  delay(10); // Fixed: add timeout to release the sd card before mount
 #ifdef ESP32
   // Init SD card with SPI clock = 80Mhz
   // https://github.com/espressif/esp-idf/issues/1008
